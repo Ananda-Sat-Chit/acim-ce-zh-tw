@@ -3,16 +3,24 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  /* 強制解除 Word 鎖死的寬度，讓所有內容不超過螢幕 */
+  /* 1. 強制解除 Word 鎖死的寬度 */
   body, div, p, table, tr, td, span {
     max-width: 100% !important;
     box-sizing: border-box !important;
     word-wrap: break-word !important;
   }
-  /* 確保圖片在手機上會自動縮小，不會撐破畫面 */
+  /* 2. 圖片自動縮放 */
   img {
     max-width: 100% !important;
     height: auto !important;
+  }
+  
+  /* 3. 【全新加入】針對手機螢幕強制優化閱讀體驗 */
+  @media (max-width: 768px) {
+    body, div, p, span, td {
+      font-size: 19px !important; /* 強制把字體放大，19px是手機閱讀很舒服的大小 */
+      line-height: 1.8 !important; /* 把行距拉開，避免字擠在一起 */
+    }
   }
 </style>
 <meta http-equiv=Content-Type content="text/html; charset=big5">
