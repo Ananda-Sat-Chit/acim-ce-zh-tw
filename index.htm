@@ -23,6 +23,20 @@
     }
   }
 </style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<link rel="apple-touch-icon" href="icon-512.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(registration => console.log('ServiceWorker 註冊成功'))
+        .catch(err => console.log('ServiceWorker 註冊失敗: ', err));
+    });
+  }
+</script>
+
 <meta http-equiv=Content-Type content="text/html; charset=big5">
 <meta name=Generator content="Microsoft Word 15 (filtered)">
 <title>完整加註版奇蹟課程_全_20260517</title>
