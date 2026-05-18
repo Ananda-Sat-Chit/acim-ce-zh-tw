@@ -37,7 +37,7 @@
   }
 </script>
 
-<meta http-equiv=Content-Type content="text/html; charset=big5">
+<meta http-equiv=Content-Type content="text/html; charset=utf-8">
 <meta name=Generator content="Microsoft Word 15 (filtered)">
 <title>完整加註版奇蹟課程_全_20260517</title>
 <style>
@@ -4301,10 +4301,191 @@ ul
 -->
 </style>
 
+<!-- ========================================== -->
+<!-- ?? 1. PWA 與閱讀體驗增強 CSS (請複製此區塊) ?? -->
+<!-- ========================================== -->
+<style>
+  /* 基礎變數：支援淺色與深色模式切換 */
+  :root {
+    --bg-color: #fdfdfd;
+    --text-color: #2c2c2c;
+    --link-color: #2F5496;
+    --link-visited: #954F72;
+    --panel-bg: #f4f4f4;
+    --border-color: #dddddd;
+    --btn-bg: rgba(255, 255, 255, 0.9);
+    --btn-text: #333;
+    --btn-shadow: rgba(0, 0, 0, 0.15);
+  }
+
+  body.dark-mode {
+    --bg-color: #1a1a1a;
+    --text-color: #e4e4e4;
+    --link-color: #66b2ff;
+    --link-visited: #ff99cc;
+    --panel-bg: #2d2d2d;
+    --border-color: #444444;
+    --btn-bg: rgba(40, 40, 40, 0.9);
+    --btn-text: #f0f0f0;
+    --btn-shadow: rgba(0, 0, 0, 0.5);
+  }
+
+  /* 覆寫 Word 預設樣式，強制套用我們的閱讀優化設定 */
+  body {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+    line-height: 1.8 !important; /* 增加行距，減少閱讀疲勞 */
+    font-size: 18px !important; /* 放大基礎字體 */
+    font-family: "Noto Sans TC", "微軟正黑體", "Microsoft JhengHei", sans-serif !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 確保所有內部元素都能繼承顏色，不被 Word 預設的黑色鎖死 */
+  div, p, span, h1, h2, h3, h4, h5, h6, table, td, tr {
+    color: inherit !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    word-wrap: break-word !important;
+  }
+
+  /* 圖片自適應 */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    border-radius: 8px;
+  }
+
+  a:link, span.MsoHyperlink { color: var(--link-color) !important; text-decoration: none; }
+  a:visited, span.MsoHyperlinkFollowed { color: var(--link-visited) !important; }
+  a:hover { text-decoration: underline; }
+
+  /* 針對手機螢幕強制優化 */
+  @media (max-width: 768px) {
+    body {
+      font-size: 19px !important; 
+      line-height: 1.8 !important;
+      padding: 10px;
+    }
+  }
+
+  /* ========================================== */
+  /* 浮動工具列與目錄 (TOC) UI 樣式               */
+  /* ========================================== */
+  #pwa-tools {
+    position: fixed;
+    bottom: 30px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 9999;
+  }
+
+  .pwa-btn {
+    background-color: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 55px;
+    height: 55px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px var(--btn-shadow);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    transition: transform 0.2s, background-color 0.3s;
+    user-select: none;
+  }
+
+  .pwa-btn:active { transform: scale(0.9); }
+
+  #pwa-toc-sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 300px;
+    max-width: 85vw;
+    height: 100vh;
+    background-color: var(--panel-bg);
+    border-right: 1px solid var(--border-color);
+    box-shadow: 2px 0 15px rgba(0,0,0,0.3);
+    overflow-y: auto;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10000;
+    padding: 25px 20px;
+    box-sizing: border-box;
+  }
+
+  #pwa-toc-sidebar.open { left: 0; }
+
+  #pwa-toc-sidebar h3 {
+    margin-top: 0;
+    font-size: 20px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+    color: var(--text-color);
+  }
+
+  .toc-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: var(--text-color);
+    cursor: pointer;
+  }
+
+  #pwa-toc-content ul { list-style: none; padding-left: 0; margin: 0; }
+  #pwa-toc-content ul li { margin-bottom: 12px; line-height: 1.4; }
+  #pwa-toc-content ul ul { padding-left: 20px; margin-top: 8px; font-size: 0.95em; border-left: 2px solid var(--border-color); }
+  
+  #pwa-toc-content a {
+    text-decoration: none;
+    color: var(--text-color) !important;
+    display: block;
+    padding: 6px 0;
+    opacity: 0.85;
+    transition: opacity 0.2s, color 0.2s;
+  }
+
+  #pwa-toc-content a:hover {
+    opacity: 1;
+    color: var(--link-color) !important;
+    font-weight: bold;
+  }
+
+  #pwa-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.6);
+    z-index: 9998;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  #pwa-overlay.show { display: block; opacity: 1; }
+
+  /* 術語解說 DL/DT/DD 排版優化 */
+  dl.custom-glossary { margin: 2em 0; padding: 1.5em; background-color: var(--panel-bg); border-radius: 8px; }
+  dl.custom-glossary dt { font-weight: bold; font-size: 1.25em; color: var(--link-color); margin-top: 1.5em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5em; }
+  dl.custom-glossary dt:first-child { margin-top: 0; }
+  dl.custom-glossary dd { margin-left: 0; padding-left: 1em; margin-top: 0.8em; line-height: 1.8; color: var(--text-color); }
+</style>
+
 </head>
 
 <body lang=ZH-TW link=blue vlink="#954F72" style='word-wrap:break-word;
 text-justify-trim:punctuation'>
+
 
 <div class=WordSection1 style='layout-grid:18.0pt'>
 
@@ -139452,6 +139633,230 @@ color:black'> </span></p>
       link.className = 'toc-' + header.tagName.toLowerCase(); 
       tocWrapper.appendChild(link);
     });
+  });
+</script>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    // 延遲 200 毫秒，確保您原有的 sidebar 和 content-area 已經建立完畢
+    setTimeout(() => {
+      
+      // ==========================================
+      // 1. 動態生成目錄，放入既有的側邊欄中
+      // ==========================================
+      const existingTocWrapper = document.getElementById('toc-wrapper');
+      if (existingTocWrapper && !document.getElementById('pwa-toc-ul')) {
+        const headers = document.querySelectorAll('h1, h2, h3');
+        const tocList = document.createElement('ul');
+        tocList.id = 'pwa-toc-ul';
+        tocList.style.listStyle = 'none';
+        tocList.style.paddingLeft = '0';
+        tocList.style.lineHeight = '1.6';
+
+        let currentH1SubList = null;
+        let currentH2SubList = null;
+
+        headers.forEach((header, index) => {
+          if (!header.id) header.id = 'pwa-heading-' + index;
+
+          const li = document.createElement('li');
+          li.style.marginBottom = '8px';
+          const a = document.createElement('a');
+          a.href = '#' + header.id;
+          a.innerText = header.innerText || header.textContent;
+          a.style.textDecoration = 'none';
+          a.style.color = 'inherit'; 
+
+          li.appendChild(a);
+          const tagName = header.tagName.toLowerCase();
+
+          if (tagName === 'h1') {
+            tocList.appendChild(li);
+            currentH1SubList = document.createElement('ul');
+            currentH1SubList.style.paddingLeft = '15px';
+            currentH1SubList.style.borderLeft = '2px solid var(--border-color)';
+            li.appendChild(currentH1SubList);
+            currentH2SubList = null;
+          } else if (tagName === 'h2') {
+            if (currentH1SubList) currentH1SubList.appendChild(li);
+            else tocList.appendChild(li);
+            currentH2SubList = document.createElement('ul');
+            currentH2SubList.style.paddingLeft = '15px';
+            li.appendChild(currentH2SubList);
+          } else if (tagName === 'h3') {
+            if (currentH2SubList) currentH2SubList.appendChild(li);
+            else if (currentH1SubList) currentH1SubList.appendChild(li);
+            else tocList.appendChild(li);
+          }
+          
+          // 點擊目錄連結後，如果是手機版，自動收起側邊欄
+          a.addEventListener('click', () => {
+             const sidebar = document.getElementById('sidebar-toc');
+             const overlay = document.getElementById('pwa-mobile-overlay');
+             if (window.innerWidth <= 768 && sidebar) {
+                 sidebar.classList.remove('open-mobile');
+                 if(overlay) overlay.style.display = 'none';
+             }
+          });
+        });
+        existingTocWrapper.appendChild(tocList);
+      }
+
+      // ==========================================
+      // 2. 動態建立深色模式與目錄切換按鈕
+      // ==========================================
+      if (!document.getElementById('pwa-tools')) {
+        const pwaTools = document.createElement('div');
+        pwaTools.id = 'pwa-tools';
+        pwaTools.style.cssText = 'position: fixed; bottom: 30px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999;';
+        
+        // 同時加入「深色」與「目錄」按鈕
+        pwaTools.innerHTML = `
+          <button class="pwa-btn" id="btn-theme" title="切換深色模式" style="font-size: 15px; font-weight: bold; width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1px solid #ccc; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.3s;">深色</button>
+          <button class="pwa-btn" id="btn-toc" title="切換目錄" style="font-size: 15px; font-weight: bold; width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1px solid #ccc; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.3s;">目錄</button>
+        `;
+        document.body.appendChild(pwaTools);
+      }
+
+      // ==========================================
+      // 3. 深色模式與手機版排版覆寫 CSS
+      // ==========================================
+      const btnTheme = document.getElementById('btn-theme');
+      
+      if (!document.getElementById('pwa-dynamic-style')) {
+        const style = document.createElement('style');
+        style.id = 'pwa-dynamic-style';
+        style.innerHTML = `
+          /* 深色模式外觀 */
+          body.dark-mode .sidebar, body.dark-mode #sidebar-toc { background-color: #2d2d2d !important; color: #e4e4e4 !important; border-right: 1px solid #444 !important; }
+          body.dark-mode #content-area { background-color: #1a1a1a !important; color: #e4e4e4 !important; }
+          body.dark-mode .info-section { background-color: #383838 !important; border-color: #555 !important; }
+          
+          /* 手機版側邊欄滑出特效 (覆蓋原本擠在頂部的 static 顯示) */
+          @media (max-width: 768px) {
+            #sidebar-toc {
+              position: fixed !important;
+              top: 0;
+              left: -350px;
+              width: 300px !important;
+              height: 100vh !important;
+              max-height: 100vh !important;
+              z-index: 10001 !important;
+              transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+              box-shadow: 2px 0 15px rgba(0,0,0,0.3);
+            }
+            #sidebar-toc.open-mobile {
+              left: 0 !important;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      function applyTheme(isDark) {
+        if (isDark) {
+          document.body.classList.add('dark-mode');
+          if(btnTheme) btnTheme.innerText = '淺色';
+          
+          // 確保兩顆按鈕的樣式一起切換為深色
+          const btns = document.querySelectorAll('.pwa-btn');
+          btns.forEach(btn => {
+            btn.style.backgroundColor = '#444';
+            btn.style.color = '#fff';
+            btn.style.borderColor = '#666';
+          });
+        } else {
+          document.body.classList.remove('dark-mode');
+          if(btnTheme) btnTheme.innerText = '深色';
+          
+          // 確保兩顆按鈕的樣式一起切換為淺色
+          const btns = document.querySelectorAll('.pwa-btn');
+          btns.forEach(btn => {
+            btn.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+            btn.style.color = '#333';
+            btn.style.borderColor = '#ccc';
+          });
+        }
+      }
+
+      if(btnTheme) {
+        btnTheme.addEventListener('click', () => {
+          const isDark = !document.body.classList.contains('dark-mode');
+          applyTheme(isDark);
+          localStorage.setItem('acim-dark-mode', isDark);
+        });
+      }
+
+      const savedTheme = localStorage.getItem('acim-dark-mode');
+      if (savedTheme !== null) {
+        applyTheme(savedTheme === 'true');
+      } else {
+        applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+      }
+
+      // ==========================================
+      // 4. 目錄切換邏輯 (手機版滑出遮罩 / 電腦版顯示隱藏)
+      // ==========================================
+      const btnToc = document.getElementById('btn-toc');
+      let overlay = document.getElementById('pwa-mobile-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'pwa-mobile-overlay';
+        overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 10000; display: none; opacity: 0; transition: opacity 0.3s;';
+        document.body.appendChild(overlay);
+      }
+
+      if(btnToc) {
+        btnToc.addEventListener('click', () => {
+          const sidebar = document.getElementById('sidebar-toc');
+          if (!sidebar) return;
+          
+          if (window.innerWidth <= 768) {
+            // 手機版：加上 .open-mobile 觸發 CSS 動畫滑出
+            sidebar.classList.toggle('open-mobile');
+            if (sidebar.classList.contains('open-mobile')) {
+              overlay.style.display = 'block';
+              setTimeout(() => overlay.style.opacity = '1', 10);
+            } else {
+              overlay.style.opacity = '0';
+              setTimeout(() => overlay.style.display = 'none', 300);
+            }
+          } else {
+            // 電腦版：點擊直接隱藏/顯示左側邊欄
+            if (sidebar.style.display === 'none') {
+              sidebar.style.display = 'block';
+            } else {
+              sidebar.style.display = 'none';
+            }
+          }
+        });
+      }
+
+      // 點擊黑色遮罩時，自動收起側邊欄
+      overlay.addEventListener('click', () => {
+        const sidebar = document.getElementById('sidebar-toc');
+        if (sidebar) sidebar.classList.remove('open-mobile');
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.style.display = 'none', 300);
+      });
+
+      // ==========================================
+      // 5. 自動替換代名詞為「他」
+      // ==========================================
+      function replacePronoun(node) {
+        if (node.nodeType === 3) {
+          if (node.nodeValue.includes('祂')) {
+            node.nodeValue = node.nodeValue.replace(/祂/g, '他');
+          }
+        } else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE') {
+          for (let i = 0; i < node.childNodes.length; i++) {
+            replacePronoun(node.childNodes[i]);
+          }
+        }
+      }
+      replacePronoun(document.body);
+
+    }, 200); 
   });
 </script>
 
