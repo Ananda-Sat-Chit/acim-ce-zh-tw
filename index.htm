@@ -65,6 +65,68 @@
     transform-origin: bottom right !important; 
   }
 }
+
+/* =======================================================
+   【全新加入】全域深色模式（反白功能）頂級色彩覆蓋規則
+   ======================================================= */
+   
+/* 1. 主背景與主文字：強力穿透並強制覆蓋 Word 的所有內聯白底黑字 */
+body.dark-mode,
+body.dark-mode #book-container,
+body.dark-mode #content-area,
+body.dark-mode div,
+body.dark-mode p,
+body.dark-mode span,
+body.dark-mode table,
+body.dark-mode tr,
+body.dark-mode td,
+body.dark-mode font {
+  background-color: #121212 !important; /* 舒適的護眼純深黑底色 */
+  color: #e0e0e0 !important;           /* 柔和的霧白字，長時間閱讀不刺眼 */
+}
+
+/* 2. 側邊欄與護持資訊區：在深色模式下的深灰層次感 */
+body.dark-mode #sidebar-toc,
+body.dark-mode #sidebar-toc h3,
+body.dark-mode #toc-wrapper,
+body.dark-mode .sidebar-info-box,
+body.dark-mode .info-section,
+body.dark-mode .info-section h4,
+body.dark-mode .info-section p {
+  background-color: #1e1e1e !important; /* 稍淺的深灰色，與主內文區隔開來 */
+  color: #cccccc !important;
+  border-color: #333333 !important;
+}
+
+/* 3. 側邊欄目錄超連結顏色優化 */
+body.dark-mode .toc-link,
+body.dark-mode #toc-wrapper a {
+  color: #aaaaaa !important;
+  background-color: transparent !important;
+}
+body.dark-mode .toc-link:hover,
+body.dark-mode #toc-wrapper a:hover {
+  color: #00d2ff !important; /* 懸停時呈現亮藍色 */
+  background-color: #2a2a2a !important;
+}
+
+/* 4. 註腳 [xx] 數字與文字依然保持您之前滿意的高亮度螢光藍 */
+body.dark-mode a[href*="_ftn"],
+body.dark-mode a[href*="_ftn"] span,
+body.dark-mode .MsoFootnoteReference,
+body.dark-mode .MsoFootnoteReference span {
+  color: #00d2ff !important;
+  background-color: transparent !important;
+}
+
+/* 5. 深色模式下自動降低圖片亮度，避免白色插圖在半夜刺眼 */
+body.dark-mode img {
+  opacity: 0.75 !important;
+  transition: opacity 0.3s;
+}
+body.dark-mode img:hover {
+  opacity: 1.0 !important;
+}
 </style>
 
 <link rel="manifest" href="manifest.json">
@@ -139614,22 +139676,55 @@ color:black'> </span></p>
     }
     #content-area { padding: 30px 20px; }
   }
+  
+/* =======================================================
+   【最終完美版】分離註腳數字與內文顏色
+   僅將「註腳數字 [xx]」調為高亮度特殊色，後續文字回歸系統原生顏色
+   ======================================================= */
+
+/* ---------------------------------------------------
+   第一部分：預設狀態（淺色模式 / 白底）
+   數字改為高亮度的「深寶藍色」，與後方黑字徹底區隔
+   --------------------------------------------------- */
+a[href*="_ftn"],
+a[href*="_ftn"] span,
+.MsoFootnoteReference,
+.MsoFootnoteReference span {
+  color: #0056b3 !important; /* 高亮度深寶藍，與純黑文字形成強烈對比 */
+  font-weight: bold !important; /* 數字稍微加粗，讓每一則註腳的開頭極易辨識 */
+}
+
+
+/* ---------------------------------------------------
+   第二部分：深色模式（黑底 - 自動切換覆蓋）
+   數字改為高亮度的「螢光青藍色」，與後方白/灰字徹底區隔
+   --------------------------------------------------- */
+body.dark-mode a[href*="_ftn"],
+body.dark-mode a[href*="_ftn"] span,
+body.dark-mode .MsoFootnoteReference,
+body.dark-mode .MsoFootnoteReference span,
+body.dark a[href*="_ftn"],
+body.dark a[href*="_ftn"] span,
+body.dark .MsoFootnoteReference,
+body.dark .MsoFootnoteReference span {
+  color: #00d2ff !important; /* 保持您滿意的深色模式高亮度螢光藍 */
+}
 </style>
 
 <script>
   document.addEventListener("DOMContentLoaded", function() {
     const body = document.body;
     
-    // 建立外部容器
+    // 1. 建立電子書外部總容器
     const container = document.createElement('div');
     container.id = 'book-container';
 
-    // 建立側邊欄
+    // 2. 建立側邊欄目錄區
     const sidebar = document.createElement('div');
     sidebar.id = 'sidebar-toc';
     sidebar.innerHTML = '<h3>《完整加註版奇蹟課程》目錄</h3>';
 
-    // 建立固定資訊區塊 (調整順序：置於側邊欄頂部，標題正下方)
+    // 3. 建立固定資訊區塊 (置於側邊欄頂部，標題正下方)
     const infoBox = document.createElement('div');
     infoBox.className = 'sidebar-info-box';
     infoBox.innerHTML = `
@@ -139648,246 +139743,156 @@ color:black'> </span></p>
     `;
     sidebar.appendChild(infoBox);
 
-    // 建立目錄連結的專屬容器 (置於資訊區塊下方)
+    // 4. 建立目錄連結的專屬容器 (置於資訊區塊下方)
     const tocWrapper = document.createElement('div');
     tocWrapper.id = 'toc-wrapper';
     sidebar.appendChild(tocWrapper);
 
-    // 建立閱讀內容區
+    // 5. 建立右側閱讀內容區
     const content = document.createElement('div');
     content.id = 'content-area';
 
-    // 將 Word 產生的內文搬移到閱讀區
+    // 6. 將 Word 產生的所有原始內文，安全搬移到閱讀內容區
     while (body.firstChild) {
       content.appendChild(body.firstChild);
     }
 
-    // 將組件放回網頁中
+    // 7. 將重組好的側邊欄與內容區放回總容器，再放回網頁中
     container.appendChild(sidebar);
     container.appendChild(content);
     body.appendChild(container);
 
-    // 自動抓取 H1 到 H6 標題，生成跳轉目錄並塞入目錄容器
+    // ⭐【關鍵防錯：若按鈕組不存在，則由程式動態「自動生成」出來】
+    let pwaTools = document.getElementById('pwa-tools');
+    if (!pwaTools) {
+      pwaTools = document.createElement('div');
+      pwaTools.id = 'pwa-tools';
+      pwaTools.style.cssText = 'position: fixed; bottom: 25px; right: 25px; display: flex; flex-direction: column; gap: 12px; z-index: 99999;';
+      
+      // 建立深色模式（反白）按鈕
+      const btnDark = document.createElement('button');
+      btnDark.id = 'btn-dark';
+      btnDark.innerHTML = '🌓';
+      btnDark.title = '切換深色/反白模式';
+      btnDark.style.cssText = 'width: 50px; height: 50px; border-radius: 50%; border: none; background: #333; color: white; font-size: 22px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent;';
+      
+      // 建立目錄按鈕
+      const btnToc = document.createElement('button');
+      btnToc.id = 'btn-toc';
+      btnToc.innerHTML = '☰';
+      btnToc.title = '顯示/隱藏目錄';
+      btnToc.style.cssText = 'width: 50px; height: 50px; border-radius: 50%; border: none; background: #1a73e8; color: white; font-size: 22px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent;';
+      
+      pwaTools.appendChild(btnDark);
+      pwaTools.appendChild(btnToc);
+    }
+    // 強制將按鈕掛在 body 最外層，確保絕對不會被內文圖層遮擋
+    body.appendChild(pwaTools);
+
+    // 8. 建立目錄的 <ul> 容器，並進行精確的 H1 ~ H6 單次掃描生成
+    const ul = document.createElement('ul');
+    ul.style.listStyle = 'none';
+    ul.style.padding = '10px 0';
+    ul.style.margin = '0';
+
     const headers = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
     headers.forEach(function(header, index) {
-      if (!header.id) { header.id = 'chapter-' + index; }
+      // 統一生成唯一錨點 ID
+      if (!header.id) { 
+        header.id = 'chapter-' + index; 
+      }
       
+      const li = document.createElement('li');
       const link = document.createElement('a');
       link.href = '#' + header.id;
       link.textContent = header.textContent;
-      link.className = 'toc-' + header.tagName.toLowerCase(); 
-      tocWrapper.appendChild(link);
-    });
-  });
-</script>
-
-<script>
-  window.addEventListener('DOMContentLoaded', () => {
-    // 延遲 200 毫秒，確保您原有的 sidebar 和 content-area 已經建立完畢
-    setTimeout(() => {
       
-      // ==========================================
-      // 1. 動態生成目錄，放入既有的側邊欄中
-      // ==========================================
-      const existingTocWrapper = document.getElementById('toc-wrapper');
-      if (existingTocWrapper && !document.getElementById('pwa-toc-ul')) {
-        const headers = document.querySelectorAll('h1, h2, h3');
-        const tocList = document.createElement('ul');
-        tocList.id = 'pwa-toc-ul';
-        tocList.style.listStyle = 'none';
-        tocList.style.paddingLeft = '0';
-        tocList.style.lineHeight = '1.6';
+      // 目錄連結的基本樣式與類別
+      link.className = 'toc-link toc-' + header.tagName.toLowerCase(); 
+      link.style.textDecoration = 'none';
+      link.style.display = 'block';
+      link.style.padding = '5px 0';
+      link.style.fontSize = '15px';
 
-        let currentH1SubList = null;
-        let currentH2SubList = null;
+      // 依據標題層級（H1 ~ H6）自動給予多階層優雅縮排
+      const level = parseInt(header.tagName.replace('H', ''), 10);
+      li.style.paddingLeft = `${(level - 1) * 12}px`;
 
-        headers.forEach((header, index) => {
-          if (!header.id) header.id = 'pwa-heading-' + index;
-
-          const li = document.createElement('li');
-          li.style.marginBottom = '8px';
-          const a = document.createElement('a');
-          a.href = '#' + header.id;
-          a.innerText = header.innerText || header.textContent;
-          a.style.textDecoration = 'none';
-          a.style.color = 'inherit'; 
-
-          li.appendChild(a);
-          const tagName = header.tagName.toLowerCase();
-
-          if (tagName === 'h1') {
-            tocList.appendChild(li);
-            currentH1SubList = document.createElement('ul');
-            currentH1SubList.style.paddingLeft = '15px';
-            currentH1SubList.style.borderLeft = '2px solid var(--border-color)';
-            li.appendChild(currentH1SubList);
-            currentH2SubList = null;
-          } else if (tagName === 'h2') {
-            if (currentH1SubList) currentH1SubList.appendChild(li);
-            else tocList.appendChild(li);
-            currentH2SubList = document.createElement('ul');
-            currentH2SubList.style.paddingLeft = '15px';
-            li.appendChild(currentH2SubList);
-          } else if (tagName === 'h3') {
-            if (currentH2SubList) currentH2SubList.appendChild(li);
-            else if (currentH1SubList) currentH1SubList.appendChild(li);
-            else tocList.appendChild(li);
-          }
-          
-          // 點擊目錄連結後，如果是手機版，自動收起側邊欄
-          a.addEventListener('click', () => {
-             const sidebar = document.getElementById('sidebar-toc');
-             const overlay = document.getElementById('pwa-mobile-overlay');
-             if (window.innerWidth <= 768 && sidebar) {
-                 sidebar.classList.remove('open-mobile');
-                 if(overlay) overlay.style.display = 'none';
-             }
-          });
-        });
-        existingTocWrapper.appendChild(tocList);
-      }
-
-      // ==========================================
-      // 2. 動態建立深色模式與目錄切換按鈕
-      // ==========================================
-      if (!document.getElementById('pwa-tools')) {
-        const pwaTools = document.createElement('div');
-        pwaTools.id = 'pwa-tools';
-        pwaTools.style.cssText = 'position: fixed; bottom: 30px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999;';
-        
-        // 同時加入「深色」與「目錄」按鈕
-        pwaTools.innerHTML = `
-          <button class="pwa-btn" id="btn-theme" title="切換深色模式" style="font-size: 15px; font-weight: bold; width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1px solid #ccc; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.3s;">深色</button>
-          <button class="pwa-btn" id="btn-toc" title="切換目錄" style="font-size: 15px; font-weight: bold; width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1px solid #ccc; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.3s;">目錄</button>
-        `;
-        document.body.appendChild(pwaTools);
-      }
-
-      // ==========================================
-      // 3. 深色模式與手機版排版覆寫 CSS
-      // ==========================================
-      const btnTheme = document.getElementById('btn-theme');
-      
-      if (!document.getElementById('pwa-dynamic-style')) {
-        const style = document.createElement('style');
-        style.id = 'pwa-dynamic-style';
-        style.innerHTML = `
-          /* 深色模式外觀 */
-          body.dark-mode .sidebar, body.dark-mode #sidebar-toc { background-color: #2d2d2d !important; color: #e4e4e4 !important; border-right: 1px solid #444 !important; }
-          body.dark-mode #content-area { background-color: #1a1a1a !important; color: #e4e4e4 !important; }
-          body.dark-mode .info-section { background-color: #383838 !important; border-color: #555 !important; }
-          
-          /* 手機版側邊欄滑出特效 (覆蓋原本擠在頂部的 static 顯示) */
-          @media (max-width: 768px) {
-            #sidebar-toc {
-              position: fixed !important;
-              top: 0;
-              left: -350px;
-              width: 300px !important;
-              height: 100vh !important;
-              max-height: 100vh !important;
-              z-index: 10001 !important;
-              transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-              box-shadow: 2px 0 15px rgba(0,0,0,0.3);
-            }
-            #sidebar-toc.open-mobile {
-              left: 0 !important;
-            }
-          }
-        `;
-        document.head.appendChild(style);
-      }
-
-      function applyTheme(isDark) {
-        if (isDark) {
-          document.body.classList.add('dark-mode');
-          if(btnTheme) btnTheme.innerText = '淺色';
-          
-          // 確保兩顆按鈕的樣式一起切換為深色
-          const btns = document.querySelectorAll('.pwa-btn');
-          btns.forEach(btn => {
-            btn.style.backgroundColor = '#444';
-            btn.style.color = '#fff';
-            btn.style.borderColor = '#666';
-          });
-        } else {
-          document.body.classList.remove('dark-mode');
-          if(btnTheme) btnTheme.innerText = '深色';
-          
-          // 確保兩顆按鈕的樣式一起切換為淺色
-          const btns = document.querySelectorAll('.pwa-btn');
-          btns.forEach(btn => {
-            btn.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-            btn.style.color = '#333';
-            btn.style.borderColor = '#ccc';
-          });
-        }
-      }
-
-      if(btnTheme) {
-        btnTheme.addEventListener('click', () => {
-          const isDark = !document.body.classList.contains('dark-mode');
-          applyTheme(isDark);
-          localStorage.setItem('acim-dark-mode', isDark);
-        });
-      }
-
-      const savedTheme = localStorage.getItem('acim-dark-mode');
-      if (savedTheme !== null) {
-        applyTheme(savedTheme === 'true');
+      // H1 強制加粗，其餘呈現階層色
+      if (level === 1) {
+        link.style.fontWeight = 'bold';
+        link.style.color = '#333';
       } else {
-        applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+        link.style.color = '#666';
       }
+      
+      li.appendChild(link);
+      ul.appendChild(li);
+    });
+    tocWrapper.appendChild(ul);
 
-      // ==========================================
-      // 4. 目錄切換邏輯 (手機版滑出遮罩 / 電腦版顯示隱藏)
-      // ==========================================
-      const btnToc = document.getElementById('btn-toc');
-      let overlay = document.getElementById('pwa-mobile-overlay');
-      if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'pwa-mobile-overlay';
-        overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 10000; display: none; opacity: 0; transition: opacity 0.3s;';
-        document.body.appendChild(overlay);
-      }
+    // 9. 功能功能綁定控制
+    const btnToc = document.getElementById('btn-toc');
+    const btnDark = document.getElementById('btn-dark');
 
-      if(btnToc) {
-        btnToc.addEventListener('click', () => {
-          const sidebar = document.getElementById('sidebar-toc');
-          if (!sidebar) return;
-          
-          if (window.innerWidth <= 768) {
-            // 手機版：加上 .open-mobile 觸發 CSS 動畫滑出
-            sidebar.classList.toggle('open-mobile');
-            if (sidebar.classList.contains('open-mobile')) {
-              overlay.style.display = 'block';
-              setTimeout(() => overlay.style.opacity = '1', 10);
-            } else {
-              overlay.style.opacity = '0';
-              setTimeout(() => overlay.style.display = 'none', 300);
-            }
+    // 建立手機版專用的黑色遮罩層（防止重複建立）
+    let overlay = document.getElementById('sidebar-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'sidebar-overlay';
+      overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 10000; display: none; opacity: 0; transition: opacity 0.3s;';
+      body.appendChild(overlay);
+    }
+
+    // 控制目錄側邊欄的顯示與隱藏（支援電腦版切換與手機版滑出）
+    if (btnToc) {
+      btnToc.addEventListener('click', function() {
+        if (window.innerWidth <= 768) {
+          // 手機版：切換 .open-mobile 樣式滑出側邊欄
+          sidebar.classList.toggle('open-mobile');
+          if (sidebar.classList.contains('open-mobile')) {
+            overlay.style.display = 'block';
+            setTimeout(() => overlay.style.opacity = '1', 10);
           } else {
-            // 電腦版：點擊直接隱藏/顯示左側邊欄
-            if (sidebar.style.display === 'none') {
-              sidebar.style.display = 'block';
-            } else {
-              sidebar.style.display = 'none';
-            }
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.style.display = 'none', 300);
           }
-        });
-      }
+        } else {
+          // 電腦版：直接切換顯示/隱藏狀態
+          sidebar.style.display = (sidebar.style.display === 'none') ? 'block' : 'none';
+        }
+      });
+    }
 
-      // 點擊黑色遮罩時，自動收起側邊欄
-      overlay.addEventListener('click', () => {
-        const sidebar = document.getElementById('sidebar-toc');
-        if (sidebar) sidebar.classList.remove('open-mobile');
+    // 點擊黑色遮罩時，自動收起手機版側邊欄
+    overlay.addEventListener('click', function() {
+      sidebar.classList.remove('open-mobile');
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.style.display = 'none', 300);
+    });
+
+    // 在手機版下，讀者點擊目錄任意章節跳轉後，自動收起目錄側邊欄
+    sidebar.addEventListener('click', function(e) {
+      if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+        sidebar.classList.remove('open-mobile');
         overlay.style.opacity = '0';
         setTimeout(() => overlay.style.display = 'none', 300);
+      }
+    });
+
+    // 深色模式（反白）切換功能
+    if (btnDark) {
+      btnDark.addEventListener('click', function() {
+        body.classList.toggle('dark-mode');
+        const isDark = body.classList.contains('dark-mode');
+        localStorage.setItem('theme-dark', isDark ? 'true' : 'false');
       });
+    }
 
-      
-
-    }, 200); 
+    // 初始化：自動讀取讀者先前的深色模式設定
+    if (localStorage.getItem('theme-dark') === 'true') {
+      body.classList.add('dark-mode');
+    }
   });
 </script>
 
