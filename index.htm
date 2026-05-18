@@ -2,7 +2,17 @@
 
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet">
+
 <style>
+/* 運用屬性選擇器，強制將所有 Word 產生的標楷體樣式替換為霞鶩文楷 */
+[style*="標楷體"], [style*="DFKai-SB"], [style*="BiauKai"], font[face*="標楷體"] {
+  font-family: "LXGW WenKai TC", "BiauKai", "DFKai-SB", serif !important;
+}
+
   /* 1. 強制解除 Word 鎖死的寬度 */
   body, div, p, table, tr, td, span {
     max-width: 100% !important;
@@ -15,11 +25,26 @@
     height: auto !important;
   }
   
-  /* 3. 【全新加入】針對手機螢幕強制優化閱讀體驗 */
+/* 3. 【全新加入】針對手機螢幕強制優化閱讀體驗 */
   @media (max-width: 768px) {
     body, div, p, span, td {
-      font-size: 19px !important; /* 強制把字體放大，19px是手機閱讀很舒服的大小 */
-      line-height: 1.8 !important; /* 把行距拉開，避免字擠在一起 */
+      font-size: 19px !important; 
+      line-height: 1.8 !important;
+    }
+    
+    /* 增加文章底部的留白，並防止文章被表格撐破產生橫向卷軸 */
+    body {
+      padding: 10px 10px 100px 10px !important; /* 底部保留 100px 空白，不被按鈕擋住 */
+      overflow-x: hidden !important; /* 強制關閉橫向卷軸，鎖死文章邊界 */
+    }
+
+    /* 手機版專屬的按鈕微調 */
+    #pwa-tools {
+      bottom: 15px; /* 距離底部近一點 */
+      right: 10px;  /* 距離右側貼齊一點，退回文章範圍內 */
+      gap: 10px;    /* 縮小兩顆按鈕之間的垂直間距 */
+      transform: scale(0.85); /* 將按鈕縮小為原來的 85% */
+      transform-origin: bottom right; /* 以右下角為縮小基準點 */
     }
   }
 </style>
