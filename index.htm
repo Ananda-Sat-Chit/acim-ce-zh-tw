@@ -139574,8 +139574,73 @@ color:black'> </span></p>
 </style>
 
 <script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const body = document.body;
+    
+    // 建立外部容器
+    const container = document.createElement('div');
+    container.id = 'book-container';
+
+    // 建立側邊欄
+    const sidebar = document.createElement('div');
+    sidebar.id = 'sidebar-toc';
+    sidebar.innerHTML = '<h3>《完整加註版奇蹟課程》目錄</h3>';
+
+    // 建立固定資訊區塊 (調整順序：置於側邊欄頂部，標題正下方)
+    const infoBox = document.createElement('div');
+    infoBox.className = 'sidebar-info-box';
+    infoBox.innerHTML = `
+      <p class="info-appeal">為了讓加註版內容能持續開放分享並維持網頁營運，我們非常需要您的經費護持。<br><br><b>懇請以實際行動支持老師的翻譯工作！</b></p>
+      <div class="info-section">
+        <h4>贊助帳戶</h4>
+        <p>郵局 (700)：0001300 0817307<br>戶名：張文智</p>
+      </div>
+      <div class="info-section">
+        <h4>聯絡 慧軍 老師</h4>
+        <p>
+          Line：huijun0928 <span class="info-note">(購書/課程)</span><br>
+          信箱：<a href="mailto:chang.wenchih@gmail.com">chang.wenchih@gmail.com</a>
+        </p>
+      </div>
+    `;
+    sidebar.appendChild(infoBox);
+
+    // 建立目錄連結的專屬容器 (置於資訊區塊下方)
+    const tocWrapper = document.createElement('div');
+    tocWrapper.id = 'toc-wrapper';
+    sidebar.appendChild(tocWrapper);
+
+    // 建立閱讀內容區
+    const content = document.createElement('div');
+    content.id = 'content-area';
+
+    // 將 Word 產生的內文搬移到閱讀區
+    while (body.firstChild) {
+      content.appendChild(body.firstChild);
+    }
+
+    // 將組件放回網頁中
+    container.appendChild(sidebar);
+    container.appendChild(content);
+    body.appendChild(container);
+
+    // 自動抓取 H1 到 H6 標題，生成跳轉目錄並塞入目錄容器
+    const headers = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    headers.forEach(function(header, index) {
+      if (!header.id) { header.id = 'chapter-' + index; }
+      
+      const link = document.createElement('a');
+      link.href = '#' + header.id;
+      link.textContent = header.textContent;
+      link.className = 'toc-' + header.tagName.toLowerCase(); 
+      tocWrapper.appendChild(link);
+    });
+  });
+</script>
+
+<script>
   window.addEventListener('DOMContentLoaded', () => {
-    // 延遲 200 毫秒，確保原有的 sidebar 和 content-area 建立完畢
+    // 延遲 200 毫秒，確保您原有的 sidebar 和 content-area 已經建立完畢
     setTimeout(() => {
       
       // ==========================================
@@ -139626,7 +139691,7 @@ color:black'> </span></p>
             else tocList.appendChild(li);
           }
           
-          // 點擊目錄連結後，手機版自動收起側邊欄
+          // 點擊目錄連結後，如果是手機版，自動收起側邊欄
           a.addEventListener('click', () => {
              const sidebar = document.getElementById('sidebar-toc');
              const overlay = document.getElementById('pwa-mobile-overlay');
@@ -139647,6 +139712,7 @@ color:black'> </span></p>
         pwaTools.id = 'pwa-tools';
         pwaTools.style.cssText = 'position: fixed; bottom: 30px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 9999;';
         
+        // 同時加入「深色」與「目錄」按鈕
         pwaTools.innerHTML = `
           <button class="pwa-btn" id="btn-theme" title="切換深色模式" style="font-size: 15px; font-weight: bold; width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1px solid #ccc; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.3s;">深色</button>
           <button class="pwa-btn" id="btn-toc" title="切換目錄" style="font-size: 15px; font-weight: bold; width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1px solid #ccc; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.3s;">目錄</button>
@@ -139668,38 +139734,8 @@ color:black'> </span></p>
           body.dark-mode #content-area { background-color: #1a1a1a !important; color: #e4e4e4 !important; }
           body.dark-mode .info-section { background-color: #383838 !important; border-color: #555 !important; }
           
-          /* 手機版側邊欄滑出特效 & 行動版寬度擠壓修復 */
+          /* 手機版側邊欄滑出特效 (覆蓋原本擠在頂部的 static 顯示) */
           @media (max-width: 768px) {
-            /* 解決手機版文字被擠壓的問題，釋放 100% 寬度 */
-            html, body {
-              max-width: 100vw !important;
-              overflow-x: hidden !important;
-            }
-            #book-container {
-              flex-direction: column !important;
-            }
-            #content-area {
-              max-width: 100vw !important;
-              width: 100% !important;
-              overflow-x: hidden !important;
-              box-sizing: border-box !important;
-              padding: 20px 15px !important;
-              margin: 0 !important;
-            }
-            /* 讓 Word 大表格在手機上可以內部滑動，不會撐破版面 */
-            #content-area table {
-              display: block !important;
-              max-width: 100% !important;
-              width: auto !important;
-              overflow-x: auto !important;
-              border-collapse: collapse !important;
-              word-break: break-word !important; 
-            }
-            #content-area img {
-              max-width: 100% !important;
-              height: auto !important;
-            }
-            /* 側邊欄抽屜特效 */
             #sidebar-toc {
               position: fixed !important;
               top: 0;
@@ -139723,6 +139759,8 @@ color:black'> </span></p>
         if (isDark) {
           document.body.classList.add('dark-mode');
           if(btnTheme) btnTheme.innerText = '淺色';
+          
+          // 確保兩顆按鈕的樣式一起切換為深色
           const btns = document.querySelectorAll('.pwa-btn');
           btns.forEach(btn => {
             btn.style.backgroundColor = '#444';
@@ -139732,6 +139770,8 @@ color:black'> </span></p>
         } else {
           document.body.classList.remove('dark-mode');
           if(btnTheme) btnTheme.innerText = '深色';
+          
+          // 確保兩顆按鈕的樣式一起切換為淺色
           const btns = document.querySelectorAll('.pwa-btn');
           btns.forEach(btn => {
             btn.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
@@ -139757,7 +139797,7 @@ color:black'> </span></p>
       }
 
       // ==========================================
-      // 4. 目錄切換邏輯
+      // 4. 目錄切換邏輯 (手機版滑出遮罩 / 電腦版顯示隱藏)
       // ==========================================
       const btnToc = document.getElementById('btn-toc');
       let overlay = document.getElementById('pwa-mobile-overlay');
@@ -139774,6 +139814,7 @@ color:black'> </span></p>
           if (!sidebar) return;
           
           if (window.innerWidth <= 768) {
+            // 手機版：加上 .open-mobile 觸發 CSS 動畫滑出
             sidebar.classList.toggle('open-mobile');
             if (sidebar.classList.contains('open-mobile')) {
               overlay.style.display = 'block';
@@ -139783,6 +139824,7 @@ color:black'> </span></p>
               setTimeout(() => overlay.style.display = 'none', 300);
             }
           } else {
+            // 電腦版：點擊直接隱藏/顯示左側邊欄
             if (sidebar.style.display === 'none') {
               sidebar.style.display = 'block';
             } else {
@@ -139792,6 +139834,7 @@ color:black'> </span></p>
         });
       }
 
+      // 點擊黑色遮罩時，自動收起側邊欄
       overlay.addEventListener('click', () => {
         const sidebar = document.getElementById('sidebar-toc');
         if (sidebar) sidebar.classList.remove('open-mobile');
@@ -139799,6 +139842,7 @@ color:black'> </span></p>
         setTimeout(() => overlay.style.display = 'none', 300);
       });
 
+      
 
     }, 200); 
   });
