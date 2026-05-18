@@ -40,6 +40,45 @@
 <meta http-equiv=Content-Type content="text/html; charset=utf-8">
 <meta name=Generator content="Microsoft Word 15 (filtered)">
 <title>完整加註版奇蹟課程_全_20260517</title>
+
+/* ========================================== */
+  /* 行動版溢出修復 (Overflow Fix)           */
+  /* ========================================== */
+  @media (max-width: 768px) {
+    /* 1. 強制鎖定 HTML 與 Body 寬度，禁止左右滑動網頁本體 */
+    html, body {
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* 2. 確保文章容器也是滿版，且不溢出 */
+    #book-container, #content-area {
+      max-width: 100% !important;
+      width: 100% !important;
+      overflow-x: hidden !important;
+      box-sizing: border-box !important;
+    }
+
+    /* 3. 【核心修正】強制 Word 產生的表格自適應寬度，並在內部滑動 */
+    #content-area table {
+      display: block !important;
+      max-width: 100% !important;
+      width: auto !important;
+      overflow-x: auto !important; /* 超過螢幕時，表格內部可滑動 */
+      border-collapse: collapse !important;
+      /* 防呆：確保表格內文字可斷行 */
+      word-break: break-word !important; 
+    }
+    
+    /* 4. 確保圖片不會撐破版面 */
+    #content-area img {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+  }
+  
 <style>
 <!--
  /* Font Definitions */
