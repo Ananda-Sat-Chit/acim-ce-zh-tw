@@ -25,28 +25,46 @@
     height: auto !important;
   }
   
-/* 3. 【全新加入】針對手機螢幕強制優化閱讀體驗 */
-  @media (max-width: 768px) {
-    body, div, p, span, td {
-      font-size: 19px !important; 
-      line-height: 1.8 !important;
-    }
-    
-    /* 增加文章底部的留白，並防止文章被表格撐破產生橫向卷軸 */
-    body {
-      padding: 10px 10px 100px 10px !important; /* 底部保留 100px 空白，不被按鈕擋住 */
-      overflow-x: hidden !important; /* 強制關閉橫向卷軸，鎖死文章邊界 */
-    }
-
-    /* 手機版專屬的按鈕微調 */
-    #pwa-tools {
-      bottom: 15px; /* 距離底部近一點 */
-      right: 10px;  /* 距離右側貼齊一點，退回文章範圍內 */
-      gap: 10px;    /* 縮小兩顆按鈕之間的垂直間距 */
-      transform: scale(0.85); /* 將按鈕縮小為原來的 85% */
-      transform-origin: bottom right; /* 以右下角為縮小基準點 */
-    }
+/* 3. 【全新加入】針對手機螢幕強制優化閱讀體驗 (終極修正版) */
+@media (max-width: 768px) {
+  /* 徹底消滅 Word 隱藏的頁面邊界與橫向卷軸 */
+  html, body {
+    width: 100vw !important;
+    overflow-x: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
+  
+  /* 強制重置 Word 專用區塊的寬度，給予舒適的手機閱讀邊距 */
+  div[class^="WordSection"] {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 15px !important; /* 文字距離手機左右邊緣的距離 */
+    box-sizing: border-box !important;
+  }
+
+  body, div, p, span, td, a {
+    font-size: 19px !important; 
+    line-height: 1.8 !important;
+    max-width: 100% !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important; /* 強制切斷長網址，防止撐破版面 */
+  }
+  
+  /* 增加文章底部的留白，避免最後一行被按鈕擋住 */
+  body {
+    padding-bottom: 120px !important; 
+  }
+
+  /* 手機版專屬的按鈕微調 (加上 !important 強制蓋過 HTML 標籤內原本的 style) */
+  #pwa-tools {
+    bottom: 15px !important; 
+    right: 15px !important;  /* 讓按鈕乖乖退回螢幕可視範圍內 */
+    gap: 10px !important;    
+    transform: scale(0.85) !important; 
+    transform-origin: bottom right !important; 
+  }
+}
 </style>
 
 <link rel="manifest" href="manifest.json">
