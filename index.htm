@@ -25,8 +25,19 @@
     height: auto !important;
   }
   
-/* 3. 【全新加入】針對手機螢幕強制優化閱讀體驗 (終極修正版) */
+/* 3. 【全新加入】針對手機螢幕強制優化閱讀體驗 (左側滑出抽屜目錄完全體) */
 @media (max-width: 768px) {
+  /* 解除電腦版雙欄並排，讓手機版內容撐滿全螢幕 */
+  #book-container {
+    display: block !important;
+  }
+  
+  #content-area {
+    width: 100% !important;
+    padding: 15px 15px 120px 15px !important; /* 底部留白 120px 避免被右下角按鈕擋字 */
+    box-sizing: border-box !important;
+  }
+
   /* 徹底消滅 Word 隱藏的頁面邊界與橫向卷軸 */
   html, body {
     width: 100vw !important;
@@ -35,11 +46,11 @@
     padding: 0 !important;
   }
   
-  /* 強制重置 Word 專用區塊的寬度，給予舒適的手機閱讀邊距 */
+  /* 強制重置 Word 專用內文區塊的寬度 */
   div[class^="WordSection"] {
     width: 100% !important;
     margin: 0 !important;
-    padding: 15px !important; /* 文字距離手機左右邊緣的距離 */
+    padding: 0 !important;
     box-sizing: border-box !important;
   }
 
@@ -48,18 +59,44 @@
     line-height: 1.8 !important;
     max-width: 100% !important;
     word-wrap: break-word !important;
-    overflow-wrap: break-word !important; /* 強制切斷長網址，防止撐破版面 */
-  }
-  
-  /* 增加文章底部的留白，避免最後一行被按鈕擋住 */
-  body {
-    padding-bottom: 120px !important; 
+    overflow-wrap: break-word !important;
   }
 
-  /* 手機版專屬的按鈕微調 (加上 !important 強制蓋過 HTML 標籤內原本的 style) */
+  /* ==========================================
+     ⭐【核心修改】將手機版目錄改造為左側滑出抽屜
+     ========================================== */
+  #sidebar-toc {
+    position: fixed !important;
+    top: 0 !important;
+    left: -290px !important;      /* 平常隱藏在螢幕左側外面 (-290px) */
+    width: 280px !important;       /* 抽屜固定寬度 280px */
+    height: 100vh !important;      /* 高度佔滿整個手機螢幕 */
+    background-color: #ffffff !important; /* 淺色模式下為白底 */
+    z-index: 10001 !important;     /* 關鍵：圖層級別必須大於反灰遮罩的 10000，確保它浮在最上方！ */
+    overflow-y: auto !important;   /* 允許目錄太長時可以在抽屜內獨自上下滾動 */
+    box-shadow: 4px 0 15px rgba(0,0,0,0.2) !important; /* 加上精美陰影增加層次感 */
+    transition: left 0.3s ease !important; /* 加上 0.3 秒滑順的左側推出動畫 */
+    display: block !important;     /* 強制讓它在手機版處於渲染狀態 */
+    padding: 10px !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* 當 JavaScript 幫目錄觸發了 .open-mobile 類別時，寬度由左側滑入至定位 (0) */
+  #sidebar-toc.open-mobile {
+    left: 0 !important;
+  }
+
+  /* 當處於深色（反白）模式時，同步調整手機版左側抽屜的底色與字體顏色 */
+  body.dark-mode #sidebar-toc {
+    background-color: #1e1e1e !important;
+    color: #cccccc !important;
+    border-color: #333333 !important;
+  }
+
+  /* 手機版專屬的右下角懸浮按鈕微調 (等比例縮小並貼邊) */
   #pwa-tools {
-    bottom: 15px !important; 
-    right: 15px !important;  /* 讓按鈕乖乖退回螢幕可視範圍內 */
+    bottom: 20px !important; 
+    right: 20px !important;  
     gap: 10px !important;    
     transform: scale(0.85) !important; 
     transform-origin: bottom right !important; 
