@@ -139840,21 +139840,7 @@ color:black'> </span></p>
         setTimeout(() => overlay.style.display = 'none', 300);
       });
 
-      // ==========================================
-      // 5. 自動替換代名詞為「他」
-      // ==========================================
-      function replacePronoun(node) {
-        if (node.nodeType === 3) {
-          if (node.nodeValue.includes('祂')) {
-            node.nodeValue = node.nodeValue.replace(/祂/g, '他');
-          }
-        } else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE') {
-          for (let i = 0; i < node.childNodes.length; i++) {
-            replacePronoun(node.childNodes[i]);
-          }
-        }
-      }
-      replacePronoun(document.body);
+      
 
     }, 200); 
   });
