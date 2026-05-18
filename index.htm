@@ -62,28 +62,29 @@
     overflow-wrap: break-word !important;
   }
 
-  /* ==========================================
-     ⭐【核心修改】將手機版目錄改造為左側滑出抽屜
+ /* ==========================================
+     ⭐【修正版】將手機版目錄改造為左側滑出抽屜（完美隱藏不遮字）
      ========================================== */
   #sidebar-toc {
     position: fixed !important;
     top: 0 !important;
-    left: -290px !important;      /* 平常隱藏在螢幕左側外面 (-290px) */
+    left: -320px !important;      /* 1. 往左推得更深（-320px），確保本體與邊框完全移出螢幕外 */
     width: 280px !important;       /* 抽屜固定寬度 280px */
     height: 100vh !important;      /* 高度佔滿整個手機螢幕 */
     background-color: #ffffff !important; /* 淺色模式下為白底 */
-    z-index: 10001 !important;     /* 關鍵：圖層級別必須大於反灰遮罩的 10000，確保它浮在最上方！ */
-    overflow-y: auto !important;   /* 允許目錄太長時可以在抽屜內獨自上下滾動 */
-    box-shadow: 4px 0 15px rgba(0,0,0,0.2) !important; /* 加上精美陰影增加層次感 */
-    transition: left 0.3s ease !important; /* 加上 0.3 秒滑順的左側推出動畫 */
-    display: block !important;     /* 強制讓它在手機版處於渲染狀態 */
+    z-index: 10001 !important;     /* 圖層級別大於反灰遮罩，確保浮在最上方 */
+    overflow-y: auto !important;   /* 允許目錄太長時可以在抽屜內上下滾動 */
+    box-shadow: none !important;   /* 2. ⭐關鍵修正：平常關閉時「完全不顯示陰影」，徹底防止陰影邊緣外露遮字 */
+    transition: left 0.3s ease !important; /* 0.3 秒滑順的左側推出動畫 */
+    display: block !important;     
     padding: 10px !important;
     box-sizing: border-box !important;
   }
   
-  /* 當 JavaScript 幫目錄觸發了 .open-mobile 類別時，寬度由左側滑入至定位 (0) */
+  /* 當 JavaScript 幫目錄觸發了 .open-mobile 類別時，自左側滑入至定位 (0) */
   #sidebar-toc.open-mobile {
     left: 0 !important;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.2) !important; /* 3. ⭐關鍵修正：只有在滑出打開時，才顯現立體陰影 */
   }
 
   /* 當處於深色（反白）模式時，同步調整手機版左側抽屜的底色與字體顏色 */
