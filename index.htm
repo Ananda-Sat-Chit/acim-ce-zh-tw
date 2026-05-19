@@ -165,6 +165,52 @@ body.dark-mode img {
 body.dark-mode img:hover {
   opacity: 1.0 !important;
 }
+
+/* ===== 註腳 Tooltip 氣泡 ===== */
+#footnote-tooltip {
+  position: absolute;
+  display: none;
+  max-width: 340px;
+  min-width: 180px;
+  background: #fffef0;
+  border: 1.5px solid #D4AF37;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #333333;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+  z-index: 999998;
+  pointer-events: none; /* 氣泡本身不擋滑鼠 */
+}
+
+/* 深色模式自動切換氣泡配色 */
+body.dark-mode #footnote-tooltip {
+  background: #1e2a2a;
+  border-color: #00d2ff;
+  color: #e0e0e0;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+}
+
+/* 氣泡頂端的小三角形 */
+#footnote-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 16px;
+  border: 7px solid transparent;
+  border-bottom-color: #D4AF37;
+}
+body.dark-mode #footnote-tooltip::before {
+  border-bottom-color: #00d2ff;
+}
+
+/* 讓內文中的 [數字] 變成可以互動的樣子 */
+#content-area a[href*="#_ftn"] {
+  cursor: help !important;
+  border-bottom: 1px dotted #0056b3;
+}
+
 </style>
 
 <link rel="manifest" href="manifest.json">
@@ -139932,6 +139978,105 @@ body.dark .MsoFootnoteReference span {
       body.classList.add('dark-mode');
     }
   });
+</script>
+
+<script>
+// =============================================
+// 【功能六】註腳 Tooltip 氣泡化
+// 讓 [數字] hover/點擊時就地顯示注腳，不再跳頁
+// =============================================
+(function() {
+
+  // 等待整頁內容渲染完畢再執行
+  setTimeout(function() {
+
+    // 1. 建立唯一的氣泡元素，掛在 body 最外層
+    const tooltip = document.createElement('div');
+    tooltip.id = 'footnote-tooltip';
+    document.body.appendChild(tooltip);
+
+    // 記錄目前哪個註腳正在顯示（用來判斷手機版點擊切換）
+    let activeRef = null;
+
+    // ── 顯示氣泡的核心函式 ──
+    function showTooltip(ref) {
+      const href = ref.getAttribute('href');           // 例如 "#_ftn3"
+      const targetId = href ? href.replace('#_', '') : null; // → "_ftn3"
+      if (!targetId) return;
+
+      const fnEl = document.getElementById(targetId);
+      if (!fnEl) return;
+
+      // 取得注腳文字，去掉開頭的 [數字] 標記
+      let fnText = fnEl.innerText || fnEl.textContent || '';
+      fnText = fnText.replace(/^\s*\[\d+\]\s*/, '').trim();
+      if (!fnText) return;
+
+      tooltip.textContent = fnText;
+      tooltip.style.display = 'block';
+
+      // ── 計算氣泡位置（優先顯示在數字正下方）──
+      const rect = ref.getBoundingClientRect();
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      const scrollX = window.scrollX || document.documentElement.scrollLeft;
+
+      let top  = scrollY + rect.bottom + 10;  // 數字下方 10px
+      let left = scrollX + rect.left;
+
+      // 防止氣泡超出右側螢幕邊界
+      const tooltipWidth = 340;
+      if (left + tooltipWidth > window.innerWidth + scrollX - 16) {
+        left = window.innerWidth + scrollX - tooltipWidth - 16;
+      }
+      // 防止超出左側
+      if (left < scrollX + 8) left = scrollX + 8;
+
+      tooltip.style.top  = top  + 'px';
+      tooltip.style.left = left + 'px';
+    }
+
+    // ── 隱藏氣泡 ──
+    function hideTooltip() {
+      tooltip.style.display = 'none';
+      activeRef = null;
+    }
+
+    // 2. 找出內文中所有的 [數字] 參考連結（排除頁尾注腳區的反向連結）
+    const allFnLinks = document.querySelectorAll('#content-area a[href*="#_ftn"]');
+
+    allFnLinks.forEach(function(ref) {
+
+      // 電腦版：滑鼠 hover 顯示 / 移開隱藏
+      ref.addEventListener('mouseenter', function() {
+        showTooltip(ref);
+      });
+      ref.addEventListener('mouseleave', function() {
+        hideTooltip();
+      });
+
+      // 手機版：點擊切換顯示 / 隱藏（並阻止跳頁）
+      ref.addEventListener('click', function(e) {
+        e.preventDefault();  // ⭐ 關鍵：阻止跳到頁尾，改用氣泡顯示
+        if (activeRef === ref) {
+          // 點同一個 → 收起
+          hideTooltip();
+        } else {
+          activeRef = ref;
+          showTooltip(ref);
+        }
+      });
+    });
+
+    // 3. 點擊內文任意其他地方 → 收起氣泡
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('a[href*="#_ftn"]')) {
+        hideTooltip();
+      }
+    });
+
+  }, 1000); // 延遲 1 秒，等 Word 的大量 DOM 完整渲染
+
+})();
 </script>
 
 </body>
