@@ -189,9 +189,10 @@ body.dark-mode #toc-search-results div {
   background: transparent !important;
 }
 
-/* ===== 效能優化：will-change 提示合成層，避免 content-visibility 破壞 scrollIntoView ===== */
-#content-area {
-  will-change: scroll-position;
+/* ===== 效能優化：content-visibility ===== */
+#content-area > div, #content-area > p, #content-area > table {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
 }
 
 #footnote-bar {
@@ -215,11 +216,10 @@ body.dark-mode #toc-search-results div {
   bottom: 0;
 }
 
-/* 深色模式：改用明顯亮紫，與 #180828 內容區產生強烈對比 */
+/* 深色模式：稍微亮一些 */
 body.dark-mode #footnote-bar {
-  background: #3D1B6E;          /* 明亮皇家紫，比內容區深紫黑明顯亮很多 */
-  border-top: 2px solid #C9A8E8; /* 薰衣草紫上邊框，強化邊界感 */
-  box-shadow: 0 -6px 24px rgba(140,60,220,0.55);
+  background: #1A0A2E;   /* 深色模式：更深的紫黑 */
+  box-shadow: 0 -4px 20px rgba(80,0,120,0.5);
 }
 
 /* 彈出列內部排版 */
@@ -140000,22 +140000,14 @@ body.dark .MsoFootnoteReference span {
               `<mark class="search-hl" style="background:#ffe066; border-radius:2px; padding:0 2px;">${m}</mark>`
             );
             regex.lastIndex = 0;
-
-            // 手機版：先收起側邊欄，等動畫+重排完成後，再即時計算位置並跳轉
+            // 手機版：先收起側邊欄，等動畫結束後再跳轉（確保 scrollIntoView 正常運作）
             if (window.innerWidth <= 768) {
               sidebar.classList.remove('open-mobile');
               overlay.style.opacity = '0';
               setTimeout(() => { overlay.style.display = 'none'; }, 300);
-              // ⭐ 關鍵：getBoundingClientRect 必須在側邊欄收起、版面重排之後才呼叫
-              setTimeout(function() {
-                const rect = node.getBoundingClientRect();
-                const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
-                window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
-              }, 450);
+              setTimeout(() => { node.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 350);
             } else {
-              const rect = node.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
-              window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+              node.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
           });
           searchResults.appendChild(item);
@@ -140355,9 +140347,9 @@ body.dark .MsoFootnoteReference span {
 
       // 手機版：點擊切換顯示 / 隱藏（並阻止跳頁）
       ref.addEventListener('click', function(e) {
-        e.preventDefault();      // 阻止跳到頁尾
-        e.stopPropagation();     // ⭐ 關鍵：阻止冒泡到 document，防止全域 click 立刻把 bar 收起
+        e.preventDefault();  // ⭐ 關鍵：阻止跳到頁尾，改用底部列顯示
         if (activeRef === ref && bar.classList.contains('fn-visible')) {
+          // 點同一個 → 收起
           hideBar();
         } else {
           activeRef = ref;
