@@ -140001,20 +140001,29 @@ body.dark .MsoFootnoteReference span {
             );
             regex.lastIndex = 0;
 
-            // ⭐【修正2】改用 scrollIntoView 確保準確定位，相容各種版面結構
+            // ⭐【修正2-v2】用 getBoundingClientRect + window.scrollTo 精確跳轉
+            // scrollIntoView 在 body 有 overflow-x:hidden 時某些 Android Chrome 會失效
             function jumpToNode() {
-              node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              var rect = node.getBoundingClientRect();
+              var scrollY = (window.scrollY !== undefined) ? window.scrollY
+                : (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0);
+              var targetY = Math.max(0, scrollY + rect.top - Math.round(window.innerHeight * 0.25));
+              try {
+                window.scrollTo({ top: targetY, behavior: 'smooth' });
+              } catch(e) {
+                window.scrollTo(0, targetY);
+              }
             }
 
             if (window.innerWidth <= 768) {
-              // 手機版：先收起側邊欄，動畫完成後再跳轉
+              // 手機版：先收起側邊欄，等動畫（0.3s）完成後再跳轉
               var ov = document.getElementById('sidebar-overlay');
               sidebar.classList.remove('open-mobile');
               if (ov) {
                 ov.style.opacity = '0';
                 setTimeout(function() { ov.style.display = 'none'; }, 300);
               }
-              setTimeout(jumpToNode, 350);
+              setTimeout(jumpToNode, 400);
             } else {
               jumpToNode();
             }
@@ -140308,26 +140317,35 @@ body.dark .MsoFootnoteReference span {
 
       barNum.textContent = num + '.';
 
-      // ⭐【修正4】只移除 _ftnref 回跳連結，保留腳注內外部超連結
-      // 原本把所有 <a> 轉成 textContent，若 textContent 本身是 URL 字串就會顯示出來
+      // ⭐【修正4-v2】用 CSS 屬性選取器移除 _ftnref 連結，再用 TreeWalker 清除殘留 [N]
       var clone = fnEl.cloneNode(true);
-      clone.querySelectorAll('a').forEach(function(a) {
+      // 步驟1：移除所有 _ftnref 回跳連結（用屬性選取器，避免 regex 大小寫或空格問題）
+      clone.querySelectorAll('a[href]').forEach(function(a) {
         var href = a.getAttribute('href') || '';
-        if (/^#_ftnref/i.test(href)) {
-          // 完全移除 [N] 回跳連結節點（含文字），避免殘留 [N] 數字
-          a.parentNode.removeChild(a);
-        } else if (href.startsWith('#')) {
-          // 其他內部錨點：移除連結但保留文字
+        var hrefLower = href.toLowerCase();
+        if (hrefLower.indexOf('_ftnref') !== -1) {
+          // 整個 <a> 節點移除（含其內部的 [N] 文字）
+          if (a.parentNode) a.parentNode.removeChild(a);
+        } else if (href.charAt(0) === '#') {
+          // 其他內部錨點：僅移除連結屬性，保留可見文字
           var txt = document.createTextNode(a.textContent);
-          a.parentNode.replaceChild(txt, a);
+          if (a.parentNode) a.parentNode.replaceChild(txt, a);
         } else {
-          // 外部連結：保留為可點擊連結，確保新視窗開啟
+          // 外部超連結：保留為可點連結並在新視窗開啟
           a.setAttribute('target', '_blank');
           a.setAttribute('rel', 'noopener noreferrer');
         }
       });
-      // 全域移除殘留的 [N] 數字標記（不限開頭位置）
-      var html = clone.innerHTML.replace(/\[[\d]+\]/g, '').replace(/^\s+/, '').trim();
+      // 步驟2：TreeWalker 遍歷所有文字節點，清除仍殘留的 [N] 數字標記
+      (function stripBracketNums(el) {
+        var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+        var node, list = [];
+        while ((node = walker.nextNode())) list.push(node);
+        list.forEach(function(tn) {
+          tn.nodeValue = tn.nodeValue.replace(/\[\d+\]/g, '');
+        });
+      })(clone);
+      var html = clone.innerHTML.replace(/^\s+/, '').trim();
       barText.innerHTML = html;
       bar.classList.add('fn-visible');
       activeRef = ref;
