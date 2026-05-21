@@ -5,7 +5,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet"></noscript>
 
 <style>
 /* 運用屬性選擇器，強制將所有 Word 產生的標楷體樣式替換為霞鶩文楷 */
@@ -166,7 +167,34 @@ body.dark-mode img:hover {
   opacity: 1.0 !important;
 }
 
-/* ===== 註腳底部彈出列 ===== */
+/* ===== 搜尋欄深色模式覆蓋 ===== */
+body.dark-mode #toc-search-frame {
+  background-color: #1A0A2E !important;
+  border-color: #7B5AAE !important;
+}
+body.dark-mode #toc-search-input {
+  color: #E8E0F8 !important;
+  caret-color: #C9A8E8 !important;
+}
+body.dark-mode #toc-search-input::placeholder {
+  color: #9070B8 !important;
+}
+body.dark-mode #toc-search-results {
+  background: #2D1B4E !important;
+  border-color: #7B5AAE !important;
+}
+body.dark-mode #toc-search-results div {
+  color: #D4C5F0 !important;
+  border-color: #3D2060 !important;
+  background: transparent !important;
+}
+
+/* ===== 效能優化：content-visibility ===== */
+#content-area > div, #content-area > p, #content-area > table {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
+}
+
 #footnote-bar {
   position: fixed;
   bottom: -100%;           /* 預設藏在螢幕底部下方 */
@@ -139918,7 +139946,7 @@ body.dark .MsoFootnoteReference span {
     searchBox.id = 'toc-search-box';
     searchBox.style.cssText = 'margin-bottom: 12px;';
     searchBox.innerHTML = `
-      <div style="display:flex; align-items:center; background:#EDE6F8; border:1.5px solid #B088D0; border-radius:8px; padding:6px 10px; gap:6px;">
+      <div id="toc-search-frame" style="display:flex; align-items:center; background:#ffffff; border:1.5px solid #B088D0; border-radius:8px; padding:6px 10px; gap:6px;">
         <span style="font-size:16px; color:#8B5BAE;">🔍</span>
         <input id="toc-search-input" type="text" placeholder="搜尋內文關鍵字…"
           style="border:none; background:transparent; outline:none; font-size:14px; width:100%; color:#3D1560; font-family:inherit;">
@@ -139972,12 +140000,14 @@ body.dark .MsoFootnoteReference span {
               `<mark class="search-hl" style="background:#ffe066; border-radius:2px; padding:0 2px;">${m}</mark>`
             );
             regex.lastIndex = 0;
-            node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // 手機版：收起側邊欄
+            // 手機版：先收起側邊欄，等動畫結束後再跳轉（確保 scrollIntoView 正常運作）
             if (window.innerWidth <= 768) {
               sidebar.classList.remove('open-mobile');
               overlay.style.opacity = '0';
-              setTimeout(() => overlay.style.display = 'none', 300);
+              setTimeout(() => { overlay.style.display = 'none'; }, 300);
+              setTimeout(() => { node.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 350);
+            } else {
+              node.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
           });
           searchResults.appendChild(item);
@@ -140014,7 +140044,9 @@ body.dark .MsoFootnoteReference span {
 
     // =====================================================
     // 8B. 建立手風琴式目錄（先顯示 H1，點擊後展開子項目）
+    // 使用 requestIdleCallback 延遲建立，避免阻擋首屏渲染
     // =====================================================
+    function buildTOC() {
     const headers = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
     headers.forEach(function(header, index) {
       if (!header.id) { header.id = 'chapter-' + index; }
@@ -140157,6 +140189,13 @@ body.dark .MsoFootnoteReference span {
     });
 
     tocWrapper.appendChild(tocContainer);
+    } // end buildTOC
+    // 用 requestIdleCallback 在瀏覽器閒置時建立目錄，不阻擋首屏渲染
+    if (window.requestIdleCallback) {
+      requestIdleCallback(buildTOC, { timeout: 2000 });
+    } else {
+      setTimeout(buildTOC, 200);
+    }
 
     // 9. 功能功能綁定控制
     const btnToc = document.getElementById('btn-toc');
@@ -140230,8 +140269,8 @@ body.dark .MsoFootnoteReference span {
 // =============================================
 (function() {
 
-  // 等待整頁內容渲染完畢再執行
-  setTimeout(function() {
+  // 等待整頁內容渲染完畢再執行，使用 requestIdleCallback 更省資源
+  const initFootnoteBar = function() {
 
     // 1. 建立底部彈出列，掛在 body 最外層
     const bar = document.createElement('div');
@@ -140326,7 +140365,12 @@ body.dark .MsoFootnoteReference span {
       }
     });
 
-  }, 1000); // 延遲 1 秒，等 Word 的大量 DOM 完整渲染
+  }; // end initFootnoteBar
+  if (window.requestIdleCallback) {
+    requestIdleCallback(initFootnoteBar, { timeout: 3000 });
+  } else {
+    setTimeout(initFootnoteBar, 1000);
+  }
 
 })();
 </script>
