@@ -140001,29 +140001,45 @@ body.dark .MsoFootnoteReference span {
             );
             regex.lastIndex = 0;
 
-            // ⭐【修正2-v2】用 getBoundingClientRect + window.scrollTo 精確跳轉
-            // scrollIntoView 在 body 有 overflow-x:hidden 時某些 Android Chrome 會失效
+            // ⭐【修正2-v3】多重後備跳轉策略
+            // scrollIntoView 為主，getBoundingClientRect+scrollTop 為副，確保各手機瀏覽器皆能捲動
             function jumpToNode() {
-              var rect = node.getBoundingClientRect();
-              var scrollY = (window.scrollY !== undefined) ? window.scrollY
-                : (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0);
-              var targetY = Math.max(0, scrollY + rect.top - Math.round(window.innerHeight * 0.25));
+              // 策略1: scrollIntoView（最廣泛支援，不受 overflow-x:hidden 影響）
+              var jumped = false;
               try {
-                window.scrollTo({ top: targetY, behavior: 'smooth' });
-              } catch(e) {
-                window.scrollTo(0, targetY);
+                node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                jumped = true;
+              } catch(e1) {
+                try {
+                  node.scrollIntoView(true);  // 舊版 API 後備
+                  jumped = true;
+                } catch(e2) {}
+              }
+              // 策略2: 若 scrollIntoView 無法確定是否成功，同時用 scrollTop 補強
+              if (!jumped) {
+                var rect = node.getBoundingClientRect();
+                var scrollY = window.pageYOffset
+                  || document.documentElement.scrollTop
+                  || document.body.scrollTop || 0;
+                var targetY = Math.max(0, scrollY + rect.top - Math.round(window.innerHeight * 0.25));
+                try { document.documentElement.scrollTop = targetY; } catch(e) {}
+                try { document.body.scrollTop = targetY; } catch(e) {}
+                try { window.scrollTo(0, targetY); } catch(e) {}
               }
             }
 
             if (window.innerWidth <= 768) {
-              // 手機版：先收起側邊欄，等動畫（0.3s）完成後再跳轉
+              // 手機版：先收起側邊欄，等動畫結束後再跳轉
               var ov = document.getElementById('sidebar-overlay');
               sidebar.classList.remove('open-mobile');
               if (ov) {
                 ov.style.opacity = '0';
                 setTimeout(function() { ov.style.display = 'none'; }, 300);
               }
-              setTimeout(jumpToNode, 400);
+              // 350ms = 比側邊欄 0.3s 動畫多 50ms 緩衝，再加 rAF 確保版面重排後再捲動
+              setTimeout(function() {
+                requestAnimationFrame(jumpToNode);
+              }, 350);
             } else {
               jumpToNode();
             }
@@ -140317,18 +140333,24 @@ body.dark .MsoFootnoteReference span {
 
       barNum.textContent = num + '.';
 
-      // ⭐【修正4-v2】用 CSS 屬性選取器移除 _ftnref 連結，再用 TreeWalker 清除殘留 [N]
+      // ⭐【修正4-v3】更積極地移除 _ftnref 回跳連結及所有純數字標記連結
       var clone = fnEl.cloneNode(true);
-      // 步驟1：移除所有 _ftnref 回跳連結（用屬性選取器，避免 regex 大小寫或空格問題）
+      // 步驟1：移除所有符合以下任一條件的 <a> 節點（含其內部 [N] 文字）
+      //   a) href 含 _ftnref（標準 Word 回跳連結）
+      //   b) 可見文字純粹為 [N] 格式（瀏覽器修正巢狀 <a> 後可能出現的孤立標記）
       clone.querySelectorAll('a[href]').forEach(function(a) {
         var href = a.getAttribute('href') || '';
         var hrefLower = href.toLowerCase();
-        if (hrefLower.indexOf('_ftnref') !== -1) {
-          // 整個 <a> 節點移除（含其內部的 [N] 文字）
+        var aText = (a.textContent || '').trim();
+        // 判斷是否為回跳連結（_ftnref）或純粹的 [N] 標記連結
+        var isBackLink = hrefLower.indexOf('_ftnref') !== -1;
+        var isBracketOnly = /^\[\d+\]$/.test(aText);
+        if (isBackLink || isBracketOnly) {
+          // 整個 <a> 節點連同 [N] 文字一起移除
           if (a.parentNode) a.parentNode.removeChild(a);
         } else if (href.charAt(0) === '#') {
           // 其他內部錨點：僅移除連結屬性，保留可見文字
-          var txt = document.createTextNode(a.textContent);
+          var txt = document.createTextNode(aText);
           if (a.parentNode) a.parentNode.replaceChild(txt, a);
         } else {
           // 外部超連結：保留為可點連結並在新視窗開啟
