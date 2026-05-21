@@ -140001,22 +140001,21 @@ body.dark .MsoFootnoteReference span {
             );
             regex.lastIndex = 0;
 
-            // 用 getBoundingClientRect 手動計算目標位置，避免 scrollIntoView 在手機側邊欄收起後失效
-            function scrollToNode() {
-              const rect = node.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
-              window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
-            }
-
-            // 手機版：先收起側邊欄，等動畫結束後再跳轉
+            // 手機版：先收起側邊欄，等動畫+重排完成後，再即時計算位置並跳轉
             if (window.innerWidth <= 768) {
               sidebar.classList.remove('open-mobile');
               overlay.style.opacity = '0';
               setTimeout(() => { overlay.style.display = 'none'; }, 300);
-              // 等側邊欄動畫（0.3s）+ 瀏覽器重排（額外 100ms）完成後再 scroll
-              setTimeout(scrollToNode, 450);
+              // ⭐ 關鍵：getBoundingClientRect 必須在側邊欄收起、版面重排之後才呼叫
+              setTimeout(function() {
+                const rect = node.getBoundingClientRect();
+                const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
+                window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+              }, 450);
             } else {
-              scrollToNode();
+              const rect = node.getBoundingClientRect();
+              const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
+              window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
             }
           });
           searchResults.appendChild(item);
@@ -140356,9 +140355,9 @@ body.dark .MsoFootnoteReference span {
 
       // 手機版：點擊切換顯示 / 隱藏（並阻止跳頁）
       ref.addEventListener('click', function(e) {
-        e.preventDefault();  // ⭐ 關鍵：阻止跳到頁尾，改用底部列顯示
+        e.preventDefault();      // 阻止跳到頁尾
+        e.stopPropagation();     // ⭐ 關鍵：阻止冒泡到 document，防止全域 click 立刻把 bar 收起
         if (activeRef === ref && bar.classList.contains('fn-visible')) {
-          // 點同一個 → 收起
           hideBar();
         } else {
           activeRef = ref;
