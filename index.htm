@@ -140001,28 +140001,19 @@ body.dark .MsoFootnoteReference span {
             );
             regex.lastIndex = 0;
 
-            // 計算節點距頁面頂端的絕對距離（不受 sidebar 開關影響）
-            function getAbsoluteTop(el) {
-              var top = 0;
-              while (el) { top += el.offsetTop; el = el.offsetParent; }
-              return top;
-            }
-
+            // ⭐【修正2】改用 scrollIntoView 確保準確定位，相容各種版面結構
             function jumpToNode() {
-              var absTop = getAbsoluteTop(node);
-              var targetY = absTop - (window.innerHeight / 2) + (node.offsetHeight / 2);
-              window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+              node.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
 
             if (window.innerWidth <= 768) {
-              // 手機版：先收起側邊欄
+              // 手機版：先收起側邊欄，動畫完成後再跳轉
               var ov = document.getElementById('sidebar-overlay');
               sidebar.classList.remove('open-mobile');
               if (ov) {
                 ov.style.opacity = '0';
                 setTimeout(function() { ov.style.display = 'none'; }, 300);
               }
-              // 側邊欄收起後跳轉（offsetTop 不受 sidebar 影響，但仍等動畫完成再 scroll 較順暢）
               setTimeout(jumpToNode, 350);
             } else {
               jumpToNode();
@@ -140168,6 +140159,7 @@ body.dark .MsoFootnoteReference span {
           // 手機版：只展開不跳轉；電腦版：跳轉 + 展開
           if (window.innerWidth <= 768) {
             e.preventDefault();
+            e.stopPropagation(); // ⭐【修正1】阻止冒泡至 sidebar click 監聽器，避免側邊欄被關閉
             const isOpen = childrenDiv.style.display !== 'none';
             tocContainer.querySelectorAll('.toc-children-open').forEach(el => {
               el.style.display = 'none';
@@ -140316,15 +140308,26 @@ body.dark .MsoFootnoteReference span {
 
       barNum.textContent = num + '.';
 
-      // 複製 footnote div，移除其中所有 <a> 反向連結（避免 PC hover 顯示路徑）
+      // ⭐【修正4】只移除 _ftnref 回跳連結，保留腳注內外部超連結
+      // 原本把所有 <a> 轉成 textContent，若 textContent 本身是 URL 字串就會顯示出來
       var clone = fnEl.cloneNode(true);
-      // 移除所有 <a> 標籤但保留其內容文字
       clone.querySelectorAll('a').forEach(function(a) {
-        var txt = document.createTextNode(a.textContent);
-        a.parentNode.replaceChild(txt, a);
+        var href = a.getAttribute('href') || '';
+        if (/^#_ftnref/i.test(href)) {
+          // 完全移除 [N] 回跳連結節點（含文字），避免殘留 [N] 數字
+          a.parentNode.removeChild(a);
+        } else if (href.startsWith('#')) {
+          // 其他內部錨點：移除連結但保留文字
+          var txt = document.createTextNode(a.textContent);
+          a.parentNode.replaceChild(txt, a);
+        } else {
+          // 外部連結：保留為可點擊連結，確保新視窗開啟
+          a.setAttribute('target', '_blank');
+          a.setAttribute('rel', 'noopener noreferrer');
+        }
       });
-      // 移除開頭殘留的 [N] 數字標記
-      var html = clone.innerHTML.replace(/^\s*\[[\d]+\]\s*/, '').trim();
+      // 全域移除殘留的 [N] 數字標記（不限開頭位置）
+      var html = clone.innerHTML.replace(/\[[\d]+\]/g, '').replace(/^\s+/, '').trim();
       barText.innerHTML = html;
       bar.classList.add('fn-visible');
       activeRef = ref;
@@ -140353,13 +140356,18 @@ body.dark .MsoFootnoteReference span {
 
     fnLinkList.forEach(function(ref) {
 
-      // 電腦版：hover 顯示
-      ref.addEventListener('mouseenter', function() { showBar(ref); });
-      ref.addEventListener('mouseleave', function(e) {
-        if (!e.relatedTarget || !e.relatedTarget.closest('#footnote-bar')) {
-          hideBar();
-        }
-      });
+      // ⭐【修正3】只在非觸控裝置啟用 hover 顯示。
+      // 觸控裝置上 mouseenter 會比 click 先觸發 → showBar；
+      // 緊接著 click 見 activeRef===ref 且已顯示 → hideBar；造成需點兩次。
+      var isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+      if (!isTouchDevice) {
+        ref.addEventListener('mouseenter', function() { showBar(ref); });
+        ref.addEventListener('mouseleave', function(e) {
+          if (!e.relatedTarget || !e.relatedTarget.closest('#footnote-bar')) {
+            hideBar();
+          }
+        });
+      }
 
       // 點擊：阻止跳頁，切換顯示/隱藏
       // 用 setTimeout 0 讓 click 在全域 document click 之前先執行並設旗標
