@@ -140001,22 +140001,31 @@ body.dark .MsoFootnoteReference span {
             );
             regex.lastIndex = 0;
 
-            // 手機版：先收起側邊欄，等動畫+重排完成後，再即時計算位置並跳轉
-            if (window.innerWidth <= 768) {
-              // ⭐ 用 getElementById 即時取得，不依賴閉包變數（閉包內 overlay 可能為 undefined）
-              const ov = document.getElementById('sidebar-overlay');
-              sidebar.classList.remove('open-mobile');
-              if (ov) { ov.style.opacity = '0'; setTimeout(() => { ov.style.display = 'none'; }, 300); }
-              // getBoundingClientRect 必須在側邊欄收起、版面重排之後才呼叫
-              setTimeout(function() {
-                const rect = node.getBoundingClientRect();
-                const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
-                window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
-              }, 450);
-            } else {
-              const rect = node.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
+            // 計算節點距頁面頂端的絕對距離（不受 sidebar 開關影響）
+            function getAbsoluteTop(el) {
+              var top = 0;
+              while (el) { top += el.offsetTop; el = el.offsetParent; }
+              return top;
+            }
+
+            function jumpToNode() {
+              var absTop = getAbsoluteTop(node);
+              var targetY = absTop - (window.innerHeight / 2) + (node.offsetHeight / 2);
               window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+            }
+
+            if (window.innerWidth <= 768) {
+              // 手機版：先收起側邊欄
+              var ov = document.getElementById('sidebar-overlay');
+              sidebar.classList.remove('open-mobile');
+              if (ov) {
+                ov.style.opacity = '0';
+                setTimeout(function() { ov.style.display = 'none'; }, 300);
+              }
+              // 側邊欄收起後跳轉（offsetTop 不受 sidebar 影響，但仍等動畫完成再 scroll 較順暢）
+              setTimeout(jumpToNode, 350);
+            } else {
+              jumpToNode();
             }
           });
           searchResults.appendChild(item);
@@ -140273,56 +140282,52 @@ body.dark .MsoFootnoteReference span {
 
 <script>
 // =============================================
-// 【功能六】註腳 Tooltip 氣泡化
-// 讓 [數字] hover/點擊時就地顯示注腳，不再跳頁
+// 【功能六】註腳底部彈出列（完整重寫版）
 // =============================================
 (function() {
 
-  // 等待整頁內容渲染完畢再執行，使用 requestIdleCallback 更省資源
-  const initFootnoteBar = function() {
+  function initFootnoteBar() {
 
-    // 1. 建立底部彈出列，掛在 body 最外層
+    // 1. 建立底部彈出列
     const bar = document.createElement('div');
     bar.id = 'footnote-bar';
-    bar.innerHTML = `
-      <div id="footnote-bar-inner">
-        <span id="footnote-bar-num"></span>
-        <div id="footnote-bar-text"></div>
-        <button id="footnote-bar-close" title="關閉">✕</button>
-      </div>`;
+    bar.innerHTML =
+      '<div id="footnote-bar-inner">' +
+        '<span id="footnote-bar-num"></span>' +
+        '<div id="footnote-bar-text"></div>' +
+        '<button id="footnote-bar-close" title="關閉">\u2715</button>' +
+      '</div>';
     document.body.appendChild(bar);
 
-    const barNum  = document.getElementById('footnote-bar-num');
-    const barText = document.getElementById('footnote-bar-text');
+    const barNum   = document.getElementById('footnote-bar-num');
+    const barText  = document.getElementById('footnote-bar-text');
     const barClose = document.getElementById('footnote-bar-close');
-
-    // 記錄目前哪個註腳正在顯示（用來判斷手機版點擊切換）
-    let activeRef = null;
+    let activeRef  = null;
 
     // ── 顯示底部列 ──
     function showBar(ref) {
-      const href = ref.getAttribute('href');           // 例如 "#_ftn3"
-      const targetId = href ? href.replace('#_', '') : null; // → "_ftn3"
-      if (!targetId) return;
-
-      const fnEl = document.getElementById(targetId);
+      const href = ref.getAttribute('href') || '';
+      // 本文連結格式: href="#_ftn1" → 目標 div id=ftn1
+      var numMatch = href.match(/#_ftn(\d+)$/);
+      if (!numMatch) return;
+      var num = numMatch[1];
+      var fnEl = document.getElementById('ftn' + num);
       if (!fnEl) return;
 
-      // 取得注腳編號（從 href 萃取數字，例如 "_ftn3" → "3."）
-      const numMatch = targetId.match(/\d+$/);
-      const numLabel = numMatch ? numMatch[0] : '';
-      barNum.textContent = numLabel ? numLabel + '.' : '';
+      barNum.textContent = num + '.';
 
-      // 取得注腳內容：使用 innerHTML 完整保留原始 Word 樣式
-      // 只複製 fnEl 的完整 innerHTML，去掉開頭的 [數字] 或 [數字] 錨點連結
-      let rawHTML = fnEl.innerHTML || '';
-      // 移除最前方的反向連結（a[href*="#_ftnref"]）及其前後空白
-      rawHTML = rawHTML.replace(/<a\s[^>]*href="[^"]*_ftnref[^"]*"[^>]*>[\s\S]*?<\/a>/i, '').trim();
-      // 移除殘留的開頭數字標記 [N]
-      rawHTML = rawHTML.replace(/^\s*\[\d+\]\s*/, '');
-
-      barText.innerHTML = rawHTML;
+      // 複製 footnote div，移除其中所有 <a> 反向連結（避免 PC hover 顯示路徑）
+      var clone = fnEl.cloneNode(true);
+      // 移除所有 <a> 標籤但保留其內容文字
+      clone.querySelectorAll('a').forEach(function(a) {
+        var txt = document.createTextNode(a.textContent);
+        a.parentNode.replaceChild(txt, a);
+      });
+      // 移除開頭殘留的 [N] 數字標記
+      var html = clone.innerHTML.replace(/^\s*\[[\d]+\]\s*/, '').trim();
+      barText.innerHTML = html;
       bar.classList.add('fn-visible');
+      activeRef = ref;
     }
 
     // ── 隱藏底部列 ──
@@ -140337,53 +140342,60 @@ body.dark .MsoFootnoteReference span {
       hideBar();
     });
 
-    // 2. 找出內文中所有的 [數字] 參考連結（排除頁尾注腳區的反向連結）
-    const allFnLinks = document.querySelectorAll('#content-area a[href*="#_ftn"]');
+    // 2. 只選取「本文中」指向 #_ftn 的連結（href 符合 #_ftn+數字，排除 #_ftnref）
+    var allFnLinks = document.querySelectorAll('#content-area a[href]');
+    var fnLinkList = [];
+    allFnLinks.forEach(function(a) {
+      if (/^#_ftn\d+$/.test(a.getAttribute('href'))) {
+        fnLinkList.push(a);
+      }
+    });
 
-    allFnLinks.forEach(function(ref) {
+    fnLinkList.forEach(function(ref) {
 
-      // 電腦版：滑鼠 hover 顯示 / 移開隱藏
-      ref.addEventListener('mouseenter', function() {
-        activeRef = ref;
-        showBar(ref);
-      });
+      // 電腦版：hover 顯示
+      ref.addEventListener('mouseenter', function() { showBar(ref); });
       ref.addEventListener('mouseleave', function(e) {
-        // 確認滑鼠沒有移入底部列本身
         if (!e.relatedTarget || !e.relatedTarget.closest('#footnote-bar')) {
           hideBar();
         }
       });
 
-      // 手機版：點擊切換顯示 / 隱藏（並阻止跳頁）
+      // 點擊：阻止跳頁，切換顯示/隱藏
+      // 用 setTimeout 0 讓 click 在全域 document click 之前先執行並設旗標
       ref.addEventListener('click', function(e) {
-        e.preventDefault();      // 阻止跳到頁尾
-        window._fnBarJustClicked = true; // 設旗標，讓全域 click 知道這次點擊來自 footnote
+        e.preventDefault();
         if (activeRef === ref && bar.classList.contains('fn-visible')) {
+          window.__fnSkipHide = true;
           hideBar();
         } else {
-          activeRef = ref;
+          window.__fnSkipHide = true;
           showBar(ref);
         }
       });
     });
 
-    // 3. 點擊內文任意其他地方 → 收起底部列
-    // 用旗標判斷，避免 footnote click 觸發後立刻被這裡收起
-    document.addEventListener('click', function(e) {
-      if (window._fnBarJustClicked) {
-        window._fnBarJustClicked = false; // 清除旗標，放行本次，收下次
-        return;
-      }
-      if (!e.target.closest('a[href*="#_ftn"]') && !e.target.closest('#footnote-bar')) {
-        hideBar();
-      }
+    // bar 本身點擊不收起
+    bar.addEventListener('click', function(e) {
+      window.__fnSkipHide = true;
     });
 
-  }; // end initFootnoteBar
-  if (window.requestIdleCallback) {
-    requestIdleCallback(initFootnoteBar, { timeout: 3000 });
+    // 點其他地方收起
+    document.addEventListener('click', function(e) {
+      if (window.__fnSkipHide) {
+        window.__fnSkipHide = false;
+        return;
+      }
+      hideBar();
+    });
+
+  }
+
+  // 等 DOM 完整後執行（用 setTimeout 確保 Word 大量 DOM 已掛載）
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(initFootnoteBar, 800); });
   } else {
-    setTimeout(initFootnoteBar, 1000);
+    setTimeout(initFootnoteBar, 800);
   }
 
 })();
