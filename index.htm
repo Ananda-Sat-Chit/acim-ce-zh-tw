@@ -140411,43 +140411,49 @@ body.dark .MsoFootnoteReference span {
       hideBar();
     });
 
-    // 2. 只選取「本文中」指向 #_ftn 的連結（href 符合 #_ftn+數字，排除 #_ftnref）
-    var allFnLinks = document.querySelectorAll('#content-area a[href]');
-    var fnLinkList = [];
-    allFnLinks.forEach(function(a) {
-      if (/^#_ftn\d+$/.test(a.getAttribute('href'))) {
-        fnLinkList.push(a);
+    // 2. 【事件委派版】將 footnote 點擊事件掛在 #content-area 上，
+    //    而非直接綁到每個 <a> 節點。
+    //    這樣即使搜尋功能用 innerHTML 替換段落 DOM（插入 <mark> 高亮），
+    //    重新產生的 <a> 節點依然能被此委派捕捉，不會失去 preventDefault 保護。
+    var contentArea = document.getElementById('content-area');
+    var isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+    // ── 委派：click ──
+    contentArea.addEventListener('click', function(e) {
+      var ref = e.target.closest('a[href]');
+      if (!ref) return;
+      var href = ref.getAttribute('href') || '';
+      if (!/^#_ftn\d+$/.test(href)) return;
+      // 確實是本文 footnote 連結
+      e.preventDefault();
+      if (activeRef === ref && bar.classList.contains('fn-visible')) {
+        window.__fnSkipHide = true;
+        hideBar();
+      } else {
+        window.__fnSkipHide = true;
+        showBar(ref);
       }
     });
 
-    fnLinkList.forEach(function(ref) {
-
-      // ⭐【修正3】只在非觸控裝置啟用 hover 顯示。
-      // 觸控裝置上 mouseenter 會比 click 先觸發 → showBar；
-      // 緊接著 click 見 activeRef===ref 且已顯示 → hideBar；造成需點兩次。
-      var isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
-      if (!isTouchDevice) {
-        ref.addEventListener('mouseenter', function() { showBar(ref); });
-        ref.addEventListener('mouseleave', function(e) {
-          if (!e.relatedTarget || !e.relatedTarget.closest('#footnote-bar')) {
-            hideBar();
-          }
-        });
-      }
-
-      // 點擊：阻止跳頁，切換顯示/隱藏
-      // 用 setTimeout 0 讓 click 在全域 document click 之前先執行並設旗標
-      ref.addEventListener('click', function(e) {
-        e.preventDefault();
-        if (activeRef === ref && bar.classList.contains('fn-visible')) {
-          window.__fnSkipHide = true;
-          hideBar();
-        } else {
-          window.__fnSkipHide = true;
+    // ── 委派：mouseenter / mouseleave（僅非觸控裝置）──
+    if (!isTouchDevice) {
+      contentArea.addEventListener('mouseover', function(e) {
+        var ref = e.target.closest('a[href]');
+        if (!ref) return;
+        if (/^#_ftn\d+$/.test(ref.getAttribute('href') || '')) {
           showBar(ref);
         }
       });
-    });
+      contentArea.addEventListener('mouseout', function(e) {
+        var ref = e.target.closest('a[href]');
+        if (!ref) return;
+        if (/^#_ftn\d+$/.test(ref.getAttribute('href') || '')) {
+          if (!e.relatedTarget || !e.relatedTarget.closest('#footnote-bar')) {
+            hideBar();
+          }
+        }
+      });
+    }
 
     // bar 本身點擊不收起
     bar.addEventListener('click', function(e) {
