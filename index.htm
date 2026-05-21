@@ -189,10 +189,9 @@ body.dark-mode #toc-search-results div {
   background: transparent !important;
 }
 
-/* ===== 效能優化：content-visibility ===== */
-#content-area > div, #content-area > p, #content-area > table {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 200px;
+/* ===== 效能優化：will-change 提示合成層，避免 content-visibility 破壞 scrollIntoView ===== */
+#content-area {
+  will-change: scroll-position;
 }
 
 #footnote-bar {
@@ -216,10 +215,11 @@ body.dark-mode #toc-search-results div {
   bottom: 0;
 }
 
-/* 深色模式：稍微亮一些 */
+/* 深色模式：改用明顯亮紫，與 #180828 內容區產生強烈對比 */
 body.dark-mode #footnote-bar {
-  background: #1A0A2E;   /* 深色模式：更深的紫黑 */
-  box-shadow: 0 -4px 20px rgba(80,0,120,0.5);
+  background: #3D1B6E;          /* 明亮皇家紫，比內容區深紫黑明顯亮很多 */
+  border-top: 2px solid #C9A8E8; /* 薰衣草紫上邊框，強化邊界感 */
+  box-shadow: 0 -6px 24px rgba(140,60,220,0.55);
 }
 
 /* 彈出列內部排版 */
@@ -140000,14 +140000,23 @@ body.dark .MsoFootnoteReference span {
               `<mark class="search-hl" style="background:#ffe066; border-radius:2px; padding:0 2px;">${m}</mark>`
             );
             regex.lastIndex = 0;
-            // 手機版：先收起側邊欄，等動畫結束後再跳轉（確保 scrollIntoView 正常運作）
+
+            // 用 getBoundingClientRect 手動計算目標位置，避免 scrollIntoView 在手機側邊欄收起後失效
+            function scrollToNode() {
+              const rect = node.getBoundingClientRect();
+              const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
+              window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+            }
+
+            // 手機版：先收起側邊欄，等動畫結束後再跳轉
             if (window.innerWidth <= 768) {
               sidebar.classList.remove('open-mobile');
               overlay.style.opacity = '0';
               setTimeout(() => { overlay.style.display = 'none'; }, 300);
-              setTimeout(() => { node.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 350);
+              // 等側邊欄動畫（0.3s）+ 瀏覽器重排（額外 100ms）完成後再 scroll
+              setTimeout(scrollToNode, 450);
             } else {
-              node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              scrollToNode();
             }
           });
           searchResults.appendChild(item);
