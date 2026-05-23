@@ -5,8 +5,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet"></noscript>
 
 <style>
 /* ══════════════════════════════════════════════════════════
@@ -42,10 +42,26 @@ body.dark-mode {
   --c-border:  #4A2870;
 }
 
-/* ── 2. Word 字型強制替換（霞鶩文楷） ── */
-[style*="A19977\9AD4"], [style*="DFKai-SB"], [style*="BiauKai"],
-font[face*="A19977\9AD4"] {
-  font-family: "LXGW WenKai TC", "BiauKai", "DFKai-SB", serif !important;
+/* ── 2. Word 字型強制替換（霞鶩文楷）── */
+/* 選擇器用直接中文字，確保手機瀏覽器能正確匹配 Word inline style */
+[style*="標楷體"],
+[style*="DFKai-SB"],
+[style*="BiauKai"],
+[face*="標楷體"],
+font[face*="標楷體"],
+font[face="DFKai-SB"],
+font[face="BiauKai"] {
+  font-family:
+    "LXGW WenKai TC",  /* 主字型：Google Fonts 霞鶩文楷（所有平台有網路時） */
+    "Kaiti TC",         /* iOS 13+ / macOS 內建繁體楷書 */
+    "Kaiti SC",         /* iOS / macOS 內建簡體楷書（繁體字亦可用） */
+    "STKaiti",          /* macOS 舊版內建楷書 */
+    "BiauKai",          /* macOS 舊版標楷體 */
+    "DFKai-SB",         /* Windows 標楷體 */
+    "標楷體",            /* Windows 標楷體中文名 */
+    "Noto Serif TC",    /* Android 備案：Google Fonts 思源宋體（楷書風格最近） */
+    serif               /* 最終 fallback */
+    !important;
 }
 
 /* ── 3. 基礎重置 ── */
