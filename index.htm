@@ -1,346 +1,290 @@
 <html>
-
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#6B2FA0">
+<title>完整加註版奇蹟課程</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="pwa-192x192.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet"></noscript>
 
-<style>
-/* ══════════════════════════════════════════════════════════
-   《完整加註版奇蹟課程》PWA eBook — 改良版 v5
-   設計原則：優雅閱讀 · 紫金配色 · 完全響應式
-   ══════════════════════════════════════════════════════════ */
-
-/* ── 1. CSS 主題變數（亮色 / 深色雙套） ── */
-:root {
-  --c-bg:        #FDFBFF;
-  --c-sidebar:   #EDE6F8;
-  --c-page:      #F2ECFF;
-  --c-text:      #1A0A2E;
-  --c-muted:     #5B3A8E;
-  --c-accent:    #6B2FA0;
-  --c-accent2:   #8B5BAE;
-  --c-gold:      #C9A227;
-  --c-border:    #C0A0DC;
-  --sidebar-w:   300px;
-  --fs-base:     18px;
-  --lh:          1.95;
-  --spd:         0.25s;
-}
-
-body.dark-mode {
-  --c-bg:      #180828;
-  --c-sidebar: #24133E;
-  --c-page:    #100520;
-  --c-text:    #EAE0F8;
-  --c-muted:   #C8B8E8;
-  --c-accent:  #D4B8F0;
-  --c-gold:    #E8C840;
-  --c-border:  #4A2870;
-}
-
-/* ── 2. Word 字型強制替換（霞鶩文楷）── */
-/* 選擇器用直接中文字，確保手機瀏覽器能正確匹配 Word inline style */
-[style*="標楷體"],
-[style*="DFKai-SB"],
-[style*="BiauKai"],
-[face*="標楷體"],
-font[face*="標楷體"],
-font[face="DFKai-SB"],
-font[face="BiauKai"] {
-  font-family:
-    "LXGW WenKai TC",  /* 主字型：Google Fonts 霞鶩文楷（所有平台有網路時） */
-    "Kaiti TC",         /* iOS 13+ / macOS 內建繁體楷書 */
-    "Kaiti SC",         /* iOS / macOS 內建簡體楷書（繁體字亦可用） */
-    "STKaiti",          /* macOS 舊版內建楷書 */
-    "BiauKai",          /* macOS 舊版標楷體 */
-    "DFKai-SB",         /* Windows 標楷體 */
-    "標楷體",            /* Windows 標楷體中文名 */
-    "Noto Serif TC",    /* Android 備案：Google Fonts 思源宋體（楷書風格最近） */
-    serif               /* 最終 fallback */
-    !important;
-}
-
-/* ── 3. 基礎重置 ── */
-*, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body, div, p, table, tr, td, span {
-  max-width: 100%;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-img { max-width: 100% !important; height: auto !important; }
-
-/* ── 4. 閱讀進度條 ── */
-#reading-progress {
-  position: fixed;
-  top: 0; left: 0;
-  height: 3px; width: 0%;
-  background: linear-gradient(90deg, var(--c-accent), var(--c-gold));
-  z-index: 999997;
-  transition: width 0.12s linear;
-  pointer-events: none;
-  border-radius: 0 2px 2px 0;
-}
-
-/* ── 5. 深色模式：主內容 ── */
-body.dark-mode,
-body.dark-mode #book-container,
-body.dark-mode #content-area,
-body.dark-mode div,
-body.dark-mode p,
-body.dark-mode span,
-body.dark-mode table,
-body.dark-mode tr,
-body.dark-mode td,
-body.dark-mode font {
-  background-color: var(--c-bg) !important;
-  color: var(--c-text) !important;
-}
-
-/* ── 6. 深色模式：側邊欄 ── */
-body.dark-mode #sidebar-toc,
-body.dark-mode #sidebar-toc h3,
-body.dark-mode #sidebar-header,
-body.dark-mode #toc-wrapper,
-body.dark-mode .sidebar-info-box,
-body.dark-mode .info-section,
-body.dark-mode .info-section h4,
-body.dark-mode .info-section p {
-  background-color: var(--c-sidebar) !important;
-  color: var(--c-muted) !important;
-  border-color: var(--c-border) !important;
-}
-
-/* ── 7. 深色模式：目錄連結 ── */
-body.dark-mode .toc-link,
-body.dark-mode #toc-wrapper a {
-  color: #9580b0 !important;
-  background-color: transparent !important;
-}
-body.dark-mode .toc-link:hover,
-body.dark-mode #toc-wrapper a:hover {
-  color: var(--c-gold) !important;
-  background-color: rgba(255,255,255,0.06) !important;
-}
-body.dark-mode .toc-link.toc-active {
-  color: var(--c-gold) !important;
-  background-color: rgba(255,255,255,0.09) !important;
-}
-
-/* ── 8. 深色模式：註腳 ── */
-body.dark-mode a[href*="_ftn"],
-body.dark-mode a[href*="_ftn"] span,
-body.dark-mode .MsoFootnoteReference,
-body.dark-mode .MsoFootnoteReference span {
-  color: #C9A8E8 !important;
-  background-color: transparent !important;
-}
-
-/* ── 9. 深色模式：圖片 ── */
-body.dark-mode img { opacity: 0.82; transition: opacity var(--spd); }
-body.dark-mode img:hover { opacity: 1; }
-
-/* ── 10. 深色模式：搜尋欄 ── */
-body.dark-mode #toc-search-frame {
-  background-color: #1A0A2E !important;
-  border-color: var(--c-border) !important;
-}
-body.dark-mode #toc-search-input {
-  color: var(--c-text) !important;
-  caret-color: var(--c-accent) !important;
-}
-body.dark-mode #toc-search-input::placeholder { color: #9070B8 !important; }
-body.dark-mode #toc-search-results {
-  background: var(--c-sidebar) !important;
-  border-color: var(--c-border) !important;
-}
-body.dark-mode .sr-item {
-  color: var(--c-muted) !important;
-  border-color: #3D2060 !important;
-}
-body.dark-mode .sr-item:hover { background: rgba(255,255,255,0.06) !important; }
-
-/* ── 11. 深色模式：mark 高亮 ── */
-body.dark-mode mark.search-hl {
-  background: rgba(255,200,50,0.3) !important;
-  color: #fff !important;
-}
-
-/* ── 12. 工具按鈕 Tooltip ── */
-.pwa-btn-wrap { position: relative; }
-.pwa-btn-wrap::before {
-  content: attr(data-tip);
-  position: absolute;
-  right: calc(100% + 10px);
-  top: 50%; transform: translateY(-50%);
-  background: rgba(20,5,40,0.92);
-  color: #f0e8ff;
-  font-size: 11.5px;
-  white-space: nowrap;
-  padding: 4px 9px;
-  border-radius: 6px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-.pwa-btn-wrap:hover::before { opacity: 1; }
-
-/* ── 13. 手機版 ── */
-@media (max-width: 768px) {
-  html, body {
-    width: 100vw !important;
-    overflow-x: hidden !important;
-    margin: 0 !important; padding: 0 !important;
-  }
-  #book-container { display: block !important; }
-  #content-area {
-    width: 100% !important;
-    padding: 20px 15px 140px 15px !important;
-  }
-  div[class^="WordSection"] {
-    width: 100% !important;
-    margin: 0 !important; padding: 0 !important;
-  }
-  #content-area p, #content-area td {
-    font-size: var(--fs-base) !important;
-    line-height: var(--lh) !important;
-    max-width: 100% !important;
-  }
-
-  /* 手機側邊欄抽屜 */
-  #sidebar-toc {
-    position: fixed !important;
-    top: 0 !important; left: -320px !important;
-    width: 290px !important;
-    height: 100vh !important;
-    background-color: #EDE6F8 !important;
-    z-index: 10001 !important;
-    /* 手機捲動關鍵：sidebar 本身為主捲動容器 */
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important; /* iOS 慣性捲動 */
-    overscroll-behavior: contain !important;
-    box-shadow: none !important;
-    transition: left var(--spd) !important;
-    /* 手機改為 flex 直排，讓內部區塊正確撐高 */
-    display: flex !important;
-    flex-direction: column !important;
-    padding: 0 !important;
-  }
-  #sidebar-toc.open-mobile {
-    left: 0 !important;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.28) !important;
-  }
-  body.dark-mode #sidebar-toc {
-    background-color: var(--c-sidebar) !important;
-  }
-  /* 手機版：toc-wrapper 自動填滿剩餘高度，捲動區在此 */
-  @media (max-width: 768px) {
-    #toc-wrapper {
-      flex: 1 1 auto !important;
-      overflow-y: auto !important;
-      -webkit-overflow-scrolling: touch !important;
-      overscroll-behavior: contain !important;
-      min-height: 0 !important; /* flex 子元素捲動必加 */
-    }
-    #sidebar-header {
-      flex-shrink: 0 !important;
-    }
-    .sidebar-info-box {
-      flex-shrink: 0 !important;
-    }
-    /* 展開的子目錄確保不被裁切 */
-    .toc-children-open {
-      overflow: visible !important;
-    }
-    /* 讓 toc-group 的點擊與滑動事件不衝突 */
-    .toc-group, .toc-h1-row, .toc-link, .toc-arrow {
-      touch-action: manipulation !important;
-    }
-  }
-
-  /* 手機按鈕縮小 */
-  #pwa-tools {
-    bottom: 16px !important; right: 44px !important;
-    gap: 8px !important;
-    transform: scale(0.88) !important;
-    transform-origin: bottom right !important;
-  }
-  .pwa-btn-wrap::before { display: none !important; }
-  #btn-totop { bottom: 100px !important; left: 14px !important; }
-}
-
-/* ── 14. 註腳彈出列 ── */
-#footnote-bar {
-  position: fixed;
-  bottom: -100%; left: 0; right: 0;
-  z-index: 999999;
-  background: #2D1B4E;
-  color: #EDE6F8;
-  padding: 14px 20px 18px;
-  box-shadow: 0 -4px 20px rgba(80,0,120,0.3);
-  transition: bottom var(--spd);
-  max-height: 42vh;
-  overflow-y: auto;
-  box-sizing: border-box;
-}
-#footnote-bar.fn-visible { bottom: 0; }
-body.dark-mode #footnote-bar {
-  background: #3D1B6E;
-  border-top: 2px solid #C9A8E8;
-  box-shadow: 0 -6px 24px rgba(140,60,220,0.55);
-}
-#footnote-bar-inner { display: flex; align-items: flex-start; gap: 10px; }
-#footnote-bar-num {
-  flex-shrink: 0;
-  font-size: 13px !important; font-weight: bold !important;
-  color: #fff !important;
-  min-width: 28px; padding-top: 2px;
-  white-space: nowrap; display: inline-block;
-}
-#footnote-bar-text { flex-grow: 1; line-height: 1.75; font-size: 14px; }
-#footnote-bar-text * { color: #EDE6F8 !important; background: transparent !important; }
-#footnote-bar-text a { color: #C9A8E8 !important; text-decoration: underline !important; }
-#footnote-bar-close {
-  flex-shrink: 0; width: 28px; height: 28px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.15);
-  border: none; color: #ccc; font-size: 16px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background var(--spd);
-  -webkit-tap-highlight-color: transparent; padding: 0;
-}
-#footnote-bar-close:hover { background: rgba(255,255,255,0.3); }
-#content-area a[href*="#_ftn"] {
-  cursor: help !important;
-  border-bottom: 1px dotted rgba(107,47,160,0.38);
-}
-</style>
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ffffff">
-<link rel="apple-touch-icon" href="icon-512.png">
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(registration => console.log('ServiceWorker 註冊成功'))
-        .catch(err => console.log('ServiceWorker 註冊失敗: ', err));
-    });
-  }
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js')
+      .catch(function(err) { console.log('SW error:', err); });
+  });
+}
 </script>
 
-<meta http-equiv=Content-Type content="text/html; charset=utf-8">
-<meta name=Generator content="Microsoft Word 15 (filtered)">
-<title>完整加註版奇蹟課程_全_20260521v4</title>
+<style>
+/* ══════════════════════════════════════════════════════════
+   《完整加註版奇蹟課程》PWA eBook — 改良版 v6
+   ══════════════════════════════════════════════════════════ */
+:root {
+  --c-bg:#FDFBFF; --c-sidebar:#EDE6F8; --c-page:#F2ECFF;
+  --c-text:#1A0A2E; --c-muted:#5B3A8E; --c-accent:#6B2FA0;
+  --c-accent2:#8B5BAE; --c-gold:#C9A227; --c-border:#C0A0DC;
+  --sidebar-w:300px; --fs-base:18px; --lh:1.95; --spd:0.25s;
+}
+body.dark-mode {
+  --c-bg:#180828; --c-sidebar:#24133E; --c-page:#100520;
+  --c-text:#EAE0F8; --c-muted:#C8B8E8; --c-accent:#D4B8F0;
+  --c-gold:#E8C840; --c-border:#4A2870;
+}
+[style*="標楷體"],[style*="DFKai-SB"],[style*="BiauKai"],
+font[face*="標楷體"],font[face="DFKai-SB"],font[face="BiauKai"]{
+  font-family:"LXGW WenKai TC","Kaiti TC","Kaiti SC","STKaiti","BiauKai","DFKai-SB","標楷體","Noto Serif TC",serif !important;
+}
+*,*::before,*::after{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body,div,p,table,tr,td,span{max-width:100%;word-wrap:break-word;overflow-wrap:break-word;}
+img{max-width:100%!important;height:auto!important;}
+#reading-progress{
+  position:fixed;top:0;left:0;height:3px;width:0%;
+  background:linear-gradient(90deg,var(--c-accent),var(--c-gold));
+  z-index:999997;transition:width 0.12s linear;pointer-events:none;border-radius:0 2px 2px 0;
+}
+.progress-chapter-dot{
+  position:absolute;top:0;width:2px;height:3px;
+  background:rgba(255,255,255,0.6);border-radius:1px;pointer-events:none;
+}
+body.dark-mode,body.dark-mode #book-container,body.dark-mode #content-area,
+body.dark-mode div,body.dark-mode p,body.dark-mode span,
+body.dark-mode table,body.dark-mode tr,body.dark-mode td,body.dark-mode font{
+  background-color:var(--c-bg)!important;color:var(--c-text)!important;
+}
+body.dark-mode #sidebar-toc,body.dark-mode #sidebar-toc h3,
+body.dark-mode #sidebar-header,body.dark-mode #toc-wrapper,
+body.dark-mode .sidebar-info-box,body.dark-mode .info-section,
+body.dark-mode .info-section h4,body.dark-mode .info-section p{
+  background-color:var(--c-sidebar)!important;color:var(--c-muted)!important;border-color:var(--c-border)!important;
+}
+body.dark-mode .toc-link,body.dark-mode #toc-wrapper a{color:#9580b0!important;background-color:transparent!important;}
+body.dark-mode .toc-link:hover,body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background-color:rgba(255,255,255,0.06)!important;}
+body.dark-mode .toc-link.toc-active{color:var(--c-gold)!important;background-color:rgba(255,255,255,0.09)!important;}
+body.dark-mode a[href*="_ftn"],body.dark-mode a[href*="_ftn"] span,
+body.dark-mode .MsoFootnoteReference,body.dark-mode .MsoFootnoteReference span{
+  color:#C9A8E8!important;background-color:transparent!important;
+}
+body.dark-mode img{opacity:0.82;transition:opacity var(--spd);}
+body.dark-mode img:hover{opacity:1;}
+body.dark-mode #toc-search-frame{background-color:#1A0A2E!important;border-color:var(--c-border)!important;}
+body.dark-mode #toc-search-input{color:var(--c-text)!important;caret-color:var(--c-accent)!important;}
+body.dark-mode #toc-search-input::placeholder{color:#9070B8!important;}
+body.dark-mode #toc-search-results{background:var(--c-sidebar)!important;border-color:var(--c-border)!important;}
+body.dark-mode .sr-item{color:var(--c-muted)!important;border-color:#3D2060!important;}
+body.dark-mode .sr-item:hover{background:rgba(255,255,255,0.06)!important;}
+body.dark-mode mark.search-hl{background:rgba(255,200,50,0.3)!important;color:#fff!important;}
+.pwa-btn-wrap{position:relative;}
+.pwa-btn-wrap::before{
+  content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);
+  background:rgba(20,5,40,0.92);color:#f0e8ff;font-size:11.5px;white-space:nowrap;
+  padding:4px 9px;border-radius:6px;pointer-events:none;opacity:0;transition:opacity 0.15s;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.pwa-btn-wrap:hover::before{opacity:1;}
+@media(max-width:768px){
+  html,body{width:100vw!important;overflow-x:hidden!important;margin:0!important;padding:0!important;}
+  #book-container{display:block!important;}
+  #content-area{width:100%!important;padding:48px 15px 140px 15px!important;}
+  div[class^="WordSection"]{width:100%!important;margin:0!important;padding:0!important;}
+  #content-area p,#content-area td{font-size:var(--fs-base)!important;line-height:var(--lh)!important;max-width:100%!important;}
+  #sidebar-toc{
+    position:fixed!important;top:0!important;left:-320px!important;width:290px!important;
+    height:100vh!important;background-color:#EDE6F8!important;z-index:10001!important;
+    overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;
+    overscroll-behavior:contain!important;box-shadow:none!important;transition:left var(--spd)!important;
+    display:flex!important;flex-direction:column!important;padding:0!important;
+  }
+  #sidebar-toc.open-mobile{left:0!important;box-shadow:4px 0 24px rgba(0,0,0,0.28)!important;}
+  body.dark-mode #sidebar-toc{background-color:var(--c-sidebar)!important;}
+  #toc-wrapper{flex:1 1 auto!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important;min-height:0!important;}
+  #sidebar-header,#sidebar-toc h3,.sidebar-info-box{flex-shrink:0!important;}
+  .toc-children-open{overflow:visible!important;}
+  .toc-group,.toc-h1-row,.toc-link,.toc-arrow{touch-action:manipulation!important;}
+  #pwa-tools{bottom:16px!important;right:44px!important;gap:8px!important;transform:scale(0.88)!important;transform-origin:bottom right!important;}
+  .pwa-btn-wrap::before{display:none!important;}
+  #chapter-breadcrumb{display:flex!important;}
+}
+#footnote-bar{
+  position:fixed;bottom:-100%;left:0;right:0;z-index:999999;
+  background:#2D1B4E;color:#EDE6F8;padding:14px 20px 18px;
+  box-shadow:0 -4px 20px rgba(80,0,120,0.3);
+  transition:bottom var(--spd);max-height:42vh;overflow-y:auto;
+}
+#footnote-bar.fn-visible{bottom:0;}
+body.dark-mode #footnote-bar{background:#3D1B6E;border-top:2px solid #C9A8E8;box-shadow:0 -6px 24px rgba(140,60,220,0.55);}
+#footnote-bar-inner{display:flex;align-items:flex-start;gap:10px;}
+#footnote-bar-num{flex-shrink:0;font-size:13px!important;font-weight:bold!important;color:#fff!important;min-width:28px;padding-top:2px;white-space:nowrap;display:inline-block;}
+#footnote-bar-text{flex-grow:1;line-height:1.75;font-size:14px;}
+#footnote-bar-text *{color:#EDE6F8!important;background:transparent!important;}
+#footnote-bar-text a{color:#C9A8E8!important;text-decoration:underline!important;}
+#footnote-bar-close{
+  flex-shrink:0;width:28px;height:28px;border-radius:50%;
+  background:rgba(255,255,255,0.15);border:none;color:#ccc;font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background var(--spd);-webkit-tap-highlight-color:transparent;padding:0;
+}
+#footnote-bar-close:hover{background:rgba(255,255,255,0.3);}
+#content-area a[href*="#_ftn"]{cursor:help!important;border-bottom:1px dotted rgba(107,47,160,0.38);}
+#chapter-breadcrumb{
+  display:none;position:fixed;top:0;left:0;right:0;height:36px;
+  background:var(--c-sidebar);border-bottom:1px solid var(--c-border);
+  z-index:9999;align-items:center;padding:0 12px;gap:8px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  cursor:pointer;transition:background var(--spd);
+}
+#chapter-breadcrumb-icon{font-size:14px;color:var(--c-accent);flex-shrink:0;}
+#chapter-breadcrumb-text{font-size:12px;color:var(--c-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+body.dark-mode #chapter-breadcrumb{background:var(--c-sidebar);border-color:var(--c-border);}
+body.dark-mode #chapter-breadcrumb-text{color:var(--c-muted);}
+</style>
+<style>
+/* ══ 佈局與元件樣式 v6 ══ */
+html,body{margin:0;padding:0;height:100%;background-color:var(--c-page);}
+#book-container{display:flex;min-height:100vh;}
+#sidebar-toc{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
+  background-color:var(--c-sidebar);border-right:1px solid var(--c-border);
+  height:100vh;position:sticky;top:0;
+  display:flex;flex-direction:column;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  transition:background-color var(--spd);
+}
+.sidebar-info-box{
+  flex-shrink:0;padding:8px 14px 8px 11px;
+  border-left:3px solid var(--c-gold);
+  border-bottom:1px dashed rgba(201,162,39,0.4);
+  font-size:11px;color:var(--c-muted);
+  background:rgba(212,175,55,0.05);transition:background-color var(--spd);line-height:1.4;
+}
+.info-appeal{font-style:italic;color:#7B5AAE;line-height:1.3;margin:0 0 5px;font-size:10.5px;}
+body.dark-mode .info-appeal{color:#A890D0!important;}
+.info-section{margin-bottom:3px;display:block;}
+.info-section:last-child{margin-bottom:0;}
+.info-section h4{margin:0;color:#3D1560;font-size:10.5px;font-weight:700;display:inline;}
+.info-section h4::after{content:" ";}
+body.dark-mode .info-section h4{color:var(--c-accent)!important;}
+.info-section p{margin:0;line-height:1.35;font-size:11px;display:inline;}
+.info-section a{display:inline!important;color:var(--c-accent)!important;text-decoration:underline!important;font-size:11px!important;}
+.info-section a:hover{color:var(--c-gold)!important;}
+.info-note{color:#8B5BAE;font-size:10px;}
+#sidebar-header{flex-shrink:0;padding:14px 16px 10px;background:var(--c-sidebar);border-bottom:1px solid var(--c-border);}
+#sidebar-toc h3{margin:0 0 10px;color:#3D1560;font-size:15.5px;font-weight:700;padding-bottom:10px;border-bottom:2px solid var(--c-gold);line-height:1.45;letter-spacing:0.02em;}
+body.dark-mode #sidebar-toc h3{color:var(--c-accent)!important;}
+#toc-wrapper{flex:1 1 auto;overflow-y:auto;min-height:0;padding:10px 14px 24px;overscroll-behavior:contain;}
+#toc-wrapper::-webkit-scrollbar{width:4px;}
+#toc-wrapper::-webkit-scrollbar-track{background:transparent;}
+#toc-wrapper::-webkit-scrollbar-thumb{background:rgba(107,47,160,0.22);border-radius:2px;}
+.toc-group{margin-bottom:2px;}
+.toc-h1-row{display:flex;align-items:center;}
+.toc-h1-row>.toc-arrow{
+  flex-shrink:0;width:20px;cursor:pointer;font-size:9px;color:var(--c-accent2);
+  padding:4px 2px 4px 4px;user-select:none;-webkit-user-select:none;
+  transition:color 0.15s;display:flex;align-items:center;
+}
+.toc-h1-row>.toc-arrow:hover{color:var(--c-gold);}
+.toc-h1-row>.toc-link.toc-h1{flex-grow:1;margin-top:0!important;}
+.toc-children{display:none;padding-left:4px;}
+.toc-children-open{display:block!important;}
+.toc-arrow{display:inline-block;font-size:9px;margin-right:4px;color:var(--c-accent2);transition:transform 0.2s;}
+#sidebar-toc a{
+  display:block;text-decoration:none;color:var(--c-muted);margin:2px 0;
+  transition:color var(--spd),background-color var(--spd);line-height:1.45;border-radius:5px;padding:3px 7px;
+}
+#sidebar-toc a:hover{color:var(--c-gold);background-color:rgba(107,47,160,0.08);}
+.toc-link.toc-active{color:var(--c-accent)!important;background-color:rgba(107,47,160,0.1)!important;font-weight:600;border-left:2px solid var(--c-accent);padding-left:5px;}
+body.dark-mode .toc-link.toc-active{color:var(--c-gold)!important;background-color:rgba(255,255,255,0.08)!important;border-color:var(--c-gold);}
+#sidebar-toc a.toc-h1{font-weight:700;margin-top:12px;color:#3D1560;font-size:14.5px;}
+#sidebar-toc a.toc-h2{margin-left:10px;font-size:13.5px;color:#5B3A8E;}
+#sidebar-toc a.toc-h3{margin-left:20px;font-size:13px;color:#7B4AAE;}
+#sidebar-toc a.toc-h4{margin-left:30px;font-size:12.5px;color:#9B6AC8;}
+#sidebar-toc a.toc-h5{margin-left:40px;font-size:12px;color:#B888D8;}
+#sidebar-toc a.toc-h6{margin-left:50px;font-size:11.5px;color:#CCA8E8;font-style:italic;}
+#content-area{
+  flex-grow:1;padding:52px 9% 80px;max-width:960px;
+  background-color:var(--c-bg);box-shadow:-2px 0 14px rgba(80,0,120,0.04);
+  font-size:var(--fs-base);line-height:var(--lh);
+  transition:background-color var(--spd),font-size 0.2s;overflow-x:hidden;
+}
+#content-area u,#content-area [style*="underline"],
+#content-area span[style*="underline"],#content-area p[style*="underline"]{
+  text-decoration:underline!important;text-decoration-color:rgba(30,0,60,0.28)!important;
+  text-decoration-thickness:1px!important;text-underline-offset:4px!important;text-decoration-skip-ink:auto!important;
+}
+body.dark-mode #content-area u,body.dark-mode #content-area [style*="underline"],
+body.dark-mode #content-area span[style*="underline"],body.dark-mode #content-area p[style*="underline"]{
+  text-decoration-color:rgba(220,200,255,0.35)!important;
+}
+#pwa-tools{position:fixed;bottom:20px;right:44px;display:flex;flex-direction:column;gap:7px;z-index:99999;}
+.pwa-btn{
+  width:40px;height:40px;border-radius:50%;border:none;color:white;cursor:pointer;
+  box-shadow:0 3px 10px rgba(60,0,100,0.28);display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;transition:transform 0.15s,box-shadow 0.15s,background var(--spd);
+  outline:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+.pwa-btn:hover{transform:scale(1.1);box-shadow:0 5px 18px rgba(60,0,100,0.5);}
+.pwa-btn:active{transform:scale(0.92);}
+@keyframes btn-shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-3px);}75%{transform:translateX(3px);}}
+.pwa-btn.btn-limit{cursor:not-allowed;animation:btn-shake 0.3s ease;}
+#btn-dark{background:#2D1B4E;font-size:18px;}
+#btn-toc{background:#6B2FA0;font-size:18px;}
+#btn-totop{background:rgba(107,47,160,0.75);font-size:16px;}
+#btn-font-up,#btn-font-dn{background:#4A2080;font-size:11.5px;font-weight:700;letter-spacing:-0.5px;}
+#toc-search-box{margin-top:8px;}
+#toc-search-frame{
+  display:flex;align-items:center;background:rgba(255,255,255,0.95);
+  border:1.5px solid var(--c-border);border-radius:8px;padding:6px 10px;gap:6px;
+  transition:border-color var(--spd),box-shadow var(--spd);position:relative;z-index:2;
+}
+#toc-search-frame:focus-within{border-color:var(--c-accent);box-shadow:0 0 0 2.5px rgba(107,47,160,0.15);}
+#toc-search-input{border:none;background:transparent;outline:none;font-size:13px;width:100%;color:#3D1560;font-family:inherit;}
+#toc-search-clear{border:none;background:transparent;cursor:pointer;font-size:12.5px;color:#aaa;display:none;padding:0;transition:color 0.15s;}
+#toc-search-clear:hover{color:var(--c-accent);}
+#toc-search-results{
+  display:none;margin-top:6px;max-height:46vh;overflow-y:auto;
+  background:#fff;border:1px solid var(--c-border);border-radius:7px;
+  box-shadow:0 3px 14px rgba(80,0,120,0.12);position:relative;z-index:1;
+}
+#toc-search-results.visible{display:block;animation:srSlide 0.18s ease;}
+@keyframes srSlide{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.sr-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0e8ff;font-size:13px;line-height:1.5;color:#333;transition:background 0.12s;}
+.sr-item:hover{background:#f5f0ff;}
+.sr-item:last-child{border-bottom:none;}
+.sr-hint{color:#aaa;font-size:11px;display:block;margin-top:2px;}
+.sr-no-result{color:#aaa;text-align:center;padding:14px;font-size:13px;}
+#search-count-badge{font-size:11.5px;color:var(--c-accent);margin-top:5px;text-align:center;display:none;}
+mark.search-hl{background:#ffe066;border-radius:2px;padding:0 2px;}
+#toc-search-results::-webkit-scrollbar{width:4px;}
+#toc-search-results::-webkit-scrollbar-thumb{background:rgba(107,47,160,0.2);border-radius:2px;}
+@media(max-width:768px){
+  #book-container{display:block!important;}
+  #content-area{padding:48px 15px 140px;width:100%!important;}
+  #sidebar-toc{padding:0!important;}
+}
+body.dark-mode #sidebar-header{background:var(--c-sidebar)!important;}
+body.dark-mode .sidebar-info-box{background:rgba(212,175,55,0.03)!important;border-left-color:var(--c-gold)!important;}
+a[href*="#_ftn"],a[href*="#_edn"],
+a[href*="#_ftn"] .MsoFootnoteReference,a[href*="#_ftn"] .MsoFootnoteReference span{
+  font-size:8px!important;font-weight:bold!important;font-style:normal!important;color:#6B2FA0!important;
+  text-decoration:none!important;vertical-align:super!important;line-height:0!important;
+  letter-spacing:-0.5px!important;border-bottom:none!important;cursor:help!important;
+}
+a[href*="#_ftn"] *,a[href*="#_edn"] *{
+  font-size:8px!important;font-weight:bold!important;font-style:normal!important;color:#6B2FA0!important;
+  text-decoration:none!important;vertical-align:baseline!important;line-height:inherit!important;
+}
+body.dark-mode a[href*="#_ftn"],body.dark-mode a[href*="#_ftn"] *,
+body.dark-mode a[href*="#_edn"],body.dark-mode .MsoFootnoteReference,
+body.dark-mode .MsoFootnoteReference span{color:#C9A8E8!important;background:transparent!important;}
+</style>
 
- 
 <style>
 <!--
  /* Font Definitions */
@@ -4780,7 +4724,6 @@ ul
   dl.custom-glossary dt { font-weight: bold; font-size: 1.25em; color: var(--link-color); margin-top: 1.5em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5em; }
   dl.custom-glossary dt:first-child { margin-top: 0; }
   dl.custom-glossary dd { margin-left: 0; padding-left: 1em; margin-top: 0.8em; line-height: 1.8; color: var(--text-color); }
-</style>
 
 </head>
 
@@ -139739,403 +139682,36 @@ color:black'> </span></p>
 
 </div>
 
-<style>
-/* ══════════════════════════════════════════════════
-   佈局與元件樣式（改良版 v5）
-   ══════════════════════════════════════════════════ */
 
-html, body { margin: 0; padding: 0; height: 100%; background-color: var(--c-page); }
-
-/* 主容器 */
-#book-container { display: flex; min-height: 100vh; }
-
-/* ── 側邊欄 ── */
-#sidebar-toc {
-  width: var(--sidebar-w);
-  min-width: var(--sidebar-w);
-  background-color: var(--c-sidebar);
-  border-right: 1px solid var(--c-border);
-  height: 100vh;
-  position: sticky; top: 0;
-  display: flex; flex-direction: column;
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  transition: background-color var(--spd);
-}
-
-/* 側邊欄頂部（固定，不隨目錄捲動） */
-#sidebar-header {
-  flex-shrink: 0;
-  padding: 18px 16px 10px;
-  background: var(--c-sidebar);
-  border-bottom: 1px solid var(--c-border);
-}
-
-#sidebar-toc h3 {
-  margin: 0 0 10px 0;
-  color: #3D1560;
-  font-size: 15.5px; font-weight: 700;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--c-gold);
-  line-height: 1.45;
-  letter-spacing: 0.02em;
-}
-body.dark-mode #sidebar-toc h3 { color: var(--c-accent) !important; }
-
-/* 資訊區塊 */
-.sidebar-info-box {
-  flex-shrink: 0;
-  padding: 7px 14px 7px;
-  border-bottom: 1px dashed var(--c-gold);
-  font-size: 11px;
-  color: var(--c-muted);
-  background: rgba(212,175,55,0.04);
-  transition: background-color var(--spd);
-  line-height: 1.35;
-}
-.info-appeal {
-  font-style: italic;
-  color: #7B5AAE;
-  line-height: 1.3;
-  margin: 0 0 4px;
-  font-size: 10.5px;
-}
-body.dark-mode .info-appeal { color: #A890D0 !important; }
-.info-section { margin-bottom: 3px; display: block; }
-.info-section:last-child { margin-bottom: 0; }
-.info-section h4 {
-  margin: 0;
-  color: #3D1560; font-size: 10.5px; font-weight: 700;
-  display: inline;
-}
-.info-section h4::after { content: " "; }
-body.dark-mode .info-section h4 { color: var(--c-accent) !important; }
-.info-section p { margin: 0; line-height: 1.35; font-size: 11px; display: inline; }
-.info-section a {
-  display: inline !important;
-  color: var(--c-accent) !important;
-  text-decoration: underline !important;
-  font-size: 11px !important;
-}
-.info-section a:hover { color: var(--c-gold) !important; }
-.info-note { color: #8B5BAE; font-size: 10px; }
-
-/* TOC 滾動區 */
-#toc-wrapper {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  min-height: 0;          /* flex 子元素捲動必加 */
-  padding: 10px 14px 24px;
-  overscroll-behavior: contain;
-}
-#toc-wrapper::-webkit-scrollbar { width: 4px; }
-#toc-wrapper::-webkit-scrollbar-track { background: transparent; }
-#toc-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(107,47,160,0.22);
-  border-radius: 2px;
-}
-
-/* TOC 群組結構 */
-.toc-group { margin-bottom: 2px; }
-.toc-h1-row {
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-.toc-h1-row > .toc-arrow {
-  flex-shrink: 0;
-  width: 20px;
-  height: 100%;
-  cursor: pointer;
-  font-size: 9px;
-  color: var(--c-accent2);
-  padding: 4px 2px 4px 4px;
-  user-select: none;
-  -webkit-user-select: none;
-  transition: color 0.15s;
-  display: flex;
-  align-items: center;
-}
-.toc-h1-row > .toc-arrow:hover { color: var(--c-gold); }
-.toc-h1-row > .toc-link.toc-h1 { flex-grow: 1; margin-top: 0 !important; }
-.toc-children { display: none; padding-left: 4px; }
-.toc-children-open { display: block !important; }
-
-/* TOC 連結 */
-#sidebar-toc a {
-  display: block;
-  text-decoration: none;
-  color: var(--c-muted);
-  margin: 2px 0;
-  transition: color var(--spd), background-color var(--spd);
-  line-height: 1.45;
-  border-radius: 5px;
-  padding: 3px 7px;
-}
-#sidebar-toc a:hover {
-  color: var(--c-gold);
-  background-color: rgba(107,47,160,0.08);
-}
-.toc-link.toc-active {
-  color: var(--c-accent) !important;
-  background-color: rgba(107,47,160,0.1) !important;
-  font-weight: 600;
-  border-left: 2px solid var(--c-accent);
-  padding-left: 5px;
-}
-body.dark-mode .toc-link.toc-active {
-  color: var(--c-gold) !important;
-  background-color: rgba(255,255,255,0.08) !important;
-  border-color: var(--c-gold);
-}
-
-/* TOC 階層縮排 */
-#sidebar-toc a.toc-h1 {
-  font-weight: 700; margin-top: 12px;
-  color: #3D1560; font-size: 14.5px;
-}
-#sidebar-toc a.toc-h2 { margin-left: 10px; font-size: 13.5px; color: #5B3A8E; }
-#sidebar-toc a.toc-h3 { margin-left: 20px; font-size: 13px; color: #7B4AAE; }
-#sidebar-toc a.toc-h4 { margin-left: 30px; font-size: 12.5px; color: #9B6AC8; }
-#sidebar-toc a.toc-h5 { margin-left: 40px; font-size: 12px; color: #B888D8; }
-#sidebar-toc a.toc-h6 { margin-left: 50px; font-size: 11.5px; color: #CCA8E8; font-style: italic; }
-
-/* 子項目折疊 */
-.toc-children { display: none; }
-.toc-children-open { display: block !important; }
-.toc-arrow {
-  display: inline-block; font-size: 9px;
-  margin-right: 4px; color: var(--c-accent2);
-  transition: transform 0.2s;
-}
-
-/* ── 閱讀內容區 ── */
-#content-area {
-  flex-grow: 1;
-  padding: 52px 9% 80px;
-  max-width: 960px;
-  background-color: var(--c-bg);
-  box-shadow: -2px 0 14px rgba(80,0,120,0.04);
-  font-size: var(--fs-base);
-  line-height: var(--lh);
-  transition: background-color var(--spd), font-size 0.2s;
-  overflow-x: hidden;
-}
-
-/* ── 底線優化：灰色、下移不壓字（仿英文版效果）── */
-/* 覆蓋 Word inline style="text-decoration:underline" 與 <u> 標籤 */
-#content-area u,
-#content-area [style*="underline"],
-#content-area span[style*="underline"],
-#content-area p[style*="underline"] {
-  text-decoration: underline !important;
-  text-decoration-color: rgba(30, 0, 60, 0.28) !important;  /* 低對比灰紫色 */
-  text-decoration-thickness: 1px !important;
-  text-underline-offset: 4px !important;   /* 底線往下移，不壓到字身 */
-  text-decoration-skip-ink: auto !important; /* 遇到 g/y 等降字自動跳過 */
-}
-
-/* 深色模式：改為淡白底線 */
-body.dark-mode #content-area u,
-body.dark-mode #content-area [style*="underline"],
-body.dark-mode #content-area span[style*="underline"],
-body.dark-mode #content-area p[style*="underline"] {
-  text-decoration-color: rgba(220, 200, 255, 0.35) !important;
-}
-
-/* ── 工具按鈕組 ── */
-#pwa-tools {
-  position: fixed;
-  bottom: 20px; right: 44px;
-  display: flex; flex-direction: column;
-  gap: 7px;
-  z-index: 99999;
-}
-
-.pwa-btn {
-  width: 40px; height: 40px;
-  border-radius: 50%; border: none;
-  color: white; cursor: pointer;
-  box-shadow: 0 3px 10px rgba(60,0,100,0.28);
-  display: flex; align-items: center; justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform 0.15s, box-shadow 0.15s, background var(--spd);
-  outline: none;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-}
-.pwa-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 5px 18px rgba(60,0,100,0.5);
-}
-.pwa-btn:active { transform: scale(0.92); }
-
-#btn-dark    { background: #2D1B4E; font-size: 18px; }
-#btn-toc     { background: #6B2FA0; font-size: 18px; }
-#btn-totop   { background: rgba(107,47,160,0.75); font-size: 16px; }
-#btn-font-up { background: #4A2080; font-size: 11.5px; font-weight: 700; letter-spacing: -0.5px; }
-#btn-font-dn { background: #4A2080; font-size: 11.5px; font-weight: 700; letter-spacing: -0.5px; }
-
-/* ── 回頂按鈕：整合在工具欄，無需獨立定位 ── */
-
-/* ── 搜尋欄 ── */
-#toc-search-box { margin-top: 8px; }
-#toc-search-frame {
-  display: flex; align-items: center;
-  background: rgba(255,255,255,0.95);
-  border: 1.5px solid var(--c-border);
-  border-radius: 8px; padding: 6px 10px; gap: 6px;
-  transition: border-color var(--spd), box-shadow var(--spd);
-}
-#toc-search-frame:focus-within {
-  border-color: var(--c-accent);
-  box-shadow: 0 0 0 2.5px rgba(107,47,160,0.15);
-}
-#toc-search-input {
-  border: none; background: transparent; outline: none;
-  font-size: 13px; width: 100%;
-  color: #3D1560; font-family: inherit;
-}
-#toc-search-clear {
-  border: none; background: transparent;
-  cursor: pointer; font-size: 12.5px;
-  color: #aaa; display: none; padding: 0;
-  transition: color 0.15s;
-}
-#toc-search-clear:hover { color: var(--c-accent); }
-#toc-search-results {
-  display: none;
-  margin-top: 6px;
-  max-height: 46vh; overflow-y: auto;
-  background: #fff;
-  border: 1px solid var(--c-border);
-  border-radius: 7px;
-  box-shadow: 0 3px 14px rgba(80,0,120,0.12);
-  position: relative;
-  z-index: 1;
-}
-#toc-search-results.visible {
-  display: block;
-  animation: srSlide 0.18s ease;
-}
-/* 確保搜尋框本身在結果框之上，X按鈕可點 */
-#toc-search-frame {
-  position: relative;
-  z-index: 2;
-}
-@keyframes srSlide {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.sr-item {
-  padding: 8px 12px; cursor: pointer;
-  border-bottom: 1px solid #f0e8ff;
-  font-size: 13px; line-height: 1.5; color: #333;
-  transition: background 0.12s;
-}
-.sr-item:hover { background: #f5f0ff; }
-.sr-item:last-child { border-bottom: none; }
-.sr-hint { color: #aaa; font-size: 11px; display: block; margin-top: 2px; }
-.sr-no-result { color: #aaa; text-align: center; padding: 14px; font-size: 13px; }
-#search-count-badge {
-  font-size: 11.5px; color: var(--c-accent);
-  margin-top: 5px; text-align: center; display: none;
-}
-
-/* ── 搜尋高亮 ── */
-mark.search-hl {
-  background: #ffe066; border-radius: 2px; padding: 0 2px;
-}
-
-/* ── 捲軸 ── */
-#toc-search-results::-webkit-scrollbar { width: 4px; }
-#toc-search-results::-webkit-scrollbar-thumb {
-  background: rgba(107,47,160,0.2); border-radius: 2px;
-}
-
-/* ── 響應式 ── */
-@media (max-width: 768px) {
-  #book-container { display: block !important; }
-  #content-area { padding: 20px 15px 140px; width: 100% !important; }
-  #sidebar-toc { padding: 0 !important; }
-  /* btn-totop 已整合進工具欄 */
-}
-
-/* ── 深色模式補強 ── */
-body.dark-mode #sidebar-header { background: var(--c-sidebar) !important; }
-body.dark-mode .sidebar-info-box { background: rgba(212,175,55,0.03) !important; }
-
-/* ── 註腳標號最終版（回歸原始精確設計）── */
-/* 關鍵：用含 # 的選擇器精確鎖定「內文上標連結」，不誤觸頁內錨點 */
-a[href*="#_ftn"], a[href*="#_edn"],
-a[href*="#_ftn"] .MsoFootnoteReference,
-a[href*="#_ftn"] .MsoFootnoteReference span {
-  font-size: 8px !important;
-  font-weight: bold !important;
-  font-style: normal !important;
-  color: #6B2FA0 !important;
-  text-decoration: none !important;
-  vertical-align: super !important;
-  line-height: 0 !important;
-  letter-spacing: -0.5px !important;
-  border-bottom: none !important;
-  cursor: help !important;
-}
-/* 子元素不再疊加 vertical-align，只繼承顏色 */
-a[href*="#_ftn"] *,
-a[href*="#_edn"] * {
-  font-size: 8px !important;
-  font-weight: bold !important;
-  font-style: normal !important;
-  color: #6B2FA0 !important;
-  text-decoration: none !important;
-  vertical-align: baseline !important;
-  line-height: inherit !important;
-}
-body.dark-mode a[href*="#_ftn"],
-body.dark-mode a[href*="#_ftn"] *,
-body.dark-mode a[href*="#_edn"],
-body.dark-mode .MsoFootnoteReference,
-body.dark-mode .MsoFootnoteReference span {
-  color: #C9A8E8 !important;
-  background: transparent !important;
-}
-</style>
 
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   《完整加註版奇蹟課程》eBook v5 — 主控程式
-   功能：TOC · 深色模式 · 字型大小 · 進度條 · 搜尋 · 鍵盤
-   ═══════════════════════════════════════════════════════════════ */
+/* 《完整加註版奇蹟課程》eBook v6 — 主控程式 */
 document.addEventListener("DOMContentLoaded", function () {
   var body = document.body;
 
-  /* ── 1. 建立 DOM 架構 ── */
+  /* 0. 早期讀取深色偏好，防止閃白 */
+  if (localStorage.getItem('acim-dark') === '1') body.classList.add('dark-mode');
+
+  /* 1. 建立 DOM 架構 */
   var container = document.createElement('div');
   container.id = 'book-container';
 
   var sidebar = document.createElement('div');
   sidebar.id = 'sidebar-toc';
 
-  // ── 贊助資訊區塊（最上方）──
   var infoBox = document.createElement('div');
   infoBox.className = 'sidebar-info-box';
   infoBox.innerHTML =
     '<p class="info-appeal">為讓加註版持續開放共享，懇請您的護持支持！</p>' +
-    '<div class="info-section">' +
-      '<h4>贊助帳戶</h4>' +
-      '<p>郵局 (700)：0001300 0817307<br>戶名：張文智</p>' +
-    '</div>' +
-    '<div class="info-section">' +
-      '<h4>聯絡 慧軍 老師</h4>' +
-      '<p>Line：huijun0928 <span class="info-note">（購書/課程）</span><br>' +
-      '信箱：<a href="mailto:chang.wenchih@gmail.com">chang.wenchih@gmail.com</a></p>' +
-    '</div>';
+    '<div class="info-section"><h4>贊助帳戶</h4>' +
+    '<p>郵局 (700)：0001300 0817307<br>戶名：張文智</p></div>' +
+    '<div class="info-section"><h4>聯絡 慧軍 老師</h4>' +
+    '<p>Line：huijun0928 <span class="info-note">（購書/課程）</span><br>' +
+    '信箱：<a href="mailto:chang.wenchih@gmail.com">chang.wenchih@gmail.com</a></p></div>';
   sidebar.appendChild(infoBox);
 
-  // ── 目錄標題 + 搜尋欄（資訊區塊之後）──
   var sidebarHeader = document.createElement('div');
   sidebarHeader.id = 'sidebar-header';
-
   var sidebarTitle = document.createElement('h3');
   sidebarTitle.textContent = '《完整加註版奇蹟課程》目錄';
   sidebarHeader.appendChild(sidebarTitle);
@@ -140145,16 +139721,32 @@ document.addEventListener("DOMContentLoaded", function () {
   tocWrapper.id = 'toc-wrapper';
   sidebar.appendChild(tocWrapper);
 
-  // 內容區（搬移 Word 內文）
+  /* 搬移 Word 內文：先隱藏避免 reflow 閃爍 */
   var content = document.createElement('div');
   content.id = 'content-area';
-  while (body.firstChild) content.appendChild(body.firstChild);
+  content.style.visibility = 'hidden';
+  var frag = document.createDocumentFragment();
+  /* Only move Word content nodes — stop before our <script>/<style> tags */
+  var node = body.firstChild;
+  while (node) {
+    var next = node.nextSibling;
+    var tag = node.nodeName;
+    /* Skip our injected script/style elements */
+    if (tag === 'SCRIPT' || tag === 'STYLE') { node = next; continue; }
+    frag.appendChild(node);
+    node = next;
+  }
+  content.appendChild(frag);
 
   container.appendChild(sidebar);
   container.appendChild(content);
   body.appendChild(container);
 
-  /* ── 2. 閱讀進度條 ── */
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { content.style.visibility = ''; });
+  });
+
+  /* 2. 閱讀進度條 */
   var progressBar = document.createElement('div');
   progressBar.id = 'reading-progress';
   body.appendChild(progressBar);
@@ -140164,15 +139756,9 @@ document.addEventListener("DOMContentLoaded", function () {
     progressBar.style.width = Math.min(100, pct * 100) + '%';
   }, { passive: true });
 
-  /* ── 3. 捲回頂部（整合進工具欄，見下方 makeBtn） ── */
-
-  /* ── 4. 工具按鈕組 ── */
-  var pwaTools = document.getElementById('pwa-tools');
-  if (!pwaTools) {
-    pwaTools = document.createElement('div');
-    pwaTools.id = 'pwa-tools';
-  }
-  pwaTools.innerHTML = '';
+  /* 3. 工具按鈕組 */
+  var pwaTools = document.createElement('div');
+  pwaTools.id = 'pwa-tools';
 
   function makeBtn(id, html, tip, bg) {
     var wrap = document.createElement('div');
@@ -140186,33 +139772,41 @@ document.addEventListener("DOMContentLoaded", function () {
     return wrap;
   }
 
-  var wrapToTop = makeBtn('btn-totop', '↑', '回到頂部', 'rgba(107,47,160,0.75)');
-  pwaTools.appendChild(wrapToTop);
+  pwaTools.appendChild(makeBtn('btn-totop',   '↑',  '回到頂部', 'rgba(107,47,160,0.75)'));
   pwaTools.appendChild(makeBtn('btn-font-up', 'A＋', '放大字體', '#4A2080'));
   pwaTools.appendChild(makeBtn('btn-font-dn', 'A－', '縮小字體', '#4A2080'));
-  pwaTools.appendChild(makeBtn('btn-dark',    '🌓',   '深色模式', '#2D1B4E'));
-  pwaTools.appendChild(makeBtn('btn-toc',     '☰',    '目錄',     '#6B2FA0'));
+  pwaTools.appendChild(makeBtn('btn-dark',    '🌓',  '深色模式', '#2D1B4E'));
+  pwaTools.appendChild(makeBtn('btn-toc',     '☰',   '目錄',    '#6B2FA0'));
   body.appendChild(pwaTools);
 
-  /* 捲動時才顯示回頂按鈕 */
-  var totopWrap = document.getElementById('btn-totop') && document.getElementById('btn-totop').parentElement;
-  if (totopWrap) totopWrap.style.display = 'none';
+  var btnTotopWrap = document.getElementById('btn-totop').parentElement;
+  btnTotopWrap.style.display = 'none';
   window.addEventListener('scroll', function () {
-    if (!totopWrap) totopWrap = document.getElementById('btn-totop') && document.getElementById('btn-totop').parentElement;
-    if (totopWrap) totopWrap.style.display = window.scrollY > 700 ? '' : 'none';
+    btnTotopWrap.style.display = window.scrollY > 700 ? '' : 'none';
   }, { passive: true });
   document.getElementById('btn-totop').addEventListener('click', function () {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  /* ── 5. 字型大小控制 ── */
-  /* 字型大小：zoom 可穿透 Word 的 inline font-size */
+  /* 4. 字型大小（zoom + Firefox fallback） */
   var zoomSteps = [0.78, 0.89, 1.0, 1.12, 1.24];
   var fontIdx = parseInt(localStorage.getItem('acim-fs') || '2');
   fontIdx = Math.max(0, Math.min(zoomSteps.length - 1, fontIdx));
+  var supportsZoom = (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('zoom','1'));
 
   function applyFont() {
-    content.style.zoom = zoomSteps[fontIdx];
+    var z = zoomSteps[fontIdx];
+    if (supportsZoom) {
+      content.style.zoom = z;
+      content.style.transform = '';
+      content.style.transformOrigin = '';
+      content.style.width = '';
+    } else {
+      content.style.zoom = '';
+      content.style.transform = 'scale(' + z + ')';
+      content.style.transformOrigin = 'top left';
+      content.style.width = (100 / z) + '%';
+    }
     localStorage.setItem('acim-fs', fontIdx);
     var upBtn = document.getElementById('btn-font-up');
     var dnBtn = document.getElementById('btn-font-dn');
@@ -140221,21 +139815,62 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   applyFont();
 
+  function triggerLimitShake(btn) {
+    btn.classList.remove('btn-limit');
+    void btn.offsetWidth;
+    btn.classList.add('btn-limit');
+    setTimeout(function () { btn.classList.remove('btn-limit'); }, 350);
+  }
+
   document.getElementById('btn-font-up').addEventListener('click', function () {
     if (fontIdx < zoomSteps.length - 1) { fontIdx++; applyFont(); }
+    else triggerLimitShake(this);
   });
   document.getElementById('btn-font-dn').addEventListener('click', function () {
-    if (fontIdx > 0) { fontIdx--; applyFont(); } // zoom
+    if (fontIdx > 0) { fontIdx--; applyFont(); }
+    else triggerLimitShake(this);
   });
 
-  /* ── 6. 搜尋功能 ── */
+  /* 5. 深色模式（切換時更新圖示） */
+  var btnDark = document.getElementById('btn-dark');
+  function updateDarkBtn() {
+    if (!btnDark) return;
+    var isDark = body.classList.contains('dark-mode');
+    btnDark.innerHTML = isDark ? '☀️' : '🌓';
+    btnDark.title = isDark ? '切換亮色' : '切換深色';
+    btnDark.parentElement.setAttribute('data-tip', btnDark.title);
+  }
+  updateDarkBtn();
+  if (btnDark) {
+    btnDark.addEventListener('click', function () {
+      body.classList.toggle('dark-mode');
+      localStorage.setItem('acim-dark', body.classList.contains('dark-mode') ? '1' : '0');
+      updateDarkBtn();
+    });
+  }
+
+  /* 6. 記住閱讀位置 */
+  var savedY = parseInt(localStorage.getItem('acim-scroll') || '0');
+  if (savedY > 100) setTimeout(function () { window.scrollTo(0, savedY); }, 350);
+  var scrollSaveTimer;
+  window.addEventListener('scroll', function () {
+    clearTimeout(scrollSaveTimer);
+    scrollSaveTimer = setTimeout(function () {
+      localStorage.setItem('acim-scroll', Math.round(window.scrollY));
+    }, 2000);
+  }, { passive: true });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) localStorage.setItem('acim-scroll', Math.round(window.scrollY));
+  });
+
+  /* 7. 搜尋（預建索引） */
   var searchBox = document.createElement('div');
   searchBox.id = 'toc-search-box';
   searchBox.innerHTML =
     '<div id="toc-search-frame">' +
       '<span style="font-size:14px;color:#8B5BAE;flex-shrink:0;line-height:1;">🔍</span>' +
-      '<input id="toc-search-input" type="search" placeholder="搜尋內文關鍵字…" autocomplete="off" spellcheck="false">' +
-      '<button id="toc-search-clear" style="display:none">✕</button>' +
+      '<input id="toc-search-input" type="search" placeholder="搜尋內文關鍵字\u2026" autocomplete="off" spellcheck="false">' +
+      '<button id="toc-search-clear">✕</button>' +
     '</div>' +
     '<div id="search-count-badge"></div>' +
     '<div id="toc-search-results"></div>';
@@ -140245,7 +139880,19 @@ document.addEventListener("DOMContentLoaded", function () {
   var searchClear   = document.getElementById('toc-search-clear');
   var searchResults = document.getElementById('toc-search-results');
   var searchBadge   = document.getElementById('search-count-badge');
+  var searchIndex   = null;
   var searchTimer;
+
+  function buildSearchIndex() {
+    var nodes = content.querySelectorAll('p,h1,h2,h3,h4,h5,h6,td');
+    searchIndex = [];
+    nodes.forEach(function (node, idx) {
+      var txt = (node.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!txt) return;
+      if (!node.id) node.id = 'si-' + idx;
+      searchIndex.push({ id: node.id, text: txt, node: node });
+    });
+  }
 
   function escRx(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
@@ -140254,16 +139901,15 @@ document.addEventListener("DOMContentLoaded", function () {
     searchBadge.style.display = 'none';
     var k = kw.trim();
     if (k.length < 2) { searchResults.classList.remove('visible'); return; }
+    if (!searchIndex) buildSearchIndex();
     var rx = new RegExp(escRx(k), 'gi');
-    var nodes = content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, td');
     var count = 0;
-    nodes.forEach(function (node, idx) {
-      if (count >= 30) return;
-      var txt = node.textContent || '';
-      if (!rx.test(txt)) return;
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < searchIndex.length && count < 30; i++) {
+      var entry = searchIndex[i];
+      if (!rx.test(entry.text)) { rx.lastIndex = 0; continue; }
       rx.lastIndex = 0; count++;
-      if (!node.id) node.id = 'sr-' + idx;
-      var ex = txt.replace(/\s+/g, ' ').trim().substring(0, 88);
+      var ex = entry.text.substring(0, 88);
       var hl = ex.replace(rx, function (m) {
         return '<mark style="background:#ffe066;border-radius:2px;padding:0 2px;">' + m + '</mark>';
       });
@@ -140283,10 +139929,11 @@ document.addEventListener("DOMContentLoaded", function () {
           nd.scrollIntoView({ behavior: 'smooth', block: 'center' });
           if (window.innerWidth <= 768) closeSidebar();
         });
-      })(node);
-      searchResults.appendChild(item);
-    });
+      })(entry.node);
+      frag.appendChild(item);
+    }
     if (count > 0) {
+      searchResults.appendChild(frag);
       searchResults.classList.add('visible');
       searchBadge.style.display = 'block';
       searchBadge.textContent = '找到 ' + count + ' 處' + (count === 30 ? '（前30筆）' : '');
@@ -140310,36 +139957,22 @@ document.addEventListener("DOMContentLoaded", function () {
     searchClear.style.display = 'none';
     searchResults.classList.remove('visible');
     searchBadge.style.display = 'none';
-    content.querySelectorAll('mark.search-hl').forEach(function (el) {
-      el.outerHTML = el.textContent;
-    });
+    content.querySelectorAll('mark.search-hl').forEach(function (el) { el.outerHTML = el.textContent; });
     searchInput.focus();
   });
 
-  /* ── 7. 建立目錄 ── */
+  /* 8. 建立目錄 */
   function buildTOC() {
     var tocContainer = document.createElement('div');
     tocContainer.id = 'toc-container';
-    var headings = Array.from(content.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+    var headings = Array.from(content.querySelectorAll('h1,h2,h3,h4,h5,h6'));
+    headings.forEach(function (h, idx) { if (!h.id) h.id = 'toc-h-' + idx; });
 
-    // 指派 ID
-    headings.forEach(function (h, idx) {
-      if (!h.id) h.id = 'toc-h-' + idx;
-    });
-
-    // 將 headings 依 h1 分組
-    // 結構：[{ h1, children:[h2,h3,...] }, ...]
-    var groups = [];
-    var current = null;
+    var groups = [], current = null;
     headings.forEach(function (h) {
       var level = parseInt(h.tagName[1]);
-      if (level === 1) {
-        current = { h1: h, children: [] };
-        groups.push(current);
-      } else if (current) {
-        current.children.push(h);
-      }
-      // level>1 且無 h1 父項，忽略（不常見）
+      if (level === 1) { current = { h1: h, children: [] }; groups.push(current); }
+      else if (current) current.children.push(h);
     });
 
     function makeLink(h, level) {
@@ -140348,7 +139981,7 @@ document.addEventListener("DOMContentLoaded", function () {
       link.className = 'toc-link toc-h' + level;
       link.dataset.target = h.id;
       var text = h.textContent.trim();
-      link.textContent = text.length > 36 ? text.slice(0, 36) + '…' : text;
+      link.textContent = text.length > 36 ? text.slice(0, 36) + '\u2026' : text;
       link.addEventListener('click', function (e) {
         e.preventDefault();
         var t = document.getElementById(link.dataset.target);
@@ -140361,36 +139994,25 @@ document.addEventListener("DOMContentLoaded", function () {
     groups.forEach(function (g) {
       var wrapper = document.createElement('div');
       wrapper.className = 'toc-group';
-
-      // h1 行：含展開箭頭（若有子項目）
       var h1Row = document.createElement('div');
       h1Row.className = 'toc-h1-row';
 
       if (g.children.length > 0) {
         var arrow = document.createElement('span');
         arrow.className = 'toc-arrow';
-        arrow.textContent = '▶';
-        h1Row.appendChild(arrow);
-
+        arrow.textContent = '\u25B6';
         var childrenDiv = document.createElement('div');
         childrenDiv.className = 'toc-children';
         g.children.forEach(function (ch) {
           childrenDiv.appendChild(makeLink(ch, parseInt(ch.tagName[1])));
         });
-
         arrow.addEventListener('click', function (e) {
-          e.preventDefault();
-          e.stopPropagation();
+          e.preventDefault(); e.stopPropagation();
           var isOpen = childrenDiv.classList.contains('toc-children-open');
-          if (isOpen) {
-            childrenDiv.classList.remove('toc-children-open');
-            arrow.textContent = '▶';
-          } else {
-            childrenDiv.classList.add('toc-children-open');
-            arrow.textContent = '▼';
-          }
+          childrenDiv.classList.toggle('toc-children-open', !isOpen);
+          arrow.textContent = isOpen ? '\u25B6' : '\u25BC';
         });
-
+        h1Row.appendChild(arrow);
         h1Row.appendChild(makeLink(g.h1, 1));
         wrapper.appendChild(h1Row);
         wrapper.appendChild(childrenDiv);
@@ -140398,17 +140020,30 @@ document.addEventListener("DOMContentLoaded", function () {
         h1Row.appendChild(makeLink(g.h1, 1));
         wrapper.appendChild(h1Row);
       }
-
       tocContainer.appendChild(wrapper);
     });
 
     tocWrapper.appendChild(tocContainer);
 
-    /* TOC 目前章節高亮（不自動展開，使用者自行控制折疊） */
+    /* 進度條章節標記點 */
+    requestAnimationFrame(function () {
+      var totalH = document.body.scrollHeight - window.innerHeight;
+      if (totalH > 0) {
+        headings.filter(function (h) { return h.tagName === 'H1'; }).forEach(function (h) {
+          var dot = document.createElement('div');
+          dot.className = 'progress-chapter-dot';
+          dot.style.left = (h.offsetTop / totalH * 100) + '%';
+          progressBar.appendChild(dot);
+        });
+      }
+    });
+
+    /* IntersectionObserver 高亮 */
     if ('IntersectionObserver' in window && headings.length > 0) {
       var allLinks = tocContainer.querySelectorAll('.toc-link');
       var linkMap = {};
       allLinks.forEach(function (l) { linkMap[l.dataset.target] = l; });
+      var currentChapter = '';
 
       var io = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
@@ -140417,16 +140052,28 @@ document.addEventListener("DOMContentLoaded", function () {
           var al = linkMap[entry.target.id];
           if (!al) return;
           al.classList.add('toc-active');
-          // 同步捲動側邊欄（只捲，不自動展開）
           var wr = tocWrapper.getBoundingClientRect();
           var lr = al.getBoundingClientRect();
           if (lr.top < wr.top || lr.bottom > wr.bottom) {
             al.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
           }
+          var txt = entry.target.textContent.trim();
+          if (txt !== currentChapter) {
+            currentChapter = txt;
+            var bc = document.getElementById('chapter-breadcrumb-text');
+            if (bc) bc.textContent = txt.length > 30 ? txt.slice(0, 30) + '\u2026' : txt;
+          }
         });
       }, { rootMargin: '-8% 0px -75% 0px', threshold: 0 });
 
       headings.forEach(function (h) { io.observe(h); });
+    }
+
+    /* 空閒時建搜尋索引 */
+    if (window.requestIdleCallback) {
+      requestIdleCallback(buildSearchIndex, { timeout: 3000 });
+    } else {
+      setTimeout(buildSearchIndex, 500);
     }
   }
 
@@ -140436,93 +140083,71 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(buildTOC, 200);
   }
 
-  /* ── 8. 側邊欄 overlay ── */
-  var overlay = document.getElementById('sidebar-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'sidebar-overlay';
-    overlay.style.cssText =
-      'position:fixed;top:0;left:0;width:100vw;height:100vh;' +
-      'background:rgba(0,0,0,0.45);z-index:10000;display:none;opacity:0;' +
-      'transition:opacity 0.25s;';
-    body.appendChild(overlay);
-  }
+  /* 9. 手機麵包屑 */
+  var breadcrumb = document.createElement('div');
+  breadcrumb.id = 'chapter-breadcrumb';
+  breadcrumb.innerHTML =
+    '<span id="chapter-breadcrumb-icon">\u2630</span>' +
+    '<span id="chapter-breadcrumb-text">\u76ee\u9304</span>';
+  body.appendChild(breadcrumb);
+
+  /* 10. 側邊欄 overlay */
+  var overlay = document.createElement('div');
+  overlay.id = 'sidebar-overlay';
+  overlay.style.cssText =
+    'position:fixed;top:0;left:0;width:100vw;height:100vh;' +
+    'background:rgba(0,0,0,0.45);z-index:10000;display:none;opacity:0;transition:opacity 0.25s;';
+  body.appendChild(overlay);
 
   function closeSidebar() {
     sidebar.classList.remove('open-mobile');
     overlay.style.opacity = '0';
     setTimeout(function () { overlay.style.display = 'none'; }, 280);
   }
+  function openSidebar() {
+    sidebar.classList.add('open-mobile');
+    overlay.style.display = 'block';
+    requestAnimationFrame(function () { overlay.style.opacity = '1'; });
+  }
+
+  breadcrumb.addEventListener('click', function () {
+    if (sidebar.classList.contains('open-mobile')) closeSidebar(); else openSidebar();
+  });
 
   var btnToc = document.getElementById('btn-toc');
   if (btnToc) {
     btnToc.addEventListener('click', function () {
       if (window.innerWidth <= 768) {
-        sidebar.classList.toggle('open-mobile');
-        if (sidebar.classList.contains('open-mobile')) {
-          overlay.style.display = 'block';
-          requestAnimationFrame(function () { overlay.style.opacity = '1'; });
-        } else {
-          closeSidebar();
-        }
+        if (sidebar.classList.contains('open-mobile')) closeSidebar(); else openSidebar();
       } else {
         sidebar.style.display = (sidebar.style.display === 'none') ? 'flex' : 'none';
       }
     });
   }
-
   overlay.addEventListener('click', closeSidebar);
   sidebar.addEventListener('click', function (e) {
     if (e.target.tagName === 'A' && window.innerWidth <= 768) closeSidebar();
   });
 
-  /* ── 9. 深色模式 ── */
-  var btnDark = document.getElementById('btn-dark');
-  if (btnDark) {
-    btnDark.addEventListener('click', function () {
-      body.classList.toggle('dark-mode');
-      localStorage.setItem('acim-dark', body.classList.contains('dark-mode') ? '1' : '0');
-    });
-  }
-  if (localStorage.getItem('acim-dark') === '1') body.classList.add('dark-mode');
-
-  /* ── 10b. 記住閱讀位置 ── */
-  // 還原上次捲動位置（在 DOM ready 後、短延遲確保版面已算好）
-  var savedY = parseInt(localStorage.getItem('acim-scroll') || '0');
-  if (savedY > 100) {
-    setTimeout(function () { window.scrollTo(0, savedY); }, 350);
-  }
-  // 定期儲存（throttle：最多每 2 秒一次）
-  var scrollSaveTimer;
-  window.addEventListener('scroll', function () {
-    clearTimeout(scrollSaveTimer);
-    scrollSaveTimer = setTimeout(function () {
-      localStorage.setItem('acim-scroll', Math.round(window.scrollY));
-    }, 2000);
-  }, { passive: true });
-
-  /* ── 10. 鍵盤快捷鍵 ── */
+  /* 11. 鍵盤快捷鍵 */
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && sidebar.classList.contains('open-mobile')) {
-      closeSidebar();
-    }
+    if (e.key === 'Escape' && sidebar.classList.contains('open-mobile')) closeSidebar();
     if ((e.ctrlKey || e.metaKey) && e.key === '[') {
       e.preventDefault();
-      if (fontIdx > 0) { fontIdx--; applyFont(); } // zoom
+      if (fontIdx > 0) { fontIdx--; applyFont(); }
+      else { var dn = document.getElementById('btn-font-dn'); if (dn) triggerLimitShake(dn); }
     }
     if ((e.ctrlKey || e.metaKey) && e.key === ']') {
       e.preventDefault();
       if (fontIdx < zoomSteps.length - 1) { fontIdx++; applyFont(); }
+      else { var up = document.getElementById('btn-font-up'); if (up) triggerLimitShake(up); }
     }
   });
 
-}); // end DOMContentLoaded
+});
 </script>
-
 <script>
-/* ═════════════════════════════════════════════════════
-   《奇蹟課程》eBook — 註腳底部彈出列（保留功能完整版）
-   ═════════════════════════════════════════════════════ */
+/* 《奇蹟課程》eBook — 註腳底部彈出列 v6 */
 (function () {
   function initFootnoteBar() {
     var bar = document.createElement('div');
@@ -140531,7 +140156,7 @@ document.addEventListener("DOMContentLoaded", function () {
       '<div id="footnote-bar-inner">' +
         '<span id="footnote-bar-num"></span>' +
         '<div id="footnote-bar-text"></div>' +
-        '<button id="footnote-bar-close" title="關閉">\u2715</button>' +
+        '<button id="footnote-bar-close" title="\u95dc\u9589">\u2715</button>' +
       '</div>';
     document.body.appendChild(bar);
 
@@ -140571,10 +140196,7 @@ document.addEventListener("DOMContentLoaded", function () {
       activeRef = ref;
     }
 
-    function hideBar() {
-      bar.classList.remove('fn-visible');
-      activeRef = null;
-    }
+    function hideBar() { bar.classList.remove('fn-visible'); activeRef = null; }
 
     barClose.addEventListener('click', function (e) { e.stopPropagation(); hideBar(); });
 
@@ -140614,13 +140236,22 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(initFootnoteBar, 800); });
+  if (window.requestIdleCallback) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        requestIdleCallback(initFootnoteBar, { timeout: 2000 });
+      });
+    } else {
+      requestIdleCallback(initFootnoteBar, { timeout: 2000 });
+    }
   } else {
-    setTimeout(initFootnoteBar, 800);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { setTimeout(initFootnoteBar, 600); });
+    } else {
+      setTimeout(initFootnoteBar, 600);
+    }
   }
 })();
 </script>
-
 </body>
 </html>
