@@ -1,6 +1,6 @@
-/* Service Worker v6 — 快取策略：核心離線 + 字型 staleWhileRevalidate */
-const CACHE_CORE = 'acim-core-v6';
-const CACHE_FONT = 'acim-font-v6';
+/* Service Worker v7 — 版本更新會自動清除 v6 舊快取 */
+const CACHE_CORE = 'acim-core-v7';
+const CACHE_FONT = 'acim-font-v7';
 
 const CORE_FILES = [
   './',
@@ -11,18 +11,16 @@ const CORE_FILES = [
   './icon-512.png'
 ];
 
-/* install：快取核心檔案 */
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE_CORE).then(function (cache) {
       return cache.addAll(CORE_FILES);
     }).then(function () {
-      return self.skipWaiting();
+      return self.skipWaiting(); // 強制立即取代舊 SW
     })
   );
 });
 
-/* activate：清除舊版快取 */
 self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
@@ -30,20 +28,20 @@ self.addEventListener('activate', function (event) {
         keys.filter(function (k) {
           return k !== CACHE_CORE && k !== CACHE_FONT;
         }).map(function (k) {
+          console.log('[SW] 刪除舊快取:', k);
           return caches.delete(k);
         })
       );
     }).then(function () {
-      return self.clients.claim();
+      return self.clients.claim(); // 立即接管所有分頁
     })
   );
 });
 
-/* fetch：三種策略 */
 self.addEventListener('fetch', function (event) {
   var url = event.request.url;
 
-  /* 字型（Google Fonts）→ staleWhileRevalidate */
+  /* Google Fonts → staleWhileRevalidate */
   if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
     event.respondWith(
       caches.open(CACHE_FONT).then(function (cache) {
@@ -61,20 +59,24 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  /* 核心檔案 → cache-first */
-  if (CORE_FILES.some(function (f) { return url.endsWith(f.replace('./', '')); }) || url === self.location.origin + '/') {
+  /* 核心檔案 → network-first（確保拿到最新版） */
+  if (url.includes('index.htm') || url.endsWith('/') || url.includes('manifest.json')) {
     event.respondWith(
-      caches.match(event.request).then(function (cached) {
-        return cached || fetch(event.request);
+      fetch(event.request).then(function (response) {
+        var clone = response.clone();
+        caches.open(CACHE_CORE).then(function (cache) { cache.put(event.request, clone); });
+        return response;
+      }).catch(function () {
+        return caches.match(event.request);
       })
     );
     return;
   }
 
-  /* 其他 → network-first */
+  /* 其他靜態資源 → cache-first */
   event.respondWith(
-    fetch(event.request).catch(function () {
-      return caches.match(event.request);
+    caches.match(event.request).then(function (cached) {
+      return cached || fetch(event.request);
     })
   );
 });

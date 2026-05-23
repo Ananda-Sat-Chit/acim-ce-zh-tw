@@ -139687,6 +139687,7 @@ color:black'> </span></p>
 <script>
 /* 《完整加註版奇蹟課程》eBook v6 — 主控程式 */
 document.addEventListener("DOMContentLoaded", function () {
+  try {
   var body = document.body;
 
   /* 0. 早期讀取深色偏好，防止閃白 */
@@ -139724,7 +139725,6 @@ document.addEventListener("DOMContentLoaded", function () {
   /* 搬移 Word 內文：先隱藏避免 reflow 閃爍 */
   var content = document.createElement('div');
   content.id = 'content-area';
-  content.style.visibility = 'hidden';
   var frag = document.createDocumentFragment();
   /* Only move Word content nodes — stop before our <script>/<style> tags */
   var node = body.firstChild;
@@ -139742,9 +139742,7 @@ document.addEventListener("DOMContentLoaded", function () {
   container.appendChild(content);
   body.appendChild(container);
 
-  requestAnimationFrame(function () {
-    requestAnimationFrame(function () { content.style.visibility = ''; });
-  });
+
 
   /* 2. 閱讀進度條 */
   var progressBar = document.createElement('div');
@@ -140144,6 +140142,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  } catch(e) {
+    console.error('ACIM init error:', e);
+    // Fallback: show body content as-is
+    document.body.style.cssText = 'padding:20px;font-size:16px;';
+  }
 });
 </script>
 <script>
