@@ -3,8 +3,8 @@
   "short_name": "奇蹟課程CE",
   "start_url": "./index.htm",
   "display": "standalone",
-  "background_color": "#413450",
-  "theme_color": "#413450",
+  "background_color": "#403053",
+  "theme_color": "#403053",
   "icons": [
     {
       "src": "pwa-192x192.png",
