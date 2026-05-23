@@ -9,107 +9,68 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet"></noscript>
 
 <style>
-/* 運用屬性選擇器，強制將所有 Word 產生的標楷體樣式替換為霞鶩文楷 */
-[style*="標楷體"], [style*="DFKai-SB"], [style*="BiauKai"], font[face*="標楷體"] {
+/* ══════════════════════════════════════════════════════════
+   《完整加註版奇蹟課程》PWA eBook — 改良版 v5
+   設計原則：優雅閱讀 · 紫金配色 · 完全響應式
+   ══════════════════════════════════════════════════════════ */
+
+/* ── 1. CSS 主題變數（亮色 / 深色雙套） ── */
+:root {
+  --c-bg:        #FDFBFF;
+  --c-sidebar:   #EDE6F8;
+  --c-page:      #F2ECFF;
+  --c-text:      #1A0A2E;
+  --c-muted:     #5B3A8E;
+  --c-accent:    #6B2FA0;
+  --c-accent2:   #8B5BAE;
+  --c-gold:      #C9A227;
+  --c-border:    #C0A0DC;
+  --sidebar-w:   300px;
+  --fs-base:     18px;
+  --lh:          1.95;
+  --spd:         0.25s;
+}
+
+body.dark-mode {
+  --c-bg:      #180828;
+  --c-sidebar: #24133E;
+  --c-page:    #100520;
+  --c-text:    #EAE0F8;
+  --c-muted:   #C8B8E8;
+  --c-accent:  #D4B8F0;
+  --c-gold:    #E8C840;
+  --c-border:  #4A2870;
+}
+
+/* ── 2. Word 字型強制替換（霞鶩文楷） ── */
+[style*="A19977\9AD4"], [style*="DFKai-SB"], [style*="BiauKai"],
+font[face*="A19977\9AD4"] {
   font-family: "LXGW WenKai TC", "BiauKai", "DFKai-SB", serif !important;
 }
 
-  /* 1. 強制解除 Word 鎖死的寬度 */
-  body, div, p, table, tr, td, span {
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    word-wrap: break-word !important;
-  }
-  /* 2. 圖片自動縮放 */
-  img {
-    max-width: 100% !important;
-    height: auto !important;
-  }
-  
-/* 3. 【全新加入】針對手機螢幕強制優化閱讀體驗 (左側滑出抽屜目錄完全體) */
-@media (max-width: 768px) {
-  /* 解除電腦版雙欄並排，讓手機版內容撐滿全螢幕 */
-  #book-container {
-    display: block !important;
-  }
-  
-  #content-area {
-    width: 100% !important;
-    padding: 15px 15px 120px 15px !important; /* 底部留白 120px 避免被右下角按鈕擋字 */
-    box-sizing: border-box !important;
-  }
+/* ── 3. 基礎重置 ── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body, div, p, table, tr, td, span {
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+img { max-width: 100% !important; height: auto !important; }
 
-  /* 徹底消滅 Word 隱藏的頁面邊界與橫向卷軸 */
-  html, body {
-    width: 100vw !important;
-    overflow-x: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  
-  /* 強制重置 Word 專用內文區塊的寬度 */
-  div[class^="WordSection"] {
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  body, div, p, span, td, a {
-    font-size: 19px !important; 
-    line-height: 1.8 !important;
-    max-width: 100% !important;
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-  }
-
- /* ==========================================
-     ⭐【修正版】將手機版目錄改造為左側滑出抽屜（完美隱藏不遮字）
-     ========================================== */
-  #sidebar-toc {
-    position: fixed !important;
-    top: 0 !important;
-    left: -320px !important;      /* 1. 往左推得更深（-320px），確保本體與邊框完全移出螢幕外 */
-    width: 280px !important;       /* 抽屜固定寬度 280px */
-    height: 100vh !important;      /* 高度佔滿整個手機螢幕 */
-    background-color: #EDE6F8 !important; /* 手機版抽屜：薰衣草紫底 */
-    z-index: 10001 !important;     /* 圖層級別大於反灰遮罩，確保浮在最上方 */
-    overflow-y: auto !important;   /* 允許目錄太長時可以在抽屜內上下滾動 */
-    box-shadow: none !important;   /* 2. ⭐關鍵修正：平常關閉時「完全不顯示陰影」，徹底防止陰影邊緣外露遮字 */
-    transition: left 0.3s ease !important; /* 0.3 秒滑順的左側推出動畫 */
-    display: block !important;     
-    padding: 10px !important;
-    box-sizing: border-box !important;
-  }
-  
-  /* 當 JavaScript 幫目錄觸發了 .open-mobile 類別時，自左側滑入至定位 (0) */
-  #sidebar-toc.open-mobile {
-    left: 0 !important;
-    box-shadow: 4px 0 15px rgba(0,0,0,0.2) !important; /* 3. ⭐關鍵修正：只有在滑出打開時，才顯現立體陰影 */
-  }
-
-  /* 當處於深色（反白）模式時，同步調整手機版左側抽屜的底色與字體顏色 */
-  body.dark-mode #sidebar-toc {
-    background-color: #2D1B4E !important;
-    color: #D4C5F0 !important;
-    border-color: #5B3A8E !important;
-  }
-
-  /* 手機版專屬的右下角懸浮按鈕微調 (等比例縮小並貼邊) */
-  #pwa-tools {
-    bottom: 20px !important; 
-    right: 20px !important;  
-    gap: 10px !important;    
-    transform: scale(0.85) !important; 
-    transform-origin: bottom right !important; 
-  }
+/* ── 4. 閱讀進度條 ── */
+#reading-progress {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px; width: 0%;
+  background: linear-gradient(90deg, var(--c-accent), var(--c-gold));
+  z-index: 999997;
+  transition: width 0.12s linear;
+  pointer-events: none;
+  border-radius: 0 2px 2px 0;
 }
 
-/* =======================================================
-   【全新加入】全域深色模式（反白功能）頂級色彩覆蓋規則
-   ======================================================= */
-   
-/* 1. 主背景與主文字：強力穿透並強制覆蓋 Word 的所有內聯白底黑字 */
+/* ── 5. 深色模式：主內容 ── */
 body.dark-mode,
 body.dark-mode #book-container,
 body.dark-mode #content-area,
@@ -120,168 +81,200 @@ body.dark-mode table,
 body.dark-mode tr,
 body.dark-mode td,
 body.dark-mode font {
-  background-color: #180828 !important; /* 深邃皇家紫黑底 */
-  color: #E8E0F8 !important;           /* 柔和薰衣草白字 */
+  background-color: var(--c-bg) !important;
+  color: var(--c-text) !important;
 }
 
-/* 2. 側邊欄與護持資訊區：在深色模式下的深灰層次感 */
+/* ── 6. 深色模式：側邊欄 ── */
 body.dark-mode #sidebar-toc,
 body.dark-mode #sidebar-toc h3,
+body.dark-mode #sidebar-header,
 body.dark-mode #toc-wrapper,
 body.dark-mode .sidebar-info-box,
 body.dark-mode .info-section,
 body.dark-mode .info-section h4,
 body.dark-mode .info-section p {
-  background-color: #2D1B4E !important; /* 深紫側邊欄 */
-  color: #D4C5F0 !important;
-  border-color: #5B3A8E !important;
+  background-color: var(--c-sidebar) !important;
+  color: var(--c-muted) !important;
+  border-color: var(--c-border) !important;
 }
 
-/* 3. 側邊欄目錄超連結顏色優化 */
+/* ── 7. 深色模式：目錄連結 ── */
 body.dark-mode .toc-link,
 body.dark-mode #toc-wrapper a {
-  color: #aaaaaa !important;
+  color: #9580b0 !important;
   background-color: transparent !important;
 }
 body.dark-mode .toc-link:hover,
 body.dark-mode #toc-wrapper a:hover {
-  color: #D4AF37 !important; /* 金色懸停，皇家對比 */
-  background-color: #3D1B5E !important;
+  color: var(--c-gold) !important;
+  background-color: rgba(255,255,255,0.06) !important;
+}
+body.dark-mode .toc-link.toc-active {
+  color: var(--c-gold) !important;
+  background-color: rgba(255,255,255,0.09) !important;
 }
 
-/* 4. 註腳 [xx] 數字與文字依然保持您之前滿意的高亮度螢光藍 */
+/* ── 8. 深色模式：註腳 ── */
 body.dark-mode a[href*="_ftn"],
 body.dark-mode a[href*="_ftn"] span,
 body.dark-mode .MsoFootnoteReference,
 body.dark-mode .MsoFootnoteReference span {
-  color: #C9A8E8 !important; /* 深色模式：薰衣草紫 */
+  color: #C9A8E8 !important;
   background-color: transparent !important;
 }
 
-/* 5. 深色模式下自動降低圖片亮度，避免白色插圖在半夜刺眼 */
-body.dark-mode img {
-  opacity: 0.75 !important;
-  transition: opacity 0.3s;
-}
-body.dark-mode img:hover {
-  opacity: 1.0 !important;
-}
+/* ── 9. 深色模式：圖片 ── */
+body.dark-mode img { opacity: 0.82; transition: opacity var(--spd); }
+body.dark-mode img:hover { opacity: 1; }
 
-/* ===== 搜尋欄深色模式覆蓋 ===== */
+/* ── 10. 深色模式：搜尋欄 ── */
 body.dark-mode #toc-search-frame {
   background-color: #1A0A2E !important;
-  border-color: #7B5AAE !important;
+  border-color: var(--c-border) !important;
 }
 body.dark-mode #toc-search-input {
-  color: #E8E0F8 !important;
-  caret-color: #C9A8E8 !important;
+  color: var(--c-text) !important;
+  caret-color: var(--c-accent) !important;
 }
-body.dark-mode #toc-search-input::placeholder {
-  color: #9070B8 !important;
-}
+body.dark-mode #toc-search-input::placeholder { color: #9070B8 !important; }
 body.dark-mode #toc-search-results {
-  background: #2D1B4E !important;
-  border-color: #7B5AAE !important;
+  background: var(--c-sidebar) !important;
+  border-color: var(--c-border) !important;
 }
-body.dark-mode #toc-search-results div {
-  color: #D4C5F0 !important;
+body.dark-mode .sr-item {
+  color: var(--c-muted) !important;
   border-color: #3D2060 !important;
-  background: transparent !important;
+}
+body.dark-mode .sr-item:hover { background: rgba(255,255,255,0.06) !important; }
+
+/* ── 11. 深色模式：mark 高亮 ── */
+body.dark-mode mark.search-hl {
+  background: rgba(255,200,50,0.3) !important;
+  color: #fff !important;
 }
 
-/* ===== 效能優化：will-change 提示合成層，避免 content-visibility 破壞 scrollIntoView ===== */
-#content-area {
-  will-change: scroll-position;
+/* ── 12. 工具按鈕 Tooltip ── */
+.pwa-btn-wrap { position: relative; }
+.pwa-btn-wrap::before {
+  content: attr(data-tip);
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%; transform: translateY(-50%);
+  background: rgba(20,5,40,0.92);
+  color: #f0e8ff;
+  font-size: 11.5px;
+  white-space: nowrap;
+  padding: 4px 9px;
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.pwa-btn-wrap:hover::before { opacity: 1; }
+
+/* ── 13. 手機版 ── */
+@media (max-width: 768px) {
+  html, body {
+    width: 100vw !important;
+    overflow-x: hidden !important;
+    margin: 0 !important; padding: 0 !important;
+  }
+  #book-container { display: block !important; }
+  #content-area {
+    width: 100% !important;
+    padding: 20px 15px 140px 15px !important;
+  }
+  div[class^="WordSection"] {
+    width: 100% !important;
+    margin: 0 !important; padding: 0 !important;
+  }
+  #content-area p, #content-area td {
+    font-size: var(--fs-base) !important;
+    line-height: var(--lh) !important;
+    max-width: 100% !important;
+  }
+
+  /* 手機側邊欄抽屜 */
+  #sidebar-toc {
+    position: fixed !important;
+    top: 0 !important; left: -320px !important;
+    width: 290px !important;
+    height: 100vh !important;
+    background-color: #EDE6F8 !important;
+    z-index: 10001 !important;
+    overflow-y: auto !important;
+    box-shadow: none !important;
+    transition: left var(--spd) !important;
+    display: block !important;
+    padding: 0 !important;
+  }
+  #sidebar-toc.open-mobile {
+    left: 0 !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.28) !important;
+  }
+  body.dark-mode #sidebar-toc {
+    background-color: var(--c-sidebar) !important;
+  }
+
+  /* 手機按鈕縮小 */
+  #pwa-tools {
+    bottom: 16px !important; right: 44px !important;
+    gap: 8px !important;
+    transform: scale(0.88) !important;
+    transform-origin: bottom right !important;
+  }
+  .pwa-btn-wrap::before { display: none !important; }
+  #btn-totop { bottom: 100px !important; left: 14px !important; }
 }
 
+/* ── 14. 註腳彈出列 ── */
 #footnote-bar {
   position: fixed;
-  bottom: -100%;           /* 預設藏在螢幕底部下方 */
-  left: 0;
-  right: 0;
+  bottom: -100%; left: 0; right: 0;
   z-index: 999999;
-  background: #2D1B4E;    /* 深皇家紫 */
+  background: #2D1B4E;
   color: #EDE6F8;
-  padding: 14px 20px 18px 20px;
+  padding: 14px 20px 18px;
   box-shadow: 0 -4px 20px rgba(80,0,120,0.3);
-  transition: bottom 0.3s ease;
-  max-height: 40vh;
+  transition: bottom var(--spd);
+  max-height: 42vh;
   overflow-y: auto;
   box-sizing: border-box;
 }
-
-/* 滑出顯示狀態 */
-#footnote-bar.fn-visible {
-  bottom: 0;
-}
-
-/* 深色模式：改用明顯亮紫，與 #180828 內容區產生強烈對比 */
+#footnote-bar.fn-visible { bottom: 0; }
 body.dark-mode #footnote-bar {
-  background: #3D1B6E;          /* 明亮皇家紫，比內容區深紫黑明顯亮很多 */
-  border-top: 2px solid #C9A8E8; /* 薰衣草紫上邊框，強化邊界感 */
+  background: #3D1B6E;
+  border-top: 2px solid #C9A8E8;
   box-shadow: 0 -6px 24px rgba(140,60,220,0.55);
 }
-
-/* 彈出列內部排版 */
-#footnote-bar-inner {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-/* 編號標籤 */
+#footnote-bar-inner { display: flex; align-items: flex-start; gap: 10px; }
 #footnote-bar-num {
   flex-shrink: 0;
-  font-size: 15px !important;
-  font-weight: bold !important;
-  color: #ffffff !important;   /* 白色：在深色底列上兩種模式都清楚可見 */
-  min-width: 32px;
-  padding-top: 1px;
-  white-space: nowrap;
-  display: inline-block;
+  font-size: 13px !important; font-weight: bold !important;
+  color: #fff !important;
+  min-width: 28px; padding-top: 2px;
+  white-space: nowrap; display: inline-block;
 }
-
-/* 內文區（保留原始 HTML 樣式，只覆蓋必要的顏色讓底色上看清楚） */
-#footnote-bar-text {
-  flex-grow: 1;
-  line-height: 1.75;
-  /* 字體大小、字型完全繼承原始 footnote 的 inline style */
-}
-#footnote-bar-text * {
-  color: #EDE6F8 !important;          /* 薰衣草白 */
-  background: transparent !important;
-}
-#footnote-bar-text a {
-  color: #C9A8E8 !important;
-  text-decoration: underline !important;
-}
-
-/* 關閉按鈕 */
+#footnote-bar-text { flex-grow: 1; line-height: 1.75; font-size: 14px; }
+#footnote-bar-text * { color: #EDE6F8 !important; background: transparent !important; }
+#footnote-bar-text a { color: #C9A8E8 !important; text-decoration: underline !important; }
 #footnote-bar-close {
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  flex-shrink: 0; width: 28px; height: 28px;
   border-radius: 50%;
   background: rgba(255,255,255,0.15);
-  border: none;
-  color: #ccc;
-  font-size: 16px;
+  border: none; color: #ccc; font-size: 16px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--spd);
+  -webkit-tap-highlight-color: transparent; padding: 0;
 }
 #footnote-bar-close:hover { background: rgba(255,255,255,0.3); }
-
-/* 讓內文中的 [數字] 變成可以互動的樣子 */
 #content-area a[href*="#_ftn"] {
   cursor: help !important;
-  border-bottom: 1px dotted #0056b3;
+  border-bottom: 1px dotted rgba(107,47,160,0.38);
 }
-
 </style>
 
 <link rel="manifest" href="manifest.json">
@@ -139701,638 +139694,791 @@ color:black'> </span></p>
 </div>
 
 <style>
-  /* 1. 基礎版面設定：左側邊欄、右側內容 */
-  html, body { margin: 0; padding: 0; height: 100%; background-color: #F5F0FF; }
-  #book-container { display: flex; min-height: 100vh; }
+/* ══════════════════════════════════════════════════
+   佈局與元件樣式（改良版 v5）
+   ══════════════════════════════════════════════════ */
 
-  /* 2. 側邊欄設計 (紫皮書風格) */
-  #sidebar-toc {
-    width: 320px;
-    min-width: 320px;
-    background-color: #EDE6F8;
-    border-right: 1px solid #B088D0;
-    height: 100vh;
-    overflow-y: auto;
-    position: sticky;
-    top: 0;
-    padding: 25px 20px;
-    box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  #sidebar-toc h3 { 
-    margin-top: 0; color: #3D1560; font-size: 20px; 
-    padding-bottom: 12px; border-bottom: 2px solid #D4AF37;
-    margin-bottom: 15px;
-  }
+html, body { margin: 0; padding: 0; height: 100%; background-color: var(--c-page); }
 
-  /* 目錄滾動區域優化 */
-  #toc-wrapper {
-    flex-grow: 1;
-  }
-  
-  #sidebar-toc a { 
-    display: block; text-decoration: none; color: #5B3A8E; 
-    margin: 8px 0; transition: color 0.2s; line-height: 1.4; 
-  }
-  #sidebar-toc a:hover { color: #D4AF37; font-weight: bold; }
+/* 主容器 */
+#book-container { display: flex; min-height: 100vh; }
 
-  /* 3. 目錄階層樣式 */
-  #sidebar-toc a.toc-h1 { font-weight: bold; margin-top: 20px; color: #3D1560; font-size: 16px; }
-  #sidebar-toc a.toc-h2 { margin-left: 15px; font-size: 15px; color: #5B3A8E; }
-  #sidebar-toc a.toc-h3 { margin-left: 30px; font-size: 14px; color: #8B5BAE; }
-  #sidebar-toc a.toc-h4 { margin-left: 45px; font-size: 13px; color: #A87CC8; }
-  #sidebar-toc a.toc-h5 { margin-left: 60px; font-size: 12px; color: #C4A0E0; }
-  #sidebar-toc a.toc-h6 { margin-left: 75px; font-size: 12px; color: #D9C5F0; font-style: italic; }
-
-  /* 4. 側邊欄頂部固定資訊欄塊 */
-  .sidebar-info-box {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px dashed #D4AF37;
-    font-size: 13.5px;
-    color: #5B3A8E;
-  }
-  .info-appeal {
-    font-style: italic;
-    color: #7B5AAE;
-    line-height: 1.5;
-    margin-top: 0;
-    margin-bottom: 18px;
-  }
-  .info-section {
-    margin-bottom: 15px;
-  }
-  .info-section h4 {
-    margin: 0 0 6px 0;
-    color: #3D1560;
-    font-size: 14px;
-    font-weight: bold;
-  }
-  .info-section p {
-    margin: 0;
-    line-height: 1.6;
-  }
-  .info-section a {
-    display: inline !important;
-    color: #6B2FA0 !important;
-    text-decoration: underline !important;
-    margin: 0 !important;
-    font-size: 13.5px !important;
-    font-weight: normal !important;
-  }
-  .info-section a:hover {
-    color: #D4AF37 !important;
-  }
-  .info-note {
-    color: #8B5BAE;
-    font-size: 12px;
-  }
-
-  /* 5. 閱讀內容區 */
-  #content-area {
-    flex-grow: 1;
-    padding: 60px 10%;
-    max-width: 1000px;
-    background-color: #FFFFFF;
-    box-shadow: -5px 0 15px rgba(80,0,120,0.05);
-  }
-
-  /* 6. 終極修正 Word 註腳的醜陋預設樣式 (強制覆蓋內聯樣式) */
-  a[href*="#_ftn"], a[href*="#_edn"], .MsoFootnoteReference {
-    font-size: 8px !important; 
-    font-weight: normal !important; 
-    font-style: normal !important; 
-    color: #2B6CB0 !important; 
-    text-decoration: none !important; /* 強制移除那條醜陋的底線 */
-    vertical-align: super !important; /* 強制推上右上方 */
-    line-height: 0 !important; /* 防止上標把整行的行高撐開 */
-    letter-spacing: -0.5px !important;
-  }
-
-  a[href*="#_ftn"] *, a[href*="#_edn"] * {
-    font-size: 8px !important;
-    font-weight: normal !important;
-    font-style: normal !important;
-    color: #2B6CB0 !important;
-    text-decoration: none !important; /* 確保底線被徹底消滅 */
-    vertical-align: baseline !important;
-  }
-
-  /* 7. 手機版響應式優化 (sidebar-toc 已由上方 media query 的 fixed 模式控制，此處不重複) */
-  @media (max-width: 768px) {
-    #book-container { display: block !important; }
-    #content-area { padding: 30px 20px; width: 100% !important; }
-  }
-  
-/* =======================================================
-   【最終完美版】分離註腳數字與內文顏色
-   僅將「註腳數字 [xx]」調為高亮度特殊色，後續文字回歸系統原生顏色
-   ======================================================= */
-
-/* ---------------------------------------------------
-   第一部分：預設狀態（淺色模式 / 白底）
-   數字改為高亮度的「深寶藍色」，與後方黑字徹底區隔
-   --------------------------------------------------- */
-a[href*="_ftn"],
-a[href*="_ftn"] span,
-.MsoFootnoteReference,
-.MsoFootnoteReference span {
-  color: #6B2FA0 !important; /* 高亮度深紫，與純黑文字形成對比 */
-  font-weight: bold !important; /* 數字稍微加粗，讓每一則註腳的開頭極易辨識 */
+/* ── 側邊欄 ── */
+#sidebar-toc {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background-color: var(--c-sidebar);
+  border-right: 1px solid var(--c-border);
+  height: 100vh;
+  position: sticky; top: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  transition: background-color var(--spd);
 }
 
+/* 側邊欄頂部（固定，不隨目錄捲動） */
+#sidebar-header {
+  flex-shrink: 0;
+  padding: 18px 16px 10px;
+  background: var(--c-sidebar);
+  border-bottom: 1px solid var(--c-border);
+}
 
-/* ---------------------------------------------------
-   第二部分：深色模式（黑底 - 自動切換覆蓋）
-   數字改為高亮度的「螢光青藍色」，與後方白/灰字徹底區隔
-   --------------------------------------------------- */
-body.dark-mode a[href*="_ftn"],
-body.dark-mode a[href*="_ftn"] span,
+#sidebar-toc h3 {
+  margin: 0 0 10px 0;
+  color: #3D1560;
+  font-size: 15.5px; font-weight: 700;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--c-gold);
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+}
+body.dark-mode #sidebar-toc h3 { color: var(--c-accent) !important; }
+
+/* 資訊區塊 */
+.sidebar-info-box {
+  flex-shrink: 0;
+  padding: 7px 14px 7px;
+  border-bottom: 1px dashed var(--c-gold);
+  font-size: 11px;
+  color: var(--c-muted);
+  background: rgba(212,175,55,0.04);
+  transition: background-color var(--spd);
+  line-height: 1.35;
+}
+.info-appeal {
+  font-style: italic;
+  color: #7B5AAE;
+  line-height: 1.3;
+  margin: 0 0 4px;
+  font-size: 10.5px;
+}
+body.dark-mode .info-appeal { color: #A890D0 !important; }
+.info-section { margin-bottom: 3px; display: block; }
+.info-section:last-child { margin-bottom: 0; }
+.info-section h4 {
+  margin: 0;
+  color: #3D1560; font-size: 10.5px; font-weight: 700;
+  display: inline;
+}
+.info-section h4::after { content: " "; }
+body.dark-mode .info-section h4 { color: var(--c-accent) !important; }
+.info-section p { margin: 0; line-height: 1.35; font-size: 11px; display: inline; }
+.info-section a {
+  display: inline !important;
+  color: var(--c-accent) !important;
+  text-decoration: underline !important;
+  font-size: 11px !important;
+}
+.info-section a:hover { color: var(--c-gold) !important; }
+.info-note { color: #8B5BAE; font-size: 10px; }
+
+/* TOC 滾動區 */
+#toc-wrapper {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 10px 14px 24px;
+  overscroll-behavior: contain;
+}
+#toc-wrapper::-webkit-scrollbar { width: 4px; }
+#toc-wrapper::-webkit-scrollbar-track { background: transparent; }
+#toc-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(107,47,160,0.22);
+  border-radius: 2px;
+}
+
+/* TOC 群組結構 */
+.toc-group { margin-bottom: 2px; }
+.toc-h1-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.toc-h1-row > .toc-arrow {
+  flex-shrink: 0;
+  width: 20px;
+  height: 100%;
+  cursor: pointer;
+  font-size: 9px;
+  color: var(--c-accent2);
+  padding: 4px 2px 4px 4px;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+}
+.toc-h1-row > .toc-arrow:hover { color: var(--c-gold); }
+.toc-h1-row > .toc-link.toc-h1 { flex-grow: 1; margin-top: 0 !important; }
+.toc-children { display: none; padding-left: 4px; }
+.toc-children-open { display: block !important; }
+
+/* TOC 連結 */
+#sidebar-toc a {
+  display: block;
+  text-decoration: none;
+  color: var(--c-muted);
+  margin: 2px 0;
+  transition: color var(--spd), background-color var(--spd);
+  line-height: 1.45;
+  border-radius: 5px;
+  padding: 3px 7px;
+}
+#sidebar-toc a:hover {
+  color: var(--c-gold);
+  background-color: rgba(107,47,160,0.08);
+}
+.toc-link.toc-active {
+  color: var(--c-accent) !important;
+  background-color: rgba(107,47,160,0.1) !important;
+  font-weight: 600;
+  border-left: 2px solid var(--c-accent);
+  padding-left: 5px;
+}
+body.dark-mode .toc-link.toc-active {
+  color: var(--c-gold) !important;
+  background-color: rgba(255,255,255,0.08) !important;
+  border-color: var(--c-gold);
+}
+
+/* TOC 階層縮排 */
+#sidebar-toc a.toc-h1 {
+  font-weight: 700; margin-top: 12px;
+  color: #3D1560; font-size: 14.5px;
+}
+#sidebar-toc a.toc-h2 { margin-left: 10px; font-size: 13.5px; color: #5B3A8E; }
+#sidebar-toc a.toc-h3 { margin-left: 20px; font-size: 13px; color: #7B4AAE; }
+#sidebar-toc a.toc-h4 { margin-left: 30px; font-size: 12.5px; color: #9B6AC8; }
+#sidebar-toc a.toc-h5 { margin-left: 40px; font-size: 12px; color: #B888D8; }
+#sidebar-toc a.toc-h6 { margin-left: 50px; font-size: 11.5px; color: #CCA8E8; font-style: italic; }
+
+/* 子項目折疊 */
+.toc-children { display: none; }
+.toc-children-open { display: block !important; }
+.toc-arrow {
+  display: inline-block; font-size: 9px;
+  margin-right: 4px; color: var(--c-accent2);
+  transition: transform 0.2s;
+}
+
+/* ── 閱讀內容區 ── */
+#content-area {
+  flex-grow: 1;
+  padding: 52px 9% 80px;
+  max-width: 960px;
+  background-color: var(--c-bg);
+  box-shadow: -2px 0 14px rgba(80,0,120,0.04);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  transition: background-color var(--spd), font-size 0.2s;
+  overflow-x: hidden;
+}
+
+/* ── 底線優化：灰色、下移不壓字（仿英文版效果）── */
+/* 覆蓋 Word inline style="text-decoration:underline" 與 <u> 標籤 */
+#content-area u,
+#content-area [style*="underline"],
+#content-area span[style*="underline"],
+#content-area p[style*="underline"] {
+  text-decoration: underline !important;
+  text-decoration-color: rgba(30, 0, 60, 0.28) !important;  /* 低對比灰紫色 */
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 4px !important;   /* 底線往下移，不壓到字身 */
+  text-decoration-skip-ink: auto !important; /* 遇到 g/y 等降字自動跳過 */
+}
+
+/* 深色模式：改為淡白底線 */
+body.dark-mode #content-area u,
+body.dark-mode #content-area [style*="underline"],
+body.dark-mode #content-area span[style*="underline"],
+body.dark-mode #content-area p[style*="underline"] {
+  text-decoration-color: rgba(220, 200, 255, 0.35) !important;
+}
+
+/* ── 工具按鈕組 ── */
+#pwa-tools {
+  position: fixed;
+  bottom: 20px; right: 44px;
+  display: flex; flex-direction: column;
+  gap: 7px;
+  z-index: 99999;
+}
+
+.pwa-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%; border: none;
+  color: white; cursor: pointer;
+  box-shadow: 0 3px 10px rgba(60,0,100,0.28);
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s, box-shadow 0.15s, background var(--spd);
+  outline: none;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.pwa-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 5px 18px rgba(60,0,100,0.5);
+}
+.pwa-btn:active { transform: scale(0.92); }
+
+#btn-dark    { background: #2D1B4E; font-size: 18px; }
+#btn-toc     { background: #6B2FA0; font-size: 18px; }
+#btn-totop   { background: rgba(107,47,160,0.75); font-size: 16px; }
+#btn-font-up { background: #4A2080; font-size: 11.5px; font-weight: 700; letter-spacing: -0.5px; }
+#btn-font-dn { background: #4A2080; font-size: 11.5px; font-weight: 700; letter-spacing: -0.5px; }
+
+/* ── 回頂按鈕：整合在工具欄，無需獨立定位 ── */
+
+/* ── 搜尋欄 ── */
+#toc-search-box { margin-top: 8px; }
+#toc-search-frame {
+  display: flex; align-items: center;
+  background: rgba(255,255,255,0.95);
+  border: 1.5px solid var(--c-border);
+  border-radius: 8px; padding: 6px 10px; gap: 6px;
+  transition: border-color var(--spd), box-shadow var(--spd);
+}
+#toc-search-frame:focus-within {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 2.5px rgba(107,47,160,0.15);
+}
+#toc-search-input {
+  border: none; background: transparent; outline: none;
+  font-size: 13px; width: 100%;
+  color: #3D1560; font-family: inherit;
+}
+#toc-search-clear {
+  border: none; background: transparent;
+  cursor: pointer; font-size: 12.5px;
+  color: #aaa; display: none; padding: 0;
+  transition: color 0.15s;
+}
+#toc-search-clear:hover { color: var(--c-accent); }
+#toc-search-results {
+  display: none;
+  margin-top: 6px;
+  max-height: 46vh; overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--c-border);
+  border-radius: 7px;
+  box-shadow: 0 3px 14px rgba(80,0,120,0.12);
+  position: relative;
+  z-index: 1;
+}
+#toc-search-results.visible {
+  display: block;
+  animation: srSlide 0.18s ease;
+}
+/* 確保搜尋框本身在結果框之上，X按鈕可點 */
+#toc-search-frame {
+  position: relative;
+  z-index: 2;
+}
+@keyframes srSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sr-item {
+  padding: 8px 12px; cursor: pointer;
+  border-bottom: 1px solid #f0e8ff;
+  font-size: 13px; line-height: 1.5; color: #333;
+  transition: background 0.12s;
+}
+.sr-item:hover { background: #f5f0ff; }
+.sr-item:last-child { border-bottom: none; }
+.sr-hint { color: #aaa; font-size: 11px; display: block; margin-top: 2px; }
+.sr-no-result { color: #aaa; text-align: center; padding: 14px; font-size: 13px; }
+#search-count-badge {
+  font-size: 11.5px; color: var(--c-accent);
+  margin-top: 5px; text-align: center; display: none;
+}
+
+/* ── 搜尋高亮 ── */
+mark.search-hl {
+  background: #ffe066; border-radius: 2px; padding: 0 2px;
+}
+
+/* ── 捲軸 ── */
+#toc-search-results::-webkit-scrollbar { width: 4px; }
+#toc-search-results::-webkit-scrollbar-thumb {
+  background: rgba(107,47,160,0.2); border-radius: 2px;
+}
+
+/* ── 響應式 ── */
+@media (max-width: 768px) {
+  #book-container { display: block !important; }
+  #content-area { padding: 20px 15px 140px; width: 100% !important; }
+  #sidebar-toc { padding: 0 !important; }
+  /* btn-totop 已整合進工具欄 */
+}
+
+/* ── 深色模式補強 ── */
+body.dark-mode #sidebar-header { background: var(--c-sidebar) !important; }
+body.dark-mode .sidebar-info-box { background: rgba(212,175,55,0.03) !important; }
+
+/* ── 註腳標號最終版（回歸原始精確設計）── */
+/* 關鍵：用含 # 的選擇器精確鎖定「內文上標連結」，不誤觸頁內錨點 */
+a[href*="#_ftn"], a[href*="#_edn"],
+a[href*="#_ftn"] .MsoFootnoteReference,
+a[href*="#_ftn"] .MsoFootnoteReference span {
+  font-size: 8px !important;
+  font-weight: bold !important;
+  font-style: normal !important;
+  color: #6B2FA0 !important;
+  text-decoration: none !important;
+  vertical-align: super !important;
+  line-height: 0 !important;
+  letter-spacing: -0.5px !important;
+  border-bottom: none !important;
+  cursor: help !important;
+}
+/* 子元素不再疊加 vertical-align，只繼承顏色 */
+a[href*="#_ftn"] *,
+a[href*="#_edn"] * {
+  font-size: 8px !important;
+  font-weight: bold !important;
+  font-style: normal !important;
+  color: #6B2FA0 !important;
+  text-decoration: none !important;
+  vertical-align: baseline !important;
+  line-height: inherit !important;
+}
+body.dark-mode a[href*="#_ftn"],
+body.dark-mode a[href*="#_ftn"] *,
+body.dark-mode a[href*="#_edn"],
 body.dark-mode .MsoFootnoteReference,
-body.dark-mode .MsoFootnoteReference span,
-body.dark a[href*="_ftn"],
-body.dark a[href*="_ftn"] span,
-body.dark .MsoFootnoteReference,
-body.dark .MsoFootnoteReference span {
-  color: #C9A8E8 !important; /* 深色模式：薰衣草紫 */
+body.dark-mode .MsoFootnoteReference span {
+  color: #C9A8E8 !important;
+  background: transparent !important;
 }
 </style>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const body = document.body;
-    
-    // 1. 建立電子書外部總容器
-    const container = document.createElement('div');
-    container.id = 'book-container';
+/* ═══════════════════════════════════════════════════════════════
+   《完整加註版奇蹟課程》eBook v5 — 主控程式
+   功能：TOC · 深色模式 · 字型大小 · 進度條 · 搜尋 · 鍵盤
+   ═══════════════════════════════════════════════════════════════ */
+document.addEventListener("DOMContentLoaded", function () {
+  var body = document.body;
 
-    // 2. 建立側邊欄目錄區
-    const sidebar = document.createElement('div');
-    sidebar.id = 'sidebar-toc';
-    sidebar.innerHTML = '<h3>《完整加註版奇蹟課程》目錄</h3>';
+  /* ── 1. 建立 DOM 架構 ── */
+  var container = document.createElement('div');
+  container.id = 'book-container';
 
-    // 3. 建立固定資訊區塊 (置於側邊欄頂部，標題正下方)
-    const infoBox = document.createElement('div');
-    infoBox.className = 'sidebar-info-box';
-    infoBox.innerHTML = `
-      <p class="info-appeal">為了讓加註版內容能持續開放分享並維持網頁營運，我們非常需要您的經費護持。<br><br><b>懇請以實際行動支持老師的翻譯工作！</b></p>
-      <div class="info-section">
-        <h4>贊助帳戶</h4>
-        <p>郵局 (700)：0001300 0817307<br>戶名：張文智</p>
-      </div>
-      <div class="info-section">
-        <h4>聯絡 慧軍 老師</h4>
-        <p>
-          Line：huijun0928 <span class="info-note">(購書/課程)</span><br>
-          信箱：<a href="mailto:chang.wenchih@gmail.com">chang.wenchih@gmail.com</a>
-        </p>
-      </div>
-    `;
-    sidebar.appendChild(infoBox);
+  var sidebar = document.createElement('div');
+  sidebar.id = 'sidebar-toc';
 
-    // 4. 建立目錄連結的專屬容器 (置於資訊區塊下方)
-    const tocWrapper = document.createElement('div');
-    tocWrapper.id = 'toc-wrapper';
-    sidebar.appendChild(tocWrapper);
+  // ── 贊助資訊區塊（最上方）──
+  var infoBox = document.createElement('div');
+  infoBox.className = 'sidebar-info-box';
+  infoBox.innerHTML =
+    '<p class="info-appeal">為讓加註版持續開放共享，懇請您的護持支持！</p>' +
+    '<div class="info-section">' +
+      '<h4>贊助帳戶</h4>' +
+      '<p>郵局 (700)：0001300 0817307<br>戶名：張文智</p>' +
+    '</div>' +
+    '<div class="info-section">' +
+      '<h4>聯絡 慧軍 老師</h4>' +
+      '<p>Line：huijun0928 <span class="info-note">（購書/課程）</span><br>' +
+      '信箱：<a href="mailto:chang.wenchih@gmail.com">chang.wenchih@gmail.com</a></p>' +
+    '</div>';
+  sidebar.appendChild(infoBox);
 
-    // 5. 建立右側閱讀內容區
-    const content = document.createElement('div');
-    content.id = 'content-area';
+  // ── 目錄標題 + 搜尋欄（資訊區塊之後）──
+  var sidebarHeader = document.createElement('div');
+  sidebarHeader.id = 'sidebar-header';
 
-    // 6. 將 Word 產生的所有原始內文，安全搬移到閱讀內容區
-    while (body.firstChild) {
-      content.appendChild(body.firstChild);
-    }
+  var sidebarTitle = document.createElement('h3');
+  sidebarTitle.textContent = '《完整加註版奇蹟課程》目錄';
+  sidebarHeader.appendChild(sidebarTitle);
+  sidebar.appendChild(sidebarHeader);
 
-    // 7. 將重組好的側邊欄與內容區放回總容器，再放回網頁中
-    container.appendChild(sidebar);
-    container.appendChild(content);
-    body.appendChild(container);
+  var tocWrapper = document.createElement('div');
+  tocWrapper.id = 'toc-wrapper';
+  sidebar.appendChild(tocWrapper);
 
-    // ⭐【關鍵防錯：若按鈕組不存在，則由程式動態「自動生成」出來】
-    let pwaTools = document.getElementById('pwa-tools');
-    if (!pwaTools) {
-      pwaTools = document.createElement('div');
-      pwaTools.id = 'pwa-tools';
-      pwaTools.style.cssText = 'position: fixed; bottom: 25px; right: 25px; display: flex; flex-direction: column; gap: 12px; z-index: 99999;';
-      
-      // 建立深色模式（反白）按鈕
-      const btnDark = document.createElement('button');
-      btnDark.id = 'btn-dark';
-      btnDark.innerHTML = '🌓';
-      btnDark.title = '切換深色/反白模式';
-      btnDark.style.cssText = 'width: 50px; height: 50px; border-radius: 50%; border: none; background: #2D1B4E; color: white; font-size: 22px; cursor: pointer; box-shadow: 0 4px 10px rgba(80,0,120,0.4); display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent;';
-      
-      // 建立目錄按鈕
-      const btnToc = document.createElement('button');
-      btnToc.id = 'btn-toc';
-      btnToc.innerHTML = '☰';
-      btnToc.title = '顯示/隱藏目錄';
-      btnToc.style.cssText = 'width: 50px; height: 50px; border-radius: 50%; border: none; background: #6B2FA0; color: white; font-size: 22px; cursor: pointer; box-shadow: 0 4px 10px rgba(80,0,120,0.4); display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent;';
-      
-      pwaTools.appendChild(btnDark);
-      pwaTools.appendChild(btnToc);
-    }
-    // 強制將按鈕掛在 body 最外層，確保絕對不會被內文圖層遮擋
-    body.appendChild(pwaTools);
+  // 內容區（搬移 Word 內文）
+  var content = document.createElement('div');
+  content.id = 'content-area';
+  while (body.firstChild) content.appendChild(body.firstChild);
 
-    // =====================================================
-    // 8A. 在目錄頂端加入搜尋欄
-    // =====================================================
-    const searchBox = document.createElement('div');
-    searchBox.id = 'toc-search-box';
-    searchBox.style.cssText = 'margin-bottom: 12px;';
-    searchBox.innerHTML = `
-      <div id="toc-search-frame" style="display:flex; align-items:center; background:#ffffff; border:1.5px solid #B088D0; border-radius:8px; padding:6px 10px; gap:6px;">
-        <span style="font-size:16px; color:#8B5BAE;">🔍</span>
-        <input id="toc-search-input" type="text" placeholder="搜尋內文關鍵字…"
-          style="border:none; background:transparent; outline:none; font-size:14px; width:100%; color:#3D1560; font-family:inherit;">
-        <button id="toc-search-clear" style="border:none; background:transparent; cursor:pointer; font-size:14px; color:#aaa; display:none; padding:0;">✕</button>
-      </div>
-      <div id="toc-search-results" style="display:none; margin-top:8px; max-height:50vh; overflow-y:auto; background:#fff; border:1px solid #B088D0; border-radius:6px; box-shadow:0 2px 8px rgba(80,0,120,0.12);"></div>
-    `;
-    tocWrapper.appendChild(searchBox);
+  container.appendChild(sidebar);
+  container.appendChild(content);
+  body.appendChild(container);
 
-    // 搜尋功能實作
-    const searchInput = document.getElementById('toc-search-input');
-    const searchClear = document.getElementById('toc-search-clear');
-    const searchResults = document.getElementById('toc-search-results');
+  /* ── 2. 閱讀進度條 ── */
+  var progressBar = document.createElement('div');
+  progressBar.id = 'reading-progress';
+  body.appendChild(progressBar);
 
-    function escapeRegex(str) {
-      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
+  window.addEventListener('scroll', function () {
+    var pct = window.scrollY / Math.max(1, document.body.scrollHeight - window.innerHeight);
+    progressBar.style.width = Math.min(100, pct * 100) + '%';
+  }, { passive: true });
 
-    function doSearch(keyword) {
-      searchResults.innerHTML = '';
-      if (!keyword || keyword.trim().length < 2) {
-        searchResults.style.display = 'none';
-        return;
-      }
-      const regex = new RegExp(escapeRegex(keyword.trim()), 'gi');
-      const allNodes = content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, td');
-      let count = 0;
-      allNodes.forEach(function(node, idx) {
-        const text = node.textContent || '';
-        if (regex.test(text) && count < 30) {
-          count++;
-          regex.lastIndex = 0;
-          // 確保有 ID 可跳轉
-          if (!node.id) node.id = 'search-target-' + idx;
-          const excerpt = text.replace(/\s+/g, ' ').trim().substring(0, 80);
-          const highlighted = excerpt.replace(regex, m => `<mark style="background:#ffe066; border-radius:2px; padding:0 2px;">${m}</mark>`);
-          regex.lastIndex = 0;
+  /* ── 3. 捲回頂部（整合進工具欄，見下方 makeBtn） ── */
 
-          const item = document.createElement('div');
-          item.style.cssText = 'padding:8px 12px; cursor:pointer; border-bottom:1px solid #f0f0f0; font-size:13px; line-height:1.5; color:#333;';
-          item.innerHTML = highlighted + '<span style="color:#aaa; font-size:11px; display:block; margin-top:2px;">點擊跳至該段落</span>';
-          item.addEventListener('mouseenter', () => item.style.background = '#f5f5ff');
-          item.addEventListener('mouseleave', () => item.style.background = '');
-          item.addEventListener('click', function() {
-            // 移除舊高亮
-            content.querySelectorAll('.search-hl').forEach(el => {
-              el.outerHTML = el.textContent;
-            });
-            // 新高亮
-            node.innerHTML = node.innerHTML.replace(regex, m =>
-              `<mark class="search-hl" style="background:#ffe066; border-radius:2px; padding:0 2px;">${m}</mark>`
-            );
-            regex.lastIndex = 0;
+  /* ── 4. 工具按鈕組 ── */
+  var pwaTools = document.getElementById('pwa-tools');
+  if (!pwaTools) {
+    pwaTools = document.createElement('div');
+    pwaTools.id = 'pwa-tools';
+  }
+  pwaTools.innerHTML = '';
 
-            if (window.innerWidth <= 768) {
-              // ================================================================
-              // 【手機版完整重設計】v4
-              // 根本原因：CSS 同時在 html+body 設 overflow-x:hidden!important，
-              // 導致 Android Chrome 混淆 scroll root，使所有程式捲動靜默失敗。
-              // 修正策略：
-              //   1. 關閉前「預算」絕對 Y 座標（此時 DOM 最新，座標最準）
-              //   2. 關閉側邊欄動畫（300ms）
-              //   3. 動畫結束後暫時解除 overflow-x 限制
-              //   4. 直接設 scrollTop（多種方法並用）
-              //   5. 100ms 後還原 overflow-x，並驗證是否成功，否則用 scrollIntoView 補救
-              // ================================================================
+  function makeBtn(id, html, tip, bg) {
+    var wrap = document.createElement('div');
+    wrap.className = 'pwa-btn-wrap';
+    wrap.setAttribute('data-tip', tip);
+    var btn = document.createElement('button');
+    btn.id = id; btn.className = 'pwa-btn';
+    btn.innerHTML = html; btn.title = tip;
+    btn.style.background = bg;
+    wrap.appendChild(btn);
+    return wrap;
+  }
 
-              // Step 1：在任何 DOM 操作前先計算目標絕對座標
-              var preRect = node.getBoundingClientRect();
-              var preScrollY = window.pageYOffset
-                || document.documentElement.scrollTop
-                || document.body.scrollTop || 0;
-              var targetScrollY = Math.max(0,
-                preScrollY + preRect.top - Math.round(window.innerHeight * 0.25));
+  var wrapToTop = makeBtn('btn-totop', '↑', '回到頂部', 'rgba(107,47,160,0.75)');
+  pwaTools.appendChild(wrapToTop);
+  pwaTools.appendChild(makeBtn('btn-font-up', 'A＋', '放大字體', '#4A2080'));
+  pwaTools.appendChild(makeBtn('btn-font-dn', 'A－', '縮小字體', '#4A2080'));
+  pwaTools.appendChild(makeBtn('btn-dark',    '🌓',   '深色模式', '#2D1B4E'));
+  pwaTools.appendChild(makeBtn('btn-toc',     '☰',    '目錄',     '#6B2FA0'));
+  body.appendChild(pwaTools);
 
-              // Step 2：關閉側邊欄
-              var ov = document.getElementById('sidebar-overlay');
-              sidebar.classList.remove('open-mobile');
-              if (ov) {
-                ov.style.opacity = '0';
-                setTimeout(function() { ov.style.display = 'none'; }, 300);
-              }
+  /* 捲動時才顯示回頂按鈕 */
+  var totopWrap = document.getElementById('btn-totop') && document.getElementById('btn-totop').parentElement;
+  if (totopWrap) totopWrap.style.display = 'none';
+  window.addEventListener('scroll', function () {
+    if (!totopWrap) totopWrap = document.getElementById('btn-totop') && document.getElementById('btn-totop').parentElement;
+    if (totopWrap) totopWrap.style.display = window.scrollY > 700 ? '' : 'none';
+  }, { passive: true });
+  document.getElementById('btn-totop').addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
-              // Step 3 & 4：動畫結束後執行捲動
-              setTimeout(function() {
-                // 暫時解除 overflow-x:hidden（此為 Android Chrome 捲動失效的主因）
-                try {
-                  document.documentElement.style.setProperty('overflow-x', 'visible', 'important');
-                  document.body.style.setProperty('overflow-x', 'visible', 'important');
-                } catch(e) {}
+  /* ── 5. 字型大小控制 ── */
+  /* 字型大小：zoom 可穿透 Word 的 inline font-size */
+  var zoomSteps = [0.78, 0.89, 1.0, 1.12, 1.24];
+  var fontIdx = parseInt(localStorage.getItem('acim-fs') || '2');
+  fontIdx = Math.max(0, Math.min(zoomSteps.length - 1, fontIdx));
 
-                // 多管齊下設定 scrollTop
-                try { document.documentElement.scrollTop = targetScrollY; } catch(e) {}
-                try { document.body.scrollTop = targetScrollY; } catch(e) {}
-                try { window.scrollTo(0, targetScrollY); } catch(e) {}
+  function applyFont() {
+    content.style.zoom = zoomSteps[fontIdx];
+    localStorage.setItem('acim-fs', fontIdx);
+    var upBtn = document.getElementById('btn-font-up');
+    var dnBtn = document.getElementById('btn-font-dn');
+    if (upBtn) upBtn.style.opacity = fontIdx >= zoomSteps.length - 1 ? '0.38' : '1';
+    if (dnBtn) dnBtn.style.opacity = fontIdx <= 0 ? '0.38' : '1';
+  }
+  applyFont();
 
-                // Step 5：100ms 後還原 overflow-x，驗證捲動是否成功
-                setTimeout(function() {
-                  try {
-                    document.documentElement.style.removeProperty('overflow-x');
-                    document.body.style.removeProperty('overflow-x');
-                  } catch(e) {}
-                  // 若仍差距 > 150px，最後以 scrollIntoView 補救
-                  var actualScroll = window.pageYOffset
-                    || document.documentElement.scrollTop
-                    || document.body.scrollTop || 0;
-                  if (Math.abs(actualScroll - targetScrollY) > 150) {
-                    try { node.scrollIntoView({ block: 'center' }); }
-                    catch(e) { try { node.scrollIntoView(true); } catch(e2) {} }
-                  }
-                }, 100);
-              }, 350);
+  document.getElementById('btn-font-up').addEventListener('click', function () {
+    if (fontIdx < zoomSteps.length - 1) { fontIdx++; applyFont(); }
+  });
+  document.getElementById('btn-font-dn').addEventListener('click', function () {
+    if (fontIdx > 0) { fontIdx--; applyFont(); } // zoom
+  });
 
-            } else {
-              // ── PC 版：直接捲動（保持原有行為）──
-              var rect = node.getBoundingClientRect();
-              var scrollY = window.scrollY || window.pageYOffset
-                || document.documentElement.scrollTop || 0;
-              var targetY = Math.max(0, scrollY + rect.top - Math.round(window.innerHeight * 0.25));
-              try { window.scrollTo({ top: targetY, behavior: 'smooth' }); }
-              catch(e) { window.scrollTo(0, targetY); }
-            }
+  /* ── 6. 搜尋功能 ── */
+  var searchBox = document.createElement('div');
+  searchBox.id = 'toc-search-box';
+  searchBox.innerHTML =
+    '<div id="toc-search-frame">' +
+      '<span style="font-size:14px;color:#8B5BAE;flex-shrink:0;line-height:1;">🔍</span>' +
+      '<input id="toc-search-input" type="search" placeholder="搜尋內文關鍵字…" autocomplete="off" spellcheck="false">' +
+      '<button id="toc-search-clear" style="display:none">✕</button>' +
+    '</div>' +
+    '<div id="search-count-badge"></div>' +
+    '<div id="toc-search-results"></div>';
+  sidebarHeader.appendChild(searchBox);
+
+  var searchInput   = document.getElementById('toc-search-input');
+  var searchClear   = document.getElementById('toc-search-clear');
+  var searchResults = document.getElementById('toc-search-results');
+  var searchBadge   = document.getElementById('search-count-badge');
+  var searchTimer;
+
+  function escRx(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  function doSearch(kw) {
+    searchResults.innerHTML = '';
+    searchBadge.style.display = 'none';
+    var k = kw.trim();
+    if (k.length < 2) { searchResults.classList.remove('visible'); return; }
+    var rx = new RegExp(escRx(k), 'gi');
+    var nodes = content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, td');
+    var count = 0;
+    nodes.forEach(function (node, idx) {
+      if (count >= 30) return;
+      var txt = node.textContent || '';
+      if (!rx.test(txt)) return;
+      rx.lastIndex = 0; count++;
+      if (!node.id) node.id = 'sr-' + idx;
+      var ex = txt.replace(/\s+/g, ' ').trim().substring(0, 88);
+      var hl = ex.replace(rx, function (m) {
+        return '<mark style="background:#ffe066;border-radius:2px;padding:0 2px;">' + m + '</mark>';
+      });
+      rx.lastIndex = 0;
+      var item = document.createElement('div');
+      item.className = 'sr-item';
+      item.innerHTML = hl + '<span class="sr-hint">點擊跳至段落</span>';
+      (function (nd) {
+        item.addEventListener('click', function () {
+          content.querySelectorAll('mark.search-hl').forEach(function (el) {
+            el.outerHTML = el.textContent;
           });
-          searchResults.appendChild(item);
-        }
-        regex.lastIndex = 0;
-      });
+          nd.innerHTML = nd.innerHTML.replace(rx, function (m) {
+            return '<mark class="search-hl">' + m + '</mark>';
+          });
+          rx.lastIndex = 0;
+          nd.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (window.innerWidth <= 768) closeSidebar();
+        });
+      })(node);
+      searchResults.appendChild(item);
+    });
+    if (count > 0) {
+      searchResults.classList.add('visible');
+      searchBadge.style.display = 'block';
+      searchBadge.textContent = '找到 ' + count + ' 處' + (count === 30 ? '（前30筆）' : '');
+    } else {
+      var noR = document.createElement('div');
+      noR.className = 'sr-no-result';
+      noR.textContent = '找不到「' + k + '」';
+      searchResults.appendChild(noR);
+      searchResults.classList.add('visible');
+    }
+  }
 
-      if (count === 0) {
-        searchResults.innerHTML = '<div style="padding:10px 12px; color:#999; font-size:13px;">找不到符合的段落</div>';
-      } else if (count >= 30) {
-        const note = document.createElement('div');
-        note.style.cssText = 'padding:6px 12px; color:#aaa; font-size:12px; text-align:center;';
-        note.textContent = '僅顯示前 30 筆結果，請縮小關鍵字範圍';
-        searchResults.appendChild(note);
+  searchInput.addEventListener('input', function () {
+    var v = searchInput.value;
+    searchClear.style.display = v ? 'block' : 'none';
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(function () { doSearch(v); }, 300);
+  });
+  searchClear.addEventListener('click', function () {
+    searchInput.value = '';
+    searchClear.style.display = 'none';
+    searchResults.classList.remove('visible');
+    searchBadge.style.display = 'none';
+    content.querySelectorAll('mark.search-hl').forEach(function (el) {
+      el.outerHTML = el.textContent;
+    });
+    searchInput.focus();
+  });
+
+  /* ── 7. 建立目錄 ── */
+  function buildTOC() {
+    var tocContainer = document.createElement('div');
+    tocContainer.id = 'toc-container';
+    var headings = Array.from(content.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+
+    // 指派 ID
+    headings.forEach(function (h, idx) {
+      if (!h.id) h.id = 'toc-h-' + idx;
+    });
+
+    // 將 headings 依 h1 分組
+    // 結構：[{ h1, children:[h2,h3,...] }, ...]
+    var groups = [];
+    var current = null;
+    headings.forEach(function (h) {
+      var level = parseInt(h.tagName[1]);
+      if (level === 1) {
+        current = { h1: h, children: [] };
+        groups.push(current);
+      } else if (current) {
+        current.children.push(h);
       }
-      searchResults.style.display = 'block';
+      // level>1 且無 h1 父項，忽略（不常見）
+    });
+
+    function makeLink(h, level) {
+      var link = document.createElement('a');
+      link.href = '#' + h.id;
+      link.className = 'toc-link toc-h' + level;
+      link.dataset.target = h.id;
+      var text = h.textContent.trim();
+      link.textContent = text.length > 36 ? text.slice(0, 36) + '…' : text;
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        var t = document.getElementById(link.dataset.target);
+        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (window.innerWidth <= 768) closeSidebar();
+      });
+      return link;
     }
 
-    let searchTimer;
-    searchInput.addEventListener('input', function() {
-      const val = this.value;
-      searchClear.style.display = val ? 'block' : 'none';
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => doSearch(val), 300);
-    });
-    searchClear.addEventListener('click', function() {
-      searchInput.value = '';
-      searchClear.style.display = 'none';
-      searchResults.style.display = 'none';
-      content.querySelectorAll('.search-hl').forEach(el => {
-        el.outerHTML = el.textContent;
-      });
-    });
+    groups.forEach(function (g) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'toc-group';
 
-    // =====================================================
-    // 8B. 建立手風琴式目錄（先顯示 H1，點擊後展開子項目）
-    // 使用 requestIdleCallback 延遲建立，避免阻擋首屏渲染
-    // =====================================================
-    function buildTOC() {
-    const headers = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    headers.forEach(function(header, index) {
-      if (!header.id) { header.id = 'chapter-' + index; }
-    });
+      // h1 行：含展開箭頭（若有子項目）
+      var h1Row = document.createElement('div');
+      h1Row.className = 'toc-h1-row';
 
-    // 將所有標題整理成樹狀結構（以 H1 為根節點）
-    const tocTree = []; // [{ h1El, h1Id, h1Text, children: [{el, level, id, text}] }]
-    let currentGroup = null;
+      if (g.children.length > 0) {
+        var arrow = document.createElement('span');
+        arrow.className = 'toc-arrow';
+        arrow.textContent = '▶';
+        h1Row.appendChild(arrow);
 
-    headers.forEach(function(header) {
-      const level = parseInt(header.tagName.replace('H', ''), 10);
-      if (level === 1) {
-        currentGroup = { h1El: header, h1Id: header.id, h1Text: header.textContent.trim(), children: [] };
-        tocTree.push(currentGroup);
-      } else {
-        if (!currentGroup) {
-          // 如果 H1 前就有 H2-H6，建立一個匿名 H1 群組
-          currentGroup = { h1El: null, h1Id: null, h1Text: '（前言）', children: [] };
-          tocTree.push(currentGroup);
-        }
-        currentGroup.children.push({ el: header, level: level, id: header.id, text: header.textContent.trim() });
-      }
-    });
-
-    const tocContainer = document.createElement('div');
-    tocContainer.id = 'toc-accordion';
-
-    tocTree.forEach(function(group, gIdx) {
-      // H1 列 (可點擊展開)
-      const h1Row = document.createElement('div');
-      h1Row.style.cssText = 'display:flex; align-items:flex-start; gap:4px; margin: 6px 0;';
-
-      const arrow = document.createElement('span');
-      arrow.textContent = group.children.length > 0 ? '▶' : '•';
-      arrow.style.cssText = 'font-size:10px; color:#8B5BAE; flex-shrink:0; margin-top:5px; transition:transform 0.2s; cursor:pointer; width:14px; text-align:center;';
-
-      const h1Link = document.createElement('a');
-      if (group.h1Id) {
-        h1Link.href = '#' + group.h1Id;
-      } else {
-        h1Link.href = 'javascript:void(0)';
-      }
-      h1Link.textContent = group.h1Text;
-      h1Link.style.cssText = 'font-weight:bold; color:#3D1560; font-size:15px; text-decoration:none; line-height:1.4; flex-grow:1; display:block; padding: 3px 0;';
-      h1Link.addEventListener('mouseenter', () => h1Link.style.color = '#D4AF37');
-      h1Link.addEventListener('mouseleave', () => h1Link.style.color = '#3D1560');
-
-      h1Row.appendChild(arrow);
-      h1Row.appendChild(h1Link);
-      tocContainer.appendChild(h1Row);
-
-      // 子項目容器（預設隱藏）
-      if (group.children.length > 0) {
-        const childrenDiv = document.createElement('div');
-        childrenDiv.style.cssText = 'display:none; padding-left: 4px; border-left: 2px solid #C4A0E0; margin-left: 7px; margin-bottom: 4px;';
-
-        group.children.forEach(function(child) {
-          const indent = (child.level - 2) * 12;
-          const childLink = document.createElement('a');
-          childLink.href = '#' + child.id;
-          childLink.textContent = child.text;
-          childLink.style.cssText = `display:block; padding: 3px 0 3px ${indent + 8}px; font-size:${Math.max(12, 14 - (child.level - 2))}px; color:#5B3A8E; text-decoration:none; line-height:1.4;`;
-          childLink.addEventListener('mouseenter', () => childLink.style.color = '#D4AF37');
-          childLink.addEventListener('mouseleave', () => childLink.style.color = '#5B3A8E');
-          childrenDiv.appendChild(childLink);
+        var childrenDiv = document.createElement('div');
+        childrenDiv.className = 'toc-children';
+        g.children.forEach(function (ch) {
+          childrenDiv.appendChild(makeLink(ch, parseInt(ch.tagName[1])));
         });
 
-        tocContainer.appendChild(childrenDiv);
-
-        // 點擊箭頭或 H1 標題→展開/收合子項目
-        function toggleChildren(e) {
+        arrow.addEventListener('click', function (e) {
           e.preventDefault();
-          const isOpen = childrenDiv.style.display !== 'none';
-          // 收合所有其他已展開的群組
-          tocContainer.querySelectorAll('.toc-children-open').forEach(el => {
-            el.style.display = 'none';
-            el.classList.remove('toc-children-open');
-            const prevArrow = el.previousSibling && el.previousSibling.querySelector && el.previousSibling.querySelector('span');
-            if (prevArrow && prevArrow.textContent === '▼') {
-              prevArrow.textContent = '▶';
-              prevArrow.style.transform = '';
-            }
-          });
-          if (!isOpen) {
-            childrenDiv.style.display = 'block';
-            childrenDiv.classList.add('toc-children-open');
-            arrow.textContent = '▼';
-          } else {
-            childrenDiv.style.display = 'none';
+          e.stopPropagation();
+          var isOpen = childrenDiv.classList.contains('toc-children-open');
+          if (isOpen) {
             childrenDiv.classList.remove('toc-children-open');
             arrow.textContent = '▶';
-          }
-          // 手機版點擊 H1 本體時同時跳轉
-          if (e.currentTarget === h1Link && group.h1Id && !isOpen === false) {
-            // 如果收合，不跳轉；若展開，讓瀏覽器正常跳轉
-          }
-        }
-
-        arrow.addEventListener('click', toggleChildren);
-        h1Link.addEventListener('click', function(e) {
-          // 手機版：只展開不跳轉；電腦版：跳轉 + 展開
-          if (window.innerWidth <= 768) {
-            e.preventDefault();
-            e.stopPropagation(); // ⭐【修正1】阻止冒泡至 sidebar click 監聽器，避免側邊欄被關閉
-            const isOpen = childrenDiv.style.display !== 'none';
-            tocContainer.querySelectorAll('.toc-children-open').forEach(el => {
-              el.style.display = 'none';
-              el.classList.remove('toc-children-open');
-            });
-            if (!isOpen) {
-              childrenDiv.style.display = 'block';
-              childrenDiv.classList.add('toc-children-open');
-              arrow.textContent = '▼';
-            } else {
-              arrow.textContent = '▶';
-            }
           } else {
-            // 電腦版：展開子項目並允許跳轉
-            const isOpen = childrenDiv.style.display !== 'none';
-            if (!isOpen) {
-              tocContainer.querySelectorAll('.toc-children-open').forEach(el => {
-                el.style.display = 'none';
-                el.classList.remove('toc-children-open');
-              });
-              childrenDiv.style.display = 'block';
-              childrenDiv.classList.add('toc-children-open');
-              arrow.textContent = '▼';
-            }
+            childrenDiv.classList.add('toc-children-open');
+            arrow.textContent = '▼';
           }
         });
 
-        // 手機版：點擊子項目後自動收起側邊欄
-        childrenDiv.addEventListener('click', function(e) {
-          if (e.target.tagName === 'A' && window.innerWidth <= 768) {
-            sidebar.classList.remove('open-mobile');
-            overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 300);
-          }
-        });
+        h1Row.appendChild(makeLink(g.h1, 1));
+        wrapper.appendChild(h1Row);
+        wrapper.appendChild(childrenDiv);
+      } else {
+        h1Row.appendChild(makeLink(g.h1, 1));
+        wrapper.appendChild(h1Row);
       }
+
+      tocContainer.appendChild(wrapper);
     });
 
     tocWrapper.appendChild(tocContainer);
-    } // end buildTOC
-    // 用 requestIdleCallback 在瀏覽器閒置時建立目錄，不阻擋首屏渲染
-    if (window.requestIdleCallback) {
-      requestIdleCallback(buildTOC, { timeout: 2000 });
-    } else {
-      setTimeout(buildTOC, 200);
-    }
 
-    // 9. 功能功能綁定控制
-    const btnToc = document.getElementById('btn-toc');
-    const btnDark = document.getElementById('btn-dark');
+    /* TOC 目前章節高亮（不自動展開，使用者自行控制折疊） */
+    if ('IntersectionObserver' in window && headings.length > 0) {
+      var allLinks = tocContainer.querySelectorAll('.toc-link');
+      var linkMap = {};
+      allLinks.forEach(function (l) { linkMap[l.dataset.target] = l; });
 
-    // 建立手機版專用的黑色遮罩層（防止重複建立）
-    let overlay = document.getElementById('sidebar-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'sidebar-overlay';
-      overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 10000; display: none; opacity: 0; transition: opacity 0.3s;';
-      body.appendChild(overlay);
-    }
-
-    // 控制目錄側邊欄的顯示與隱藏（支援電腦版切換與手機版滑出）
-    if (btnToc) {
-      btnToc.addEventListener('click', function() {
-        if (window.innerWidth <= 768) {
-          // 手機版：切換 .open-mobile 樣式滑出側邊欄
-          sidebar.classList.toggle('open-mobile');
-          if (sidebar.classList.contains('open-mobile')) {
-            overlay.style.display = 'block';
-            setTimeout(() => overlay.style.opacity = '1', 10);
-          } else {
-            overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 300);
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          allLinks.forEach(function (l) { l.classList.remove('toc-active'); });
+          var al = linkMap[entry.target.id];
+          if (!al) return;
+          al.classList.add('toc-active');
+          // 同步捲動側邊欄（只捲，不自動展開）
+          var wr = tocWrapper.getBoundingClientRect();
+          var lr = al.getBoundingClientRect();
+          if (lr.top < wr.top || lr.bottom > wr.bottom) {
+            al.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
           }
-        } else {
-          // 電腦版：直接切換顯示/隱藏狀態
-          sidebar.style.display = (sidebar.style.display === 'none') ? 'block' : 'none';
-        }
-      });
+        });
+      }, { rootMargin: '-8% 0px -75% 0px', threshold: 0 });
+
+      headings.forEach(function (h) { io.observe(h); });
     }
+  }
 
-    // 點擊黑色遮罩時，自動收起手機版側邊欄
-    overlay.addEventListener('click', function() {
-      sidebar.classList.remove('open-mobile');
-      overlay.style.opacity = '0';
-      setTimeout(() => overlay.style.display = 'none', 300);
-    });
+  if (window.requestIdleCallback) {
+    requestIdleCallback(buildTOC, { timeout: 2000 });
+  } else {
+    setTimeout(buildTOC, 200);
+  }
 
-    // 在手機版下，讀者點擊目錄任意章節跳轉後，自動收起目錄側邊欄
-    sidebar.addEventListener('click', function(e) {
-      if (e.target.tagName === 'A' && window.innerWidth <= 768) {
-        sidebar.classList.remove('open-mobile');
-        overlay.style.opacity = '0';
-        setTimeout(() => overlay.style.display = 'none', 300);
+  /* ── 8. 側邊欄 overlay ── */
+  var overlay = document.getElementById('sidebar-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'sidebar-overlay';
+    overlay.style.cssText =
+      'position:fixed;top:0;left:0;width:100vw;height:100vh;' +
+      'background:rgba(0,0,0,0.45);z-index:10000;display:none;opacity:0;' +
+      'transition:opacity 0.25s;';
+    body.appendChild(overlay);
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open-mobile');
+    overlay.style.opacity = '0';
+    setTimeout(function () { overlay.style.display = 'none'; }, 280);
+  }
+
+  var btnToc = document.getElementById('btn-toc');
+  if (btnToc) {
+    btnToc.addEventListener('click', function () {
+      if (window.innerWidth <= 768) {
+        sidebar.classList.toggle('open-mobile');
+        if (sidebar.classList.contains('open-mobile')) {
+          overlay.style.display = 'block';
+          requestAnimationFrame(function () { overlay.style.opacity = '1'; });
+        } else {
+          closeSidebar();
+        }
+      } else {
+        sidebar.style.display = (sidebar.style.display === 'none') ? 'flex' : 'none';
       }
     });
+  }
 
-    // 深色模式（反白）切換功能
-    if (btnDark) {
-      btnDark.addEventListener('click', function() {
-        body.classList.toggle('dark-mode');
-        const isDark = body.classList.contains('dark-mode');
-        localStorage.setItem('theme-dark', isDark ? 'true' : 'false');
-      });
+  overlay.addEventListener('click', closeSidebar);
+  sidebar.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && window.innerWidth <= 768) closeSidebar();
+  });
+
+  /* ── 9. 深色模式 ── */
+  var btnDark = document.getElementById('btn-dark');
+  if (btnDark) {
+    btnDark.addEventListener('click', function () {
+      body.classList.toggle('dark-mode');
+      localStorage.setItem('acim-dark', body.classList.contains('dark-mode') ? '1' : '0');
+    });
+  }
+  if (localStorage.getItem('acim-dark') === '1') body.classList.add('dark-mode');
+
+  /* ── 10b. 記住閱讀位置 ── */
+  // 還原上次捲動位置（在 DOM ready 後、短延遲確保版面已算好）
+  var savedY = parseInt(localStorage.getItem('acim-scroll') || '0');
+  if (savedY > 100) {
+    setTimeout(function () { window.scrollTo(0, savedY); }, 350);
+  }
+  // 定期儲存（throttle：最多每 2 秒一次）
+  var scrollSaveTimer;
+  window.addEventListener('scroll', function () {
+    clearTimeout(scrollSaveTimer);
+    scrollSaveTimer = setTimeout(function () {
+      localStorage.setItem('acim-scroll', Math.round(window.scrollY));
+    }, 2000);
+  }, { passive: true });
+
+  /* ── 10. 鍵盤快捷鍵 ── */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && sidebar.classList.contains('open-mobile')) {
+      closeSidebar();
     }
-
-    // 初始化：自動讀取讀者先前的深色模式設定
-    if (localStorage.getItem('theme-dark') === 'true') {
-      body.classList.add('dark-mode');
+    if ((e.ctrlKey || e.metaKey) && e.key === '[') {
+      e.preventDefault();
+      if (fontIdx > 0) { fontIdx--; applyFont(); } // zoom
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === ']') {
+      e.preventDefault();
+      if (fontIdx < zoomSteps.length - 1) { fontIdx++; applyFont(); }
     }
   });
+
+}); // end DOMContentLoaded
 </script>
 
 <script>
-// =============================================
-// 【功能六】註腳底部彈出列（完整重寫版）
-// =============================================
-(function() {
-
+/* ═════════════════════════════════════════════════════
+   《奇蹟課程》eBook — 註腳底部彈出列（保留功能完整版）
+   ═════════════════════════════════════════════════════ */
+(function () {
   function initFootnoteBar() {
-
-    // 1. 建立底部彈出列
-    const bar = document.createElement('div');
+    var bar = document.createElement('div');
     bar.id = 'footnote-bar';
     bar.innerHTML =
       '<div id="footnote-bar-inner">' +
@@ -140342,145 +140488,92 @@ body.dark .MsoFootnoteReference span {
       '</div>';
     document.body.appendChild(bar);
 
-    const barNum   = document.getElementById('footnote-bar-num');
-    const barText  = document.getElementById('footnote-bar-text');
-    const barClose = document.getElementById('footnote-bar-close');
-    let activeRef  = null;
+    var barNum   = document.getElementById('footnote-bar-num');
+    var barText  = document.getElementById('footnote-bar-text');
+    var barClose = document.getElementById('footnote-bar-close');
+    var activeRef = null;
 
-    // ── 顯示底部列 ──
     function showBar(ref) {
-      const href = ref.getAttribute('href') || '';
-      // 本文連結格式: href="#_ftn1" → 目標 div id=ftn1
-      var numMatch = href.match(/#_ftn(\d+)$/);
-      if (!numMatch) return;
-      var num = numMatch[1];
-      var fnEl = document.getElementById('ftn' + num);
+      var href = ref.getAttribute('href') || '';
+      var m = href.match(/#_ftn(\d+)$/);
+      if (!m) return;
+      var fnEl = document.getElementById('ftn' + m[1]);
       if (!fnEl) return;
-
-      barNum.textContent = num + '.';
-
-      // ⭐【修正4-v3】更積極地移除 _ftnref 回跳連結及所有純數字標記連結
+      barNum.textContent = m[1] + '.';
       var clone = fnEl.cloneNode(true);
-      // 步驟1：移除所有符合以下任一條件的 <a> 節點（含其內部 [N] 文字）
-      //   a) href 含 _ftnref（標準 Word 回跳連結）
-      //   b) 可見文字純粹為 [N] 格式（瀏覽器修正巢狀 <a> 後可能出現的孤立標記）
-      clone.querySelectorAll('a[href]').forEach(function(a) {
-        var href = a.getAttribute('href') || '';
-        var hrefLower = href.toLowerCase();
-        var aText = (a.textContent || '').trim();
-        // 判斷是否為回跳連結（_ftnref）或純粹的 [N] 標記連結
-        var isBackLink = hrefLower.indexOf('_ftnref') !== -1;
-        var isBracketOnly = /^\[\d+\]$/.test(aText);
-        if (isBackLink || isBracketOnly) {
-          // 整個 <a> 節點連同 [N] 文字一起移除
+      clone.querySelectorAll('a[href]').forEach(function (a) {
+        var ah = a.getAttribute('href') || '';
+        var at = (a.textContent || '').trim();
+        if (ah.toLowerCase().indexOf('_ftnref') !== -1 || /^\[\d+\]$/.test(at)) {
           if (a.parentNode) a.parentNode.removeChild(a);
-        } else if (href.charAt(0) === '#') {
-          // 其他內部錨點：僅移除連結屬性，保留可見文字
-          var txt = document.createTextNode(aText);
-          if (a.parentNode) a.parentNode.replaceChild(txt, a);
+        } else if (ah.charAt(0) === '#') {
+          if (a.parentNode) a.parentNode.replaceChild(document.createTextNode(at), a);
         } else {
-          // 外部超連結：保留為可點連結並在新視窗開啟
           a.setAttribute('target', '_blank');
           a.setAttribute('rel', 'noopener noreferrer');
         }
       });
-      // 步驟2：TreeWalker 遍歷所有文字節點，清除仍殘留的 [N] 數字標記
-      (function stripBracketNums(el) {
+      (function stripNums(el) {
         var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
-        var node, list = [];
-        while ((node = walker.nextNode())) list.push(node);
-        list.forEach(function(tn) {
-          tn.nodeValue = tn.nodeValue.replace(/\[\d+\]/g, '');
-        });
+        var nd, list = [];
+        while ((nd = walker.nextNode())) list.push(nd);
+        list.forEach(function (tn) { tn.nodeValue = tn.nodeValue.replace(/\[\d+\]/g, ''); });
       })(clone);
-      var html = clone.innerHTML.replace(/^\s+/, '').trim();
-      barText.innerHTML = html;
+      barText.innerHTML = clone.innerHTML.trim();
       bar.classList.add('fn-visible');
       activeRef = ref;
     }
 
-    // ── 隱藏底部列 ──
     function hideBar() {
       bar.classList.remove('fn-visible');
       activeRef = null;
     }
 
-    // 關閉按鈕
-    barClose.addEventListener('click', function(e) {
-      e.stopPropagation();
-      hideBar();
-    });
+    barClose.addEventListener('click', function (e) { e.stopPropagation(); hideBar(); });
 
-    // 2. 【事件委派版】將 footnote 點擊事件掛在 #content-area 上，
-    //    而非直接綁到每個 <a> 節點。
-    //    這樣即使搜尋功能用 innerHTML 替換段落 DOM（插入 <mark> 高亮），
-    //    重新產生的 <a> 節點依然能被此委派捕捉，不會失去 preventDefault 保護。
     var contentArea = document.getElementById('content-area');
-    var isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    var isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
-    // ── 委派：click ──
-    contentArea.addEventListener('click', function(e) {
+    contentArea.addEventListener('click', function (e) {
       var ref = e.target.closest('a[href]');
       if (!ref) return;
-      var href = ref.getAttribute('href') || '';
-      if (!/^#_ftn\d+$/.test(href)) return;
-      // 確實是本文 footnote 連結
+      var h = ref.getAttribute('href') || '';
+      if (!/^#_ftn\d+$/.test(h)) return;
       e.preventDefault();
       if (activeRef === ref && bar.classList.contains('fn-visible')) {
-        window.__fnSkipHide = true;
-        hideBar();
+        window.__fnSkip = true; hideBar();
       } else {
-        window.__fnSkipHide = true;
-        showBar(ref);
+        window.__fnSkip = true; showBar(ref);
       }
     });
 
-    // ── 委派：mouseenter / mouseleave（僅非觸控裝置）──
-    if (!isTouchDevice) {
-      contentArea.addEventListener('mouseover', function(e) {
+    if (!isTouch) {
+      contentArea.addEventListener('mouseover', function (e) {
         var ref = e.target.closest('a[href]');
-        if (!ref) return;
-        if (/^#_ftn\d+$/.test(ref.getAttribute('href') || '')) {
-          showBar(ref);
-        }
+        if (ref && /^#_ftn\d+$/.test(ref.getAttribute('href') || '')) showBar(ref);
       });
-      contentArea.addEventListener('mouseout', function(e) {
+      contentArea.addEventListener('mouseout', function (e) {
         var ref = e.target.closest('a[href]');
-        if (!ref) return;
-        if (/^#_ftn\d+$/.test(ref.getAttribute('href') || '')) {
-          if (!e.relatedTarget || !e.relatedTarget.closest('#footnote-bar')) {
-            hideBar();
-          }
+        if (ref && /^#_ftn\d+$/.test(ref.getAttribute('href') || '')) {
+          if (!e.relatedTarget || !e.relatedTarget.closest('#footnote-bar')) hideBar();
         }
       });
     }
 
-    // bar 本身點擊不收起
-    bar.addEventListener('click', function(e) {
-      window.__fnSkipHide = true;
-    });
-
-    // 點其他地方收起
-    document.addEventListener('click', function(e) {
-      if (window.__fnSkipHide) {
-        window.__fnSkipHide = false;
-        return;
-      }
+    bar.addEventListener('click', function () { window.__fnSkip = true; });
+    document.addEventListener('click', function () {
+      if (window.__fnSkip) { window.__fnSkip = false; return; }
       hideBar();
     });
-
   }
 
-  // 等 DOM 完整後執行（用 setTimeout 確保 Word 大量 DOM 已掛載）
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(initFootnoteBar, 800); });
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(initFootnoteBar, 800); });
   } else {
     setTimeout(initFootnoteBar, 800);
   }
-
 })();
 </script>
 
 </body>
-
 </html>
