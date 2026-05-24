@@ -302,7 +302,7 @@ a[href*="#_edn"] .fn-badge,
   font-style: normal !important;
   line-height: 1.5 !important;
   vertical-align: middle !important;
-  background: rgba(107,47,160,0.13) !important;
+  background: rgba(107,47,160,0.22) !important;
   color: #5A2090 !important;
   border-radius: 4px !important;
   padding: 0 4px !important;
@@ -319,12 +319,17 @@ a[href*="#_edn"]:hover .fn-badge {
   background: rgba(107,47,160,0.26) !important;
   color: #3D1060 !important;
 }
-body.dark-mode .fn-badge {
-  background: rgba(200,168,232,0.18) !important;
-  color: #C9A8E8 !important;
+body.dark-mode .fn-badge,
+body.dark-mode a[href*="#_ftn"] .fn-badge,
+body.dark-mode a[href*="#_edn"] .fn-badge {
+  background: rgba(212,184,255,0.28) !important;
+  color: #F0E0FF !important;
+  border: 1px solid rgba(212,184,255,0.4) !important;
 }
-body.dark-mode a[href*="#_ftn"]:hover .fn-badge {
-  background: rgba(200,168,232,0.32) !important;
+body.dark-mode a[href*="#_ftn"]:hover .fn-badge,
+body.dark-mode a[href*="#_edn"]:hover .fn-badge {
+  background: rgba(212,184,255,0.46) !important;
+  color: #FFFFFF !important;
 }
 body.dark-mode #footnote-bar{background:#3D1B6E;border-top:2px solid #C9A8E8;}
 #fn-inner{display:flex;align-items:flex-start;gap:10px;}
@@ -367,14 +372,7 @@ body.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-b
   .pwa-btn-wrap::before{display:none;}
 }
 
-/* 腳注編號樣式 */
-a[href*="#_ftn"],a[href*="#_ftn"] .MsoFootnoteReference,
-a[href*="#_ftn"] .MsoFootnoteReference span{
-  font-size:8px!important;font-weight:bold!important;font-style:normal!important;
-  color:#6B2FA0!important;text-decoration:none!important;
-  vertical-align:super!important;line-height:0!important;cursor:help!important;
-  border-bottom:none!important;
-}
+/* 腳注編號樣式 — 移除：已由 fn-badge 系統接管，保留此區塊會覆蓋隱藏規則 */
 </style>
 <style>
 <!--
@@ -139761,6 +139759,8 @@ color:black'> </span></p>
   syncDark();
   btnDark.addEventListener('click', function(){
     body.classList.toggle('dark-mode');
+    /* 同步 html 元素的 class（早期防閃爍腳本會加在 html 上） */
+    document.documentElement.classList.toggle('dark-mode', body.classList.contains('dark-mode'));
     localStorage.setItem('acim-dark', body.classList.contains('dark-mode')?'1':'0');
     syncDark();
   });
