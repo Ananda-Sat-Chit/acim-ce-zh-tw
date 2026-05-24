@@ -139856,7 +139856,13 @@ color:black'> </span></p>
       sb=document.getElementById('search-count-badge'),
       st;
 
-  function esc(s){return s.replace(/[.*+?^${}()|[\]\]/g,'\$&');}
+  function esc(s){
+    var chars='\\^$.|?*+()[]{}';
+    var r=s;
+    for(var j=0;j<chars.length;j++)
+      r=r.split(chars[j]).join('\\'+chars[j]);
+    return r;
+  }
 
   si.addEventListener('input',function(){
     sc.style.display=si.value?'block':'none';
