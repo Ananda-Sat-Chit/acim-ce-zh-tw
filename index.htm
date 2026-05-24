@@ -157,19 +157,37 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
 /* TOC 階層 */
 .toc-group{margin-bottom:2px;}
 .toc-h1-row{display:flex;align-items:center;}
-.toc-h1-row .toc-arrow{
+.toc-h2-row{display:flex;align-items:center;}
+.toc-h1-row .toc-arrow,
+.toc-h2-row .toc-arrow{
   flex-shrink:0;width:20px;cursor:pointer;font-size:9px;
   color:var(--c-accent2);padding:4px 2px 4px 4px;
   user-select:none;-webkit-user-select:none;
 }
-.toc-h1-row .toc-arrow:hover{color:var(--c-gold);}
+.toc-h1-row .toc-arrow:hover,
+.toc-h2-row .toc-arrow:hover{color:var(--c-gold);}
 .toc-h1-row .toc-link{flex-grow:1;}
+.toc-h2-row .toc-link{flex-grow:1;}
 .toc-children{display:none;padding-left:4px;}
 .toc-children.open{display:block;}
+/* 各層縮排、字體大小、顏色 */
 .toc-h1{font-weight:700;margin-top:12px;color:#3D1560;font-size:14.5px;}
-.toc-h2{margin-left:10px;font-size:13.5px;color:#5B3A8E;}
-.toc-h3{margin-left:20px;font-size:13px;color:#7B4AAE;}
-.toc-h4{margin-left:30px;font-size:12.5px;color:#9B6AC8;}
+.toc-h2{
+  margin-left:14px;font-size:13.5px;color:#5B3A8E;
+  padding-left:6px;
+  border-left:2px solid rgba(107,47,160,0.22);
+}
+.toc-h3{
+  margin-left:26px;font-size:13px;color:#7B4AAE;
+  padding-left:5px;
+  border-left:2px solid rgba(155,106,200,0.18);
+}
+.toc-h4{
+  margin-left:38px;font-size:12.5px;color:#9B6AC8;
+  padding-left:4px;
+  border-left:2px solid rgba(168,128,204,0.14);
+}
+.toc-h5{margin-left:46px;font-size:12px;color:#A880CC;}
 
 /* ── 閱讀內容區 ── */
 #content-area {
@@ -339,7 +357,7 @@ body.dark-mode #footnote-bar{background:#3D1B6E;border-top:2px solid #C9A8E8;}
   z-index:9999;align-items:center;padding:0 12px;gap:8px;
   font-family:-apple-system,sans-serif;cursor:pointer;
 }
-#crumb-text{font-size:12px;color:var(--c-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+#crumb-text{font-size:11.5px;color:var(--c-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;letter-spacing:0.01em;}
 body.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-border);}
 
 /* ── 手機版 ── */
@@ -139778,12 +139796,20 @@ color:black'> </span></p>
     var headings = Array.from(content.querySelectorAll('h1,h2,h3,h4,h5,h6'));
     headings.forEach(function(h,i){ if(!h.id) h.id='h'+i; });
 
-    var frag = document.createDocumentFragment();
-    var groups=[], cur=null;
+    /* ── 建立 heading → 祖先對照表，用於 breadcrumb ── */
+    var headingAncestors = {}; // id -> {h1text, h2text, h3text}
+    var curH1='', curH2='', curH3='';
     headings.forEach(function(h){
-      if(h.tagName==='H1'){ cur={h:h,kids:[]}; groups.push(cur); }
-      else if(cur) cur.kids.push(h);
+      var lv = parseInt(h.tagName[1]);
+      var txt = h.textContent.trim();
+      if(lv===1){ curH1=txt; curH2=''; curH3=''; }
+      else if(lv===2){ curH2=txt; curH3=''; }
+      else if(lv===3){ curH3=txt; }
+      headingAncestors[h.id]={lv:lv, h1:curH1, h2:curH2, h3:curH3, self:txt};
     });
+
+    /* ── 遞迴建立巢狀 TOC ── */
+    var frag = document.createDocumentFragment();
 
     function mkLink(h, cls) {
       var a = document.createElement('a');
@@ -139798,25 +139824,49 @@ color:black'> </span></p>
       return a;
     }
 
-    groups.forEach(function(g){
-      var grp=document.createElement('div'); grp.className='toc-group';
-      var row=document.createElement('div'); row.className='toc-h1-row';
-      if(g.kids.length){
-        var arr=document.createElement('span'); arr.className='toc-arrow'; arr.textContent='▶';
-        var kids=document.createElement('div'); kids.className='toc-children';
-        g.kids.forEach(function(k){ kids.appendChild(mkLink(k,'toc-h'+k.tagName[1])); });
+    /* 將 headings 組成巢狀樹：h1 → h2 → h3+ */
+    var groups=[], cur1=null, cur2=null;
+    headings.forEach(function(h){
+      var lv=parseInt(h.tagName[1]);
+      if(lv===1){
+        cur1={h:h, kids:[]}; cur2=null; groups.push(cur1);
+      } else if(lv===2){
+        if(!cur1){ cur1={h:null,kids:[]}; groups.push(cur1); }
+        cur2={h:h, kids:[]}; cur1.kids.push({type:'h2',node:cur2});
+      } else {
+        var parent=cur2||cur1;
+        if(parent) parent.kids.push({type:'h'+lv, node:{h:h,kids:[]}});
+      }
+    });
+
+    /* 遞迴渲染一個 group */
+    function renderGroup(g, depth){
+      var cls='toc-h'+(depth+1);
+      var wrap=document.createElement('div'); wrap.className='toc-group';
+      var row=document.createElement('div'); row.className=(depth===0?'toc-h1-row':'toc-h2-row');
+      if(g.kids && g.kids.length){
+        var arr=document.createElement('span');
+        arr.className='toc-arrow'; arr.textContent='▶';
+        var childWrap=document.createElement('div'); childWrap.className='toc-children';
+        g.kids.forEach(function(k){
+          childWrap.appendChild(renderGroup(k.node, depth+1));
+        });
         arr.addEventListener('click',function(e){
           e.stopPropagation();
-          var open=kids.classList.contains('open');
-          kids.classList.toggle('open',!open); arr.textContent=open?'▶':'▼';
+          var open=childWrap.classList.contains('open');
+          childWrap.classList.toggle('open',!open);
+          arr.textContent=open?'▶':'▼';
         });
-        row.appendChild(arr); row.appendChild(mkLink(g.h,'toc-h1'));
-        grp.appendChild(row); grp.appendChild(kids);
+        if(g.h){ row.appendChild(arr); row.appendChild(mkLink(g.h, cls)); }
+        wrap.appendChild(row); wrap.appendChild(childWrap);
       } else {
-        row.appendChild(mkLink(g.h,'toc-h1')); grp.appendChild(row);
+        if(g.h){ row.appendChild(mkLink(g.h, cls)); }
+        wrap.appendChild(row);
       }
-      frag.appendChild(grp);
-    });
+      return wrap;
+    }
+
+    groups.forEach(function(g){ frag.appendChild(renderGroup(g, 0)); });
     tocWrapper.appendChild(frag);
 
     /* 進度條章節點 */
@@ -139828,7 +139878,7 @@ color:black'> </span></p>
       });
     });
 
-    /* IntersectionObserver 高亮 */
+    /* IntersectionObserver 高亮 + breadcrumb */
     if('IntersectionObserver' in window){
       var links={};
       tocWrapper.querySelectorAll('.toc-link').forEach(function(l){links[l.dataset.id]=l;});
@@ -139838,11 +139888,28 @@ color:black'> </span></p>
           Object.values(links).forEach(function(l){l.classList.remove('toc-active');});
           var al=links[e.target.id]; if(!al) return;
           al.classList.add('toc-active');
+          /* 展開父層 toc-children */
+          var p=al.parentElement;
+          while(p&&p!==tocWrapper){
+            if(p.classList.contains('toc-children')&&!p.classList.contains('open')){
+              p.classList.add('open');
+              var arr=p.previousElementSibling&&p.previousElementSibling.querySelector('.toc-arrow');
+              if(arr) arr.textContent='▼';
+            }
+            p=p.parentElement;
+          }
           var wr=tocWrapper.getBoundingClientRect(), lr=al.getBoundingClientRect();
           if(lr.top<wr.top||lr.bottom>wr.bottom) al.scrollIntoView({block:'nearest',behavior:'smooth'});
-          var txt=e.target.textContent.trim();
+          /* breadcrumb：組合 h1 › h2 › h3 路徑 */
+          var anc=headingAncestors[e.target.id];
           var ct=document.getElementById('crumb-text');
-          if(ct) ct.textContent=txt.length>28?txt.slice(0,28)+'…':txt;
+          if(ct && anc){
+            var parts=[];
+            if(anc.h1) parts.push(anc.h1.length>20?anc.h1.slice(0,20)+'…':anc.h1);
+            if(anc.lv>=2 && anc.h2) parts.push(anc.h2.length>20?anc.h2.slice(0,20)+'…':anc.h2);
+            if(anc.lv>=3 && anc.h3) parts.push(anc.h3.length>16?anc.h3.slice(0,16)+'…':anc.h3);
+            ct.textContent=parts.join(' › ');
+          }
         });
       },{rootMargin:'-8% 0px -75% 0px',threshold:0});
       headings.forEach(function(h){io.observe(h);});
