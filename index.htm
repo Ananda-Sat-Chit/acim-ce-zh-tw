@@ -460,64 +460,40 @@ body.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-b
 }
 
 /* ── 效能優化：長頁面段落延遲渲染 ── */
-/* content-visibility:auto 讓瀏覽器跳過畫面外區塊的 layout/paint，大幅加速 */
-#content-area > div {
-  content-visibility: auto;
-  contain-intrinsic-block-size: 300px;
-}
 @media(prefers-reduced-motion:no-preference){
   #content-area {
-    contain: layout style;
+    contain:layout style;
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   深色模式：Word 固定顏色邊線 → 改為半透明淡紫（windowtext = 黑色，深色下不可見）
-   ═══════════════════════════════════════════════════════════════ */
+/* 腳注編號樣式 — 移除：已由 fn-badge 系統接管，保留此區塊會覆蓋隱藏規則 */
 
-/* Word 用 windowtext（黑色）畫的 div 框線（課程標題上下線等） */
-body.dark-mode #content-area div[style*="windowtext"],
-body.dark-mode #content-area p[style*="windowtext"],
-body.dark-mode #content-area td[style*="windowtext"],
-body.dark-mode #content-area th[style*="windowtext"] {
-  border-color: rgba(200,180,255,0.45) !important;
+/* ══ 課程標題框（Word border-top/bottom div）深色模式修正 ══ */
+#content-area div[style*="border-top"],
+#content-area div[style*="border-bottom"] {
+  padding-top:    10px !important;
+  padding-bottom: 10px !important;
 }
-
-/* Word 用 black / #000 / #1C1E21 等硬編碼黑色的邊線 */
-body.dark-mode #content-area [style*="border-top:solid black"],
-body.dark-mode #content-area [style*="border-bottom:solid black"],
-body.dark-mode #content-area [style*="border:solid black"],
-body.dark-mode #content-area [style*="border-top: solid black"],
-body.dark-mode #content-area [style*="border-bottom: solid black"] {
-  border-color: rgba(200,180,255,0.45) !important;
+body.dark-mode #content-area div[style*="border-top"],
+body.dark-mode #content-area div[style*="border-bottom"] {
+  border-color: rgba(180,160,240,0.7) !important;
 }
-
-/* Word inline color:black / color:#000 → 改為淺色文字 */
+body.dark-mode #content-area [style*="windowtext"] {
+  border-color: rgba(180,160,240,0.5) !important;
+}
 body.dark-mode #content-area [style*="color:black"],
+body.dark-mode #content-area [style*="color:windowtext"],
 body.dark-mode #content-area [style*="color:#000"],
-body.dark-mode #content-area [style*="color:#1C1E21"],
-body.dark-mode #content-area [style*="color: black"],
-body.dark-mode #content-area [style*="color:#2c2c2c"],
-body.dark-mode #content-area [style*="color:windowtext"] {
+body.dark-mode #content-area [style*="color: black"] {
   color: var(--c-text) !important;
 }
-
-/* Word background:white / #fff → 深色模式改透明 */
 body.dark-mode #content-area [style*="background:white"],
 body.dark-mode #content-area [style*="background-color:white"],
-body.dark-mode #content-area [style*="background:#fff"],
-body.dark-mode #content-area [style*="background-color:#fff"],
 body.dark-mode #content-area [style*="background: white"],
-body.dark-mode #content-area [style*="background-color: white"] {
+body.dark-mode #content-area [style*="background:#fff"] {
   background-color: transparent !important;
 }
 
-/* HR 分隔線深色模式 */
-body.dark-mode #content-area hr {
-  border-color: rgba(200,180,255,0.3) !important;
-}
-
-/* 腳注編號樣式 — 移除：已由 fn-badge 系統接管，保留此區塊會覆蓋隱藏規則 */
 </style>
 <style>
 /* Minimal Word compatibility styles — @font-face block removed (was 1474 unused entries) */
@@ -135648,45 +135624,39 @@ color:black'> </span></p>
 
   /* ── 深色模式 ── */
   var btnDark = document.getElementById('btn-dark');
-  /* ── 深色模式：JS 修正 Word 的多行 inline style 邊線 ── */
-  var DARK_BORDER = 'rgba(180,160,240,0.5)';
-  var DARK_TEXT   = '#EAE0F8';
-  var LIGHT_BORDER_RE = /windowtext|#000|black/i;
-  var LIGHT_BG_RE     = /white|#fff|#ffffff/i;
-  var LIGHT_COLOR_RE  = /windowtext|#000|black|#1c1e21|#2c2c2c/i;
-
   function applyDarkFixes(isDark) {
-    var content = document.getElementById('content-area');
-    if (!content) return;
-    /* 所有帶 style 屬性的元素 */
-    var els = content.querySelectorAll('[style]');
+    var ca = document.getElementById('content-area');
+    if (!ca) return;
+    var els = ca.querySelectorAll('[style]');
     for (var i = 0; i < els.length; i++) {
       var el = els[i];
       var st = el.getAttribute('style') || '';
+      var hasBT = st.indexOf('border-top') !== -1;
+      var hasBB = st.indexOf('border-bottom') !== -1;
+      var hasWB = (hasBT || hasBB || st.indexOf('border') !== -1) &&
+                  (st.indexOf('windowtext') !== -1 || /black|#000/.test(st));
+      var hasWC = /color\s*:\s*(black|windowtext|#000|#1[Cc]1[Ee]21)/.test(st);
+      var hasBG = /background(-color)?\s*:\s*(white|#[Ff]{3,6})/.test(st);
       if (isDark) {
-        /* 邊線：windowtext / black → 淡紫 */
-        if (LIGHT_BORDER_RE.test(st) && /border/.test(st)) {
-          el.style.borderColor = DARK_BORDER;
+        if (hasWB || hasBT || hasBB) {
+          el.style.borderColor = 'rgba(180,160,240,0.7)';
+          if (hasBT && hasBB) {
+            el.style.paddingTop    = '10px';
+            el.style.paddingBottom = '10px';
+          }
         }
-        /* 文字顏色：black / windowtext → 淡色 */
-        if (LIGHT_COLOR_RE.test(st) && /color/.test(st)) {
-          el.style.color = DARK_TEXT;
-        }
-        /* 背景：white / #fff → 透明 */
-        if (LIGHT_BG_RE.test(st) && /background/.test(st)) {
-          el.style.backgroundColor = 'transparent';
-        }
+        if (hasWC) el.style.color = '#EAE0F8';
+        if (hasBG) el.style.backgroundColor = 'transparent';
       } else {
-        /* 亮色：還原 inline style（移除我們加的覆蓋）*/
-        if (LIGHT_BORDER_RE.test(st) && /border/.test(st)) {
+        if (hasWB || hasBT || hasBB) {
           el.style.borderColor = '';
+          if (hasBT && hasBB) {
+            el.style.paddingTop    = '';
+            el.style.paddingBottom = '';
+          }
         }
-        if (LIGHT_COLOR_RE.test(st) && /color/.test(st)) {
-          el.style.color = '';
-        }
-        if (LIGHT_BG_RE.test(st) && /background/.test(st)) {
-          el.style.backgroundColor = '';
-        }
+        if (hasWC) el.style.color = '';
+        if (hasBG) el.style.backgroundColor = '';
       }
     }
   }
@@ -135696,7 +135666,6 @@ color:black'> </span></p>
     btnDark.innerHTML = dark ? '☀️' : '🌓';
     btnDark.title = dark ? '切換亮色' : '切換深色';
     btnDark.parentElement.setAttribute('data-tip', btnDark.title);
-    applyDarkFixes(dark);
   }
   syncDark();
   btnDark.addEventListener('click', function(){
@@ -135704,6 +135673,7 @@ color:black'> </span></p>
     document.documentElement.classList.toggle('dark-mode', body.classList.contains('dark-mode'));
     localStorage.setItem('acim-dark', body.classList.contains('dark-mode')?'1':'0');
     syncDark();
+    applyDarkFixes(body.classList.contains('dark-mode'));
   });
 
   /* ── 進度條（rAF throttle，避免強迫同步 layout）── */
@@ -135867,16 +135837,13 @@ color:black'> </span></p>
   if(window.requestIdleCallback){
     requestIdleCallback(buildTOC,{timeout:2000});
     requestIdleCallback(injectFnBadges,{timeout:3000});
-    /* 初始深色模式時修正 Word 硬編碼邊線 */
-    if(localStorage.getItem('acim-dark')==='1'){
-      requestIdleCallback(function(){ applyDarkFixes(true); },{timeout:4000});
-    }
+    if(localStorage.getItem('acim-dark')==='1')
+      requestIdleCallback(function(){applyDarkFixes(true);},{timeout:4000});
   } else {
     setTimeout(buildTOC,200);
     setTimeout(injectFnBadges,600);
-    if(localStorage.getItem('acim-dark')==='1'){
-      setTimeout(function(){ applyDarkFixes(true); },800);
-    }
+    if(localStorage.getItem('acim-dark')==='1')
+      setTimeout(function(){applyDarkFixes(true);},800);
   }
 
   function injectFnBadges(){
