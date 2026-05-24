@@ -311,8 +311,12 @@ body.dark-mode #content-area u,body.dark-mode #content-area [style*="underline"]
 body.dark-mode #book-container,
 body.dark-mode #content-area,
 body.dark-mode div,body.dark-mode p,
-body.dark-mode span,body.dark-mode table,
+body.dark-mode table,
 body.dark-mode tr,body.dark-mode td,body.dark-mode font {
+  background-color:var(--c-bg)!important; color:var(--c-text)!important;
+}
+/* span 單獨處理：排除有彩色 inline style 的 span，避免蓋掉有語義的顏色 */
+body.dark-mode span:not([style*="color:#7030A0"]):not([style*="color:#C00000"]):not([style*="color:#0070C0"]):not([style*="color:#0000CC"]) {
   background-color:var(--c-bg)!important; color:var(--c-text)!important;
 }
 body.dark-mode #sidebar-toc,body.dark-mode #sidebar-header,
@@ -543,6 +547,42 @@ body.dark-mode #content-area [style*="color:#000"],
 body.dark-mode #content-area [style*="color: black"] {
   color: var(--c-text) !important;
 }
+/* 近黑色系（Word 轉出的深色但非純黑）→ 也轉為正文色 */
+body.dark-mode #content-area [style*="color:#181717"],
+body.dark-mode #content-area [style*="color:#222222"],
+body.dark-mode #content-area [style*="color:#1C1E21"],
+body.dark-mode #content-area [style*="color:#050505"],
+body.dark-mode #content-area [style*="color:#001320"],
+body.dark-mode #content-area [style*="color:#00000A"],
+body.dark-mode #content-area [style*="color:#333333"],
+body.dark-mode #content-area [style*="color:#1F1F1F"] {
+  color: var(--c-text) !important;
+}
+
+/* ── 有語義的彩色：深色模式亮化，保留視覺區別 ──
+   原則：色相不變，亮度提高到深色背景可辨識的程度          */
+
+/* Word 紫色 #7030A0 → 深色模式亮紫 */
+body.dark-mode #content-area [style*="color:#7030A0"],
+body.dark-mode #content-area [style*="color: #7030A0"] {
+  color: #C9A0F0 !important;
+}
+/* Word 深紅 #C00000 → 深色模式亮珊瑚紅 */
+body.dark-mode #content-area [style*="color:#C00000"],
+body.dark-mode #content-area [style*="color: #C00000"] {
+  color: #FF8080 !important;
+}
+/* Word 藍 #0070C0 → 深色模式天藍 */
+body.dark-mode #content-area [style*="color:#0070C0"],
+body.dark-mode #content-area [style*="color: #0070C0"] {
+  color: #70C0FF !important;
+}
+/* Word 深藍 #0000CC → 深色模式亮藍（但 footnote anchor 已隱藏，這裡給其他藍字用）*/
+body.dark-mode #content-area [style*="color:#0000CC"],
+body.dark-mode #content-area [style*="color: #0000CC"] {
+  color: #80A8FF !important;
+}
+
 body.dark-mode #content-area [style*="background:white"],
 body.dark-mode #content-area [style*="background-color:white"],
 body.dark-mode #content-area [style*="background: white"],
