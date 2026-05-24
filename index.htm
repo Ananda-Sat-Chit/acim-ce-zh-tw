@@ -245,19 +245,6 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
   transition:background var(--spd); overflow-x:hidden;
   color:var(--c-text);
 }
-/* ── 強制覆蓋 Word inline line-height（115% 過緊，會讓文字互壓）── */
-#content-area p,
-#content-area li,
-#content-area td,
-#content-area div.MsoNormal,
-#content-area p.MsoNormal,
-#content-area p.MsoListParagraph,
-#content-area p[style*="line-height"] {
-  line-height:var(--lh) !important;
-  margin-top:0.35em !important;
-  margin-bottom:0.35em !important;
-  overflow:visible !important;
-}
 /* 內文最佳行寬容器 */
 #content-area > *:not(#reading-progress) {
   max-width:var(--content-max);
@@ -473,10 +460,61 @@ body.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-b
 }
 
 /* ── 效能優化：長頁面段落延遲渲染 ── */
+/* content-visibility:auto 讓瀏覽器跳過畫面外區塊的 layout/paint，大幅加速 */
+#content-area > div {
+  content-visibility: auto;
+  contain-intrinsic-block-size: 300px;
+}
 @media(prefers-reduced-motion:no-preference){
   #content-area {
-    contain:layout style;
+    contain: layout style;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   深色模式：Word 固定顏色邊線 → 改為半透明淡紫（windowtext = 黑色，深色下不可見）
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Word 用 windowtext（黑色）畫的 div 框線（課程標題上下線等） */
+body.dark-mode #content-area div[style*="windowtext"],
+body.dark-mode #content-area p[style*="windowtext"],
+body.dark-mode #content-area td[style*="windowtext"],
+body.dark-mode #content-area th[style*="windowtext"] {
+  border-color: rgba(200,180,255,0.45) !important;
+}
+
+/* Word 用 black / #000 / #1C1E21 等硬編碼黑色的邊線 */
+body.dark-mode #content-area [style*="border-top:solid black"],
+body.dark-mode #content-area [style*="border-bottom:solid black"],
+body.dark-mode #content-area [style*="border:solid black"],
+body.dark-mode #content-area [style*="border-top: solid black"],
+body.dark-mode #content-area [style*="border-bottom: solid black"] {
+  border-color: rgba(200,180,255,0.45) !important;
+}
+
+/* Word inline color:black / color:#000 → 改為淺色文字 */
+body.dark-mode #content-area [style*="color:black"],
+body.dark-mode #content-area [style*="color:#000"],
+body.dark-mode #content-area [style*="color:#1C1E21"],
+body.dark-mode #content-area [style*="color: black"],
+body.dark-mode #content-area [style*="color:#2c2c2c"],
+body.dark-mode #content-area [style*="color:windowtext"] {
+  color: var(--c-text) !important;
+}
+
+/* Word background:white / #fff → 深色模式改透明 */
+body.dark-mode #content-area [style*="background:white"],
+body.dark-mode #content-area [style*="background-color:white"],
+body.dark-mode #content-area [style*="background:#fff"],
+body.dark-mode #content-area [style*="background-color:#fff"],
+body.dark-mode #content-area [style*="background: white"],
+body.dark-mode #content-area [style*="background-color: white"] {
+  background-color: transparent !important;
+}
+
+/* HR 分隔線深色模式 */
+body.dark-mode #content-area hr {
+  border-color: rgba(200,180,255,0.3) !important;
 }
 
 /* 腳注編號樣式 — 移除：已由 fn-badge 系統接管，保留此區塊會覆蓋隱藏規則 */
