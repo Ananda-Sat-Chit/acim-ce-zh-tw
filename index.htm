@@ -135648,16 +135648,59 @@ color:black'> </span></p>
 
   /* ── 深色模式 ── */
   var btnDark = document.getElementById('btn-dark');
+  /* ── 深色模式：JS 修正 Word 的多行 inline style 邊線 ── */
+  var DARK_BORDER = 'rgba(180,160,240,0.5)';
+  var DARK_TEXT   = '#EAE0F8';
+  var LIGHT_BORDER_RE = /windowtext|#000|black/i;
+  var LIGHT_BG_RE     = /white|#fff|#ffffff/i;
+  var LIGHT_COLOR_RE  = /windowtext|#000|black|#1c1e21|#2c2c2c/i;
+
+  function applyDarkFixes(isDark) {
+    var content = document.getElementById('content-area');
+    if (!content) return;
+    /* 所有帶 style 屬性的元素 */
+    var els = content.querySelectorAll('[style]');
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      var st = el.getAttribute('style') || '';
+      if (isDark) {
+        /* 邊線：windowtext / black → 淡紫 */
+        if (LIGHT_BORDER_RE.test(st) && /border/.test(st)) {
+          el.style.borderColor = DARK_BORDER;
+        }
+        /* 文字顏色：black / windowtext → 淡色 */
+        if (LIGHT_COLOR_RE.test(st) && /color/.test(st)) {
+          el.style.color = DARK_TEXT;
+        }
+        /* 背景：white / #fff → 透明 */
+        if (LIGHT_BG_RE.test(st) && /background/.test(st)) {
+          el.style.backgroundColor = 'transparent';
+        }
+      } else {
+        /* 亮色：還原 inline style（移除我們加的覆蓋）*/
+        if (LIGHT_BORDER_RE.test(st) && /border/.test(st)) {
+          el.style.borderColor = '';
+        }
+        if (LIGHT_COLOR_RE.test(st) && /color/.test(st)) {
+          el.style.color = '';
+        }
+        if (LIGHT_BG_RE.test(st) && /background/.test(st)) {
+          el.style.backgroundColor = '';
+        }
+      }
+    }
+  }
+
   function syncDark() {
     var dark = body.classList.contains('dark-mode');
     btnDark.innerHTML = dark ? '☀️' : '🌓';
     btnDark.title = dark ? '切換亮色' : '切換深色';
     btnDark.parentElement.setAttribute('data-tip', btnDark.title);
+    applyDarkFixes(dark);
   }
   syncDark();
   btnDark.addEventListener('click', function(){
     body.classList.toggle('dark-mode');
-    /* 同步 html 元素的 class（早期防閃爍腳本會加在 html 上） */
     document.documentElement.classList.toggle('dark-mode', body.classList.contains('dark-mode'));
     localStorage.setItem('acim-dark', body.classList.contains('dark-mode')?'1':'0');
     syncDark();
@@ -135824,9 +135867,16 @@ color:black'> </span></p>
   if(window.requestIdleCallback){
     requestIdleCallback(buildTOC,{timeout:2000});
     requestIdleCallback(injectFnBadges,{timeout:3000});
+    /* 初始深色模式時修正 Word 硬編碼邊線 */
+    if(localStorage.getItem('acim-dark')==='1'){
+      requestIdleCallback(function(){ applyDarkFixes(true); },{timeout:4000});
+    }
   } else {
     setTimeout(buildTOC,200);
     setTimeout(injectFnBadges,600);
+    if(localStorage.getItem('acim-dark')==='1'){
+      setTimeout(function(){ applyDarkFixes(true); },800);
+    }
   }
 
   function injectFnBadges(){
