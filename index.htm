@@ -13,21 +13,17 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet"></noscript>
 
 <script>
-/* SW：先清除所有舊版，再重新註冊 v7 */
+/* SW 清除：登出所有舊版 SW 並清空所有快取 */
 if ('serviceWorker' in navigator) {
-  // 立即清除所有舊 SW 和快取
   navigator.serviceWorker.getRegistrations().then(function(regs) {
     regs.forEach(function(reg) { reg.unregister(); });
   });
   caches.keys().then(function(keys) {
-    keys.forEach(function(k) {
-      if (k.indexOf('v7') === -1) caches.delete(k);
-    });
+    keys.forEach(function(k) { caches.delete(k); });
   });
-  // 重新註冊
+  /* 用 pass-through SW 確保舊快取真的清掉 */
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js')
-      .catch(function(e){ console.log('SW error:', e); });
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
   });
 }
 /* 早期套用深色模式，防止白閃 */
