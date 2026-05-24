@@ -245,6 +245,19 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
   transition:background var(--spd); overflow-x:hidden;
   color:var(--c-text);
 }
+/* ── 強制覆蓋 Word inline line-height（115% 過緊，會讓文字互壓）── */
+#content-area p,
+#content-area li,
+#content-area td,
+#content-area div.MsoNormal,
+#content-area p.MsoNormal,
+#content-area p.MsoListParagraph,
+#content-area p[style*="line-height"] {
+  line-height:var(--lh) !important;
+  margin-top:0.35em !important;
+  margin-bottom:0.35em !important;
+  overflow:visible !important;
+}
 /* 內文最佳行寬容器 */
 #content-area > *:not(#reading-progress) {
   max-width:var(--content-max);
