@@ -219,29 +219,43 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
 }
 .toc-h5{margin-left:46px;font-size:12px;color:#A880CC;}
 
-/* ── 字型覆蓋：統一升級中文閱讀體驗 ── */
-/* 新細明體/標楷體/細明體 → Noto Serif TC（Google字型，較美觀且跨平台一致） */
-#content-area,
-#content-area p, #content-area span,
-#content-area div, #content-area td, #content-area li {
-  font-family:"LXGW WenKai TC","新細明體",serif !important;
+/* ── 字型策略：保留 Word 原始細明體/標楷體差異，只補系統 fallback ── */
+/*
+  原則：
+  1. 有明確 style="font-family:新細明體" 的 span → 瀏覽器用系統細明體，
+     fallback 到 Noto Serif TC（Mac/iOS 上無新細明體時的最佳替代）
+  2. 有明確 style="font-family:標楷體" 的 span → 保留標楷體，
+     fallback 到 LXGW WenKai TC
+  3. 沒有 font-family 的元素（如 MsoNormal class）→ 設系統預設，
+     讓瀏覽器用 Noto Serif TC 作為基底
+  不做全域覆蓋，讓 inline style 的優先度正常運作。
+*/
+
+/* 基底字型：套用在沒有 inline font-family 的元素 */
+#content-area {
+  font-family: "Noto Serif TC", "新細明體", "PMingLiU", serif;
 }
+
+/* 細明體系列 fallback：補上跨平台字型，不用 !important 讓 inline style 可覆蓋 */
+#content-area [style*="新細明體"],
+#content-area [style*="細明體"],
+#content-area [style*="PMingLiU"],
+#content-area [style*="MingLiU"] {
+  font-family: "新細明體", "PMingLiU", "Noto Serif TC", serif !important;
+}
+
+/* 標楷體系列：保留，補跨平台 fallback */
+#content-area [style*="標楷體"],
+#content-area [style*="DFKai-SB"],
+#content-area [style*="BiauKai"] {
+  font-family: "標楷體", "DFKai-SB", "LXGW WenKai TC", "Kaiti TC", "STKaiti", cursive !important;
+}
+
+/* 標題字型：明體系列 */
 #content-area h1,#content-area h2,#content-area h3,
 #content-area h4,#content-area h5,#content-area h6 {
-  font-family:"新細明體",serif !important;
+  font-family: "Noto Serif TC", "新細明體", serif;
   display: block !important;
-}
-/* 課程標題 border div：確保 h4 完整撐開父容器 */
-#content-area div[style*="border-top"] h4,
-#content-area div[style*="border-bottom"] h4 {
-  display: block !important;
-  margin: 0.4em 0 !important;
-  line-height: 1.6 !important;
-}
-/* 保留標楷體用於特別標楷樣式 */
-#content-area [style*="標楷體"],#content-area [style*="DFKai-SB"],
-#content-area [style*="BiauKai"] {
-  font-family:"LXGW WenKai TC","Kaiti TC","STKaiti","標楷體",serif !important;
 }
 
 /* ── 閱讀內容區 ── */
@@ -253,27 +267,11 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
   font-size:var(--fs-base); line-height:var(--lh);
   transition:background var(--spd); overflow-x:hidden;
   color:var(--c-text);
+  /* content-visibility 不能加在整個 content-area:
+     會使 scrollIntoView() 無法定位視口外的 headings（跳到頁頂）*/
 }
-
-/* ── 速度優化：Word 章節分塊延遲渲染 ── */
-/* 各 WordSection（共40個）在視口外時跳過 layout/paint，大幅降低初始渲染時間 */
-#content-area div[class^="WordSection"] {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 3000px; /* 預估高度，避免 scrollbar 跳動 */
-}
-/* 腳注區（38000行）在視口外完全跳過渲染 */
-#footnote-section {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 80000px;
-}
-/* 內文最佳行寬：套用在 WordSection 的直接子元素，WordSection 本身保持全寬供 content-visibility 計算 */
-#content-area div[class^="WordSection"] > p,
-#content-area div[class^="WordSection"] > h1,
-#content-area div[class^="WordSection"] > h2,
-#content-area div[class^="WordSection"] > h3,
-#content-area div[class^="WordSection"] > h4,
-#content-area div[class^="WordSection"] > .lesson-title-box,
-#content-area > p, #content-area > h1, #content-area > h2 {
+/* 內文最佳行寬容器 */
+#content-area > *:not(#reading-progress) {
   max-width:var(--content-max);
   margin-left:auto;
   margin-right:auto;
@@ -495,43 +493,25 @@ body.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-b
 
 /* 腳注編號樣式 — 移除：已由 fn-badge 系統接管，保留此區塊會覆蓋隱藏規則 */
 
-/* ══ 課程標題框（JS 正規化後以 class 控制，不再依賴 Word inline style）══ */
-.lesson-title-box {
-  /* 上下邊線：用 border shorthand，不受 Word 殘留 style 干擾 */
-  border-top:    2px solid rgba(107,47,160,0.45) !important;
-  border-bottom: 2px solid rgba(107,47,160,0.45) !important;
-  border-left:   none !important;
-  border-right:  none !important;
-  padding: 12px 0 10px !important;
-  margin: 1.6em 0 0.8em !important;
-  /* 確保寬度撐滿 */
-  display: block !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-.lesson-title-box h4 {
-  display: block !important;
-  margin: 0 !important;
-  line-height: 1.6 !important;
-}
-/* 深色模式：亮紫色邊線，高對比 */
-body.dark-mode .lesson-title-box {
-  border-top-color:    rgba(212,184,255,0.75) !important;
-  border-bottom-color: rgba(212,184,255,0.75) !important;
-}
-/* 移除舊的 windowtext/border-top/border-bottom inline style 選擇器 */
-#content-area div[style*="border-top"] h4,
-#content-area div[style*="border-bottom"] h4 {
-  display: block !important;
+/* ══ 課程標題框（Word border-top/bottom div）深色模式修正 ══ */
+#content-area div[style*="border-top"],
+#content-area div[style*="border-bottom"] {
+  padding-top:    10px !important;
+  padding-bottom: 10px !important;
 }
 body.dark-mode #content-area div[style*="border-top"],
-body.dark-mode #content-area div[style*="border-bottom"],
+body.dark-mode #content-area div[style*="border-bottom"] {
+  border-color: rgba(180,160,240,0.7) !important;
+}
+body.dark-mode #content-area [style*="border-top"],
+body.dark-mode #content-area [style*="border-bottom"],
 body.dark-mode #content-area [style*="border-top:solid"],
 body.dark-mode #content-area [style*="border-bottom:solid"],
 body.dark-mode #content-area [style*="solid black"],
 body.dark-mode #content-area [style*="solid windowtext"] {
-  border-top-color: rgba(180,160,240,0.6) !important;
-  border-bottom-color: rgba(180,160,240,0.6) !important;
+  border-top-color: rgba(180,160,240,0.85) !important;
+  border-bottom-color: rgba(180,160,240,0.85) !important;
+  border-color: rgba(180,160,240,0.85) !important;
 }
 body.dark-mode #content-area [style*="windowtext"] {
   border-color: rgba(180,160,240,0.5) !important;
@@ -97312,11 +97292,12 @@ line-height:115%;font-family:"Calibri",sans-serif'>&nbsp;</span></p>
 
 </div>
 
-<div id="footnote-section"><br clear=all>
+<div><br clear=all>
 
 <hr align=left size=1 width="33%">
 
 <div id=ftn1>
+
 <p class=MsoFootnoteText style='line-height:115%'><a href="#_ftnref1"
 name="_ftn1" title=""><i><sup><span lang=EN-US style='color:blue'><b><sup><span
 lang=EN-US style='font-size:9.5pt;font-family:"Calibri",sans-serif;color:blue'>[1]</span></sup></b></span></sup></i></a><span
@@ -135605,43 +135586,6 @@ color:black'> </span></p>
   /* 套用儲存的深色模式 */
   if (localStorage.getItem('acim-dark') === '1') body.classList.add('dark-mode');
 
-  /* ══ Word HTML 正規化（載入時一次性執行，提升速度和深色模式可靠性）══ */
-  var content = document.getElementById('content-area');
-  (function normalizeWordHTML(){
-    /* 1. 課程標題框：凡含 h4 且 style 含 windowtext 的 div，加上 .lesson-title-box */
-    content.querySelectorAll('div[style]').forEach(function(div){
-      var s = (div.getAttribute('style')||'').replace(/\s+/g,' ');
-      if(/windowtext/i.test(s) && div.querySelector('h4')){
-        div.classList.add('lesson-title-box');
-        /* 移除 inline border style 改由 CSS class 控制，避免 specificity 衝突 */
-        div.style.removeProperty('border-top');
-        div.style.removeProperty('border-bottom');
-        div.style.removeProperty('border-left');
-        div.style.removeProperty('border-right');
-        div.style.removeProperty('border');
-        div.style.removeProperty('padding');
-      }
-    });
-
-    /* 2. 移除 Word inline color：black / windowtext / #000000 → 交給 CSS var */
-    var COLOR_RE = /color\s*:\s*(black|windowtext|#000000|#000)\s*[;!]?/gi;
-    content.querySelectorAll('[style]').forEach(function(el){
-      var s = el.getAttribute('style');
-      if(!s) return;
-      var cleaned = s.replace(COLOR_RE,'');
-      if(cleaned !== s) el.setAttribute('style', cleaned);
-    });
-
-    /* 3. 移除 Word inline font-size on spans（保留在 p/h 層級）— 只清 <span> */
-    content.querySelectorAll('span[style]').forEach(function(span){
-      var s = span.getAttribute('style');
-      if(!s) return;
-      var cleaned = s.replace(/font-size\s*:\s*[^;]+;?/gi,'')
-                     .replace(/line-height\s*:\s*[^;]+;?/gi,'');
-      if(cleaned !== s) span.setAttribute('style', cleaned.trim());
-    });
-  })();
-
   /* ── 工具按鈕建立 ── */
   /* ── 回頂按鈕（靜態 HTML，只控制顯隱） ── */
   var topWrap = document.getElementById('wrap-top');
@@ -135679,7 +135623,7 @@ color:black'> </span></p>
   overlay.addEventListener('click', closeSidebar);
 
   /* ── 字型縮放 ── */
-  /* content 已於 normalizeWordHTML 中宣告 */
+  var content = document.getElementById('content-area');
   var zSteps = [0.78, 0.89, 1.0, 1.12, 1.24, 1.38, 1.54];
   var fi = Math.max(0, Math.min(6, parseInt(localStorage.getItem('acim-fs')||'2')));
   var hasZoom = typeof CSS !== 'undefined' && CSS.supports && CSS.supports('zoom','1');
@@ -135822,7 +135766,12 @@ color:black'> </span></p>
       a.addEventListener('click', function(e){
         e.preventDefault();
         var el=document.getElementById(a.dataset.id);
-        if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+        if(!el) return;
+        /* getBoundingClientRect + scrollBy：比 scrollIntoView 更可靠，
+           不受 content-visibility 或 sticky header 影響 */
+        var rect = el.getBoundingClientRect();
+        var offset = window.scrollY + rect.top - 56; /* 56px = crumb bar 高度 */
+        window.scrollTo({top: Math.max(0, offset), behavior:'smooth'});
         if(window.innerWidth<=768) closeSidebar();
       });
       return a;
@@ -136013,7 +135962,9 @@ color:black'> </span></p>
           content.querySelectorAll('mark.search-hl').forEach(function(el){el.outerHTML=el.textContent;});
           nd.innerHTML=nd.innerHTML.replace(rx,function(m){return '<mark class="search-hl">'+m+'</mark>';});
           rx.lastIndex=0;
-          nd.scrollIntoView({behavior:'smooth',block:'center'});
+          var srect=nd.getBoundingClientRect();
+          var soffset=window.scrollY+srect.top-Math.round(window.innerHeight/3);
+          window.scrollTo({top:Math.max(0,soffset),behavior:'smooth'});
           if(window.innerWidth<=768) closeSidebar();
         });
       })(en.node);
