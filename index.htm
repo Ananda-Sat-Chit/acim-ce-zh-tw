@@ -493,26 +493,34 @@ body.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-b
 
 /* 腳注編號樣式 — 移除：已由 fn-badge 系統接管，保留此區塊會覆蓋隱藏規則 */
 
-/* ══ 課程標題框（Word border-top/bottom div）深色模式修正 ══ */
-#content-area div[style*="border-top"],
-#content-area div[style*="border-bottom"] {
-  padding-top:    10px !important;
-  padding-bottom: 10px !important;
+/* ══ 課程標題框：邊線直接加在 h4 上，徹底避免父 div box-model 問題 ══ */
+.lesson-title-box {
+  border: none !important;
+  padding: 0 !important;
+  margin: 1.4em 0 0.6em !important;
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
 }
-body.dark-mode #content-area div[style*="border-top"],
-body.dark-mode #content-area div[style*="border-bottom"] {
-  border-color: rgba(180,160,240,0.7) !important;
+.lesson-title-box h4 {
+  display: block !important;
+  margin: 0 !important;
+  padding: 10px 0 8px !important;
+  line-height: 1.6 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  border-top:    2px solid rgba(107,47,160,0.5) !important;
+  border-bottom: 2px solid rgba(107,47,160,0.5) !important;
+  border-left:   none !important;
+  border-right:  none !important;
 }
-body.dark-mode #content-area [style*="border-top"],
-body.dark-mode #content-area [style*="border-bottom"],
-body.dark-mode #content-area [style*="border-top:solid"],
-body.dark-mode #content-area [style*="border-bottom:solid"],
-body.dark-mode #content-area [style*="solid black"],
-body.dark-mode #content-area [style*="solid windowtext"] {
-  border-top-color: rgba(180,160,240,0.85) !important;
-  border-bottom-color: rgba(180,160,240,0.85) !important;
-  border-color: rgba(180,160,240,0.85) !important;
+body.dark-mode .lesson-title-box h4 {
+  border-top-color:    rgba(212,184,255,0.8) !important;
+  border-bottom-color: rgba(212,184,255,0.8) !important;
 }
+
+/* 舊的 inline style 選擇器保留作 fallback（對未被 JS 處理到的邊緣情況） */
 body.dark-mode #content-area [style*="windowtext"] {
   border-color: rgba(180,160,240,0.5) !important;
 }
@@ -135585,6 +135593,35 @@ color:black'> </span></p>
 
   /* 套用儲存的深色模式 */
   if (localStorage.getItem('acim-dark') === '1') body.classList.add('dark-mode');
+
+  /* ══ 課程標題框正規化（在 content-area 可用前先跑）══
+     Word 的 border-bottom 屬性值跨行，CSS [style*="border-bottom"] 在部分瀏覽器
+     無法匹配，且 border-color shorthand 無法可靠覆蓋 inline border-*-color。
+     解法：JS 找到所有含 windowtext 且有 h4 子元素的 div，
+     統一加上 .lesson-title-box class，移除 Word inline border style，
+     改由 CSS class 完全接管上下邊線。                                ══ */
+  (function fixLessonTitleBoxes(){
+    var ca = document.getElementById('content-area');
+    if (!ca) return;
+    ca.querySelectorAll('div[style]').forEach(function(div){
+      var s = div.getAttribute('style') || '';
+      /* 匹配跨行：把換行符替換後再判斷 */
+      var sFlat = s.replace(/\r?\n/g, ' ');
+      if (/windowtext/i.test(sFlat) && div.querySelector('h4')) {
+        div.classList.add('lesson-title-box');
+        /* 清除 Word 的 border inline style，讓 CSS class 接管 */
+        var cleaned = sFlat
+          .replace(/border[^:]*:[^;]+;?/gi, '')
+          .replace(/padding:[^;]+;?/gi, '')
+          .trim();
+        if (cleaned) {
+          div.setAttribute('style', cleaned);
+        } else {
+          div.removeAttribute('style');
+        }
+      }
+    });
+  })();
 
   /* ── 工具按鈕建立 ── */
   /* ── 回頂按鈕（靜態 HTML，只控制顯隱） ── */
