@@ -205,7 +205,7 @@ body.dark-mode .sidebar-info-box,body.dark-mode #toc-wrapper {
   background-color:var(--c-sidebar)!important;
   border-color:var(--c-border)!important;
 }
-body.dark-mode a[href*="_ftn"],body.dark-mode .MsoFootnoteReference{color:#C9A8E8!important;background:transparent!important;}
+body.dark-mode a[href*="_ftn"],body.dark-mode .MsoFootnoteReference{color:transparent!important;background:transparent!important;font-size:0!important;}
 body.dark-mode img{opacity:0.85;}
 body.dark-mode #toc-search-frame{background:#1A0A2E!important;border-color:var(--c-border)!important;}
 body.dark-mode #toc-search-input{color:var(--c-text)!important;}
@@ -262,47 +262,39 @@ body.dark-mode .sr-item{color:var(--c-muted)!important;border-color:#3D2060!impo
 #footnote-bar.open, #footnote-bar.fn-visible { bottom:0; }
 
 /* ── pill badge ── */
-/* ── footnote 上標連結：隱藏 Word 原始內容，顯示 badge ── */
-a[href*="#_ftn"], a[href*="#_edn"] {
-  /* 外層 a：使用 inline 避免 flex 造成 badge 位移 */
-  display: inline !important;
+/* 原始 Word footnote anchor：注入後直接隱藏，由後面的 sup.fn-badge 取代 */
+a[href*="#_ftn"][data-fn-done],
+a[href*="#_edn"][data-fn-done] {
+  display: none !important;
+}
+/* 注入前仍存在的原始 anchor（尚未被 JS 處理到）先用 CSS 隱藏原始內容 */
+a[href*="#_ftn"]:not([data-fn-done]),
+a[href*="#_edn"]:not([data-fn-done]) {
   font-size: 0 !important;
   line-height: 0 !important;
-  vertical-align: baseline !important;
+  display: inline !important;
   text-decoration: none !important;
   border-bottom: none !important;
-  cursor: help !important;
 }
-/* Word 原始子元素（sup/span/i/b）：字體縮到 0 讓它們隱形 */
-a[href*="#_ftn"] > *:not(.fn-badge),
-a[href*="#_edn"] > *:not(.fn-badge) {
-  font-size: 0 !important;
-  line-height: 0 !important;
-  color: transparent !important;
-  pointer-events: none !important;
-}
-a[href*="#_ftn"] > *:not(.fn-badge) *,
-a[href*="#_edn"] > *:not(.fn-badge) * {
+a[href*="#_ftn"]:not([data-fn-done]) *,
+a[href*="#_edn"]:not([data-fn-done]) * {
   font-size: 0 !important;
   line-height: 0 !important;
   color: transparent !important;
 }
-/* badge span：上標樣式，確保在灰色小框內顯示 */
-a[href*="#_ftn"] > span.fn-badge,
-a[href*="#_edn"] > span.fn-badge,
-a[href*="#_ftn"] .fn-badge,
-a[href*="#_edn"] .fn-badge,
-.fn-badge {
-  display: inline-block !important;
-  font-size: 9.5px !important;
+
+/* badge：sup 元素，直接顯示在文字上標位置，帶灰色小框 */
+sup.fn-badge {
+  display: inline !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
   font-style: normal !important;
-  line-height: 1.4 !important;
+  line-height: 1 !important;
   vertical-align: super !important;
   background: rgba(107,47,160,0.18) !important;
   color: #5A2090 !important;
   border-radius: 3px !important;
-  padding: 0px 3px !important;
+  padding: 1px 3px !important;
   margin: 0 1px !important;
   cursor: help !important;
   transition: background 0.15s !important;
@@ -310,23 +302,19 @@ a[href*="#_edn"] .fn-badge,
   letter-spacing: 0 !important;
   text-decoration: none !important;
   pointer-events: auto !important;
-  position: relative !important;
-  top: 0 !important;
+  /* 確保不被父層 font-size 壓縮 */
+  font-family: -apple-system, sans-serif !important;
 }
-a[href*="#_ftn"]:hover .fn-badge,
-a[href*="#_edn"]:hover .fn-badge {
+sup.fn-badge:hover {
   background: rgba(107,47,160,0.32) !important;
   color: #3D1060 !important;
 }
-body.dark-mode .fn-badge,
-body.dark-mode a[href*="#_ftn"] .fn-badge,
-body.dark-mode a[href*="#_edn"] .fn-badge {
+body.dark-mode sup.fn-badge {
   background: rgba(212,184,255,0.28) !important;
   color: #F0E0FF !important;
   border: 1px solid rgba(212,184,255,0.4) !important;
 }
-body.dark-mode a[href*="#_ftn"]:hover .fn-badge,
-body.dark-mode a[href*="#_edn"]:hover .fn-badge {
+body.dark-mode sup.fn-badge:hover {
   background: rgba(212,184,255,0.46) !important;
   color: #FFFFFF !important;
 }
@@ -139877,12 +139865,24 @@ color:black'> </span></p>
 
   function injectFnBadges(){
     content.querySelectorAll('a[href*="#_ftn"],a[href*="#_edn"]').forEach(function(a){
-      if(a.querySelector('.fn-badge')) return;
+      if(a.dataset.fnDone) return;
+      a.dataset.fnDone='1';
       var m=(a.getAttribute('href')||'').match(/#_(?:ftn|edn)(\d+)$/);
       if(!m) return;
-      var b=document.createElement('span');
-      b.className='fn-badge'; b.textContent=m[1];
-      a.appendChild(b);
+      // Hide the original anchor completely (it contains messy nested Word HTML
+      // with inline font-size that fights our CSS)
+      a.style.cssText='display:none!important;';
+      // Insert a clean <sup class="fn-badge"> immediately after the hidden anchor
+      var b=document.createElement('sup');
+      b.className='fn-badge';
+      b.textContent=m[1];
+      // Store href so the click/hover handlers can find it via closest()
+      b.dataset.fnHref=a.getAttribute('href');
+      if(a.nextSibling){
+        a.parentNode.insertBefore(b,a.nextSibling);
+      } else {
+        a.parentNode.appendChild(b);
+      }
     });
   }
 
@@ -139977,17 +139977,28 @@ color:black'> </span></p>
   var activeRef=null;
   var isTouch=('ontouchstart' in window||navigator.maxTouchPoints>0);
 
+  /* 從 <a href="#_ftnN"> 或 <sup data-fn-href="#_ftnN"> 取得 href */
+  function getFnHref(el){
+    if(!el) return null;
+    /* 新式 sup badge */
+    if(el.dataset&&el.dataset.fnHref) return el.dataset.fnHref;
+    /* 舊式直接在 a 上 */
+    var h=el.getAttribute('href')||'';
+    return h;
+  }
+
   function showFn(ref){
-    var m=(ref.getAttribute('href')||'').match(/#_ftn(\d+)$/);
+    var h=getFnHref(ref)||'';
+    var m=h.match(/#_(?:ftn|edn)(\d+)$/);
     if(!m) return;
     var el=document.getElementById('ftn'+m[1]); if(!el) return;
     fnNum.textContent=m[1]+'.';
     var clone=el.cloneNode(true);
     clone.querySelectorAll('a[href]').forEach(function(a){
-      var h=a.getAttribute('href')||'', t=(a.textContent||'').trim();
-      if(h.toLowerCase().indexOf('_ftnref')!==-1||/^\[\d+\]$/.test(t)){
+      var ah=a.getAttribute('href')||'', t=(a.textContent||'').trim();
+      if(ah.toLowerCase().indexOf('_ftnref')!==-1||/^\[\d+\]$/.test(t)){
         if(a.parentNode) a.parentNode.removeChild(a);
-      } else if(h.charAt(0)==='#'){
+      } else if(ah.charAt(0)==='#'){
         if(a.parentNode) a.parentNode.replaceChild(document.createTextNode(t),a);
       } else { a.setAttribute('target','_blank'); a.setAttribute('rel','noopener noreferrer'); }
     });
@@ -140004,22 +140015,27 @@ color:black'> </span></p>
   document.getElementById('fn-close').addEventListener('click',function(e){e.stopPropagation();hideFn();});
 
   content.addEventListener('click',function(e){
-    /* 支援點擊 badge span 或直接點 a 本身 */
-    var ref=e.target.closest('a[href*="#_ftn"],a[href*="#_edn"]');
+    /* 支援新式 sup.fn-badge 或舊式 a[href*="#_ftn"] */
+    var ref=e.target.closest('sup.fn-badge[data-fn-href]');
+    if(!ref){
+      ref=e.target.closest('a[href*="#_ftn"],a[href*="#_edn"]');
+      if(ref){
+        var h=ref.getAttribute('href')||'';
+        if(!/#_(?:ftn|edn)\d+$/.test(h)) ref=null;
+      }
+    }
     if(!ref) return;
-    var h=ref.getAttribute('href')||'';
-    if(!/#_(?:ftn|edn)\d+$/.test(h)) return;
     e.preventDefault();
     if(activeRef===ref&&fnBar.classList.contains('open')){window.__fnSkip=true;hideFn();}
     else{window.__fnSkip=true;showFn(ref);}
   });
   if(!isTouch){
     content.addEventListener('mouseover',function(e){
-      var r=e.target.closest('a[href*="#_ftn"],a[href*="#_edn"]');
+      var r=e.target.closest('sup.fn-badge[data-fn-href]')||e.target.closest('a[href*="#_ftn"],a[href*="#_edn"]');
       if(r) showFn(r);
     });
     content.addEventListener('mouseout',function(e){
-      var r=e.target.closest('a[href*="#_ftn"],a[href*="#_edn"]');
+      var r=e.target.closest('sup.fn-badge[data-fn-href]')||e.target.closest('a[href*="#_ftn"],a[href*="#_edn"]');
       if(r){
         if(!e.relatedTarget||!e.relatedTarget.closest('#footnote-bar')) hideFn();
       }
