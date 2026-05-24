@@ -139576,7 +139576,23 @@ color:black'> </span></p>
 </div><!-- #book-container -->
 
 <!-- 工具按鈕（JS 建立） -->
-<div id="pwa-tools"></div>
+<div id="pwa-tools">
+  <div class="pwa-btn-wrap" data-tip="回到頂部" id="wrap-top" style="display:none">
+    <button id="btn-top" class="pwa-btn" title="回到頂部" style="background:rgba(107,47,160,0.75)">↑</button>
+  </div>
+  <div class="pwa-btn-wrap" data-tip="放大字體">
+    <button id="btn-fup" class="pwa-btn" title="放大字體" style="background:#4A2080">A＋</button>
+  </div>
+  <div class="pwa-btn-wrap" data-tip="縮小字體">
+    <button id="btn-fdn" class="pwa-btn" title="縮小字體" style="background:#4A2080">A－</button>
+  </div>
+  <div class="pwa-btn-wrap" data-tip="切換深色">
+    <button id="btn-dark" class="pwa-btn" title="切換深色" style="background:#2D1B4E">🌓</button>
+  </div>
+  <div class="pwa-btn-wrap" data-tip="目錄">
+    <button id="btn-toc" class="pwa-btn" title="目錄" style="background:#6B2FA0">☰</button>
+  </div>
+</div>
 
 <!-- 註腳彈出列 -->
 <div id="footnote-bar">
@@ -139598,23 +139614,8 @@ color:black'> </span></p>
   if (localStorage.getItem('acim-dark') === '1') body.classList.add('dark-mode');
 
   /* ── 工具按鈕建立 ── */
-  var tools = document.getElementById('pwa-tools');
-  function makeBtn(id, label, tip, bg) {
-    var w = document.createElement('div');
-    w.className = 'pwa-btn-wrap'; w.setAttribute('data-tip', tip);
-    var b = document.createElement('button');
-    b.id = id; b.className = 'pwa-btn'; b.innerHTML = label; b.title = tip;
-    b.style.background = bg; w.appendChild(b); return w;
-  }
-  tools.appendChild(makeBtn('btn-top',  '↑',  '回到頂部', 'rgba(107,47,160,0.75)'));
-  tools.appendChild(makeBtn('btn-fup',  'A＋', '放大字體', '#4A2080'));
-  tools.appendChild(makeBtn('btn-fdn',  'A－', '縮小字體', '#4A2080'));
-  tools.appendChild(makeBtn('btn-dark', '🌓',  '深色模式', '#2D1B4E'));
-  tools.appendChild(makeBtn('btn-toc',  '☰',   '目錄',    '#6B2FA0'));
-
-  /* ── 回頂按鈕 ── */
-  var topWrap = document.getElementById('btn-top').parentElement;
-  topWrap.style.display = 'none';
+  /* ── 回頂按鈕（靜態 HTML，只控制顯隱） ── */
+  var topWrap = document.getElementById('wrap-top');
   window.addEventListener('scroll', function(){
     topWrap.style.display = window.scrollY > 700 ? '' : 'none';
   }, {passive:true});
