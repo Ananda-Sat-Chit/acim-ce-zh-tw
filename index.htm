@@ -262,23 +262,70 @@ body.dark-mode .sr-item{color:var(--c-muted)!important;border-color:#3D2060!impo
 #footnote-bar.open, #footnote-bar.fn-visible { bottom:0; }
 
 /* ── pill badge ── */
-a[href*="#_ftn"],a[href*="#_edn"]{
-  font-size:0!important;line-height:0!important;
-  vertical-align:baseline!important;text-decoration:none!important;
-  border-bottom:none!important;cursor:help!important;
-  display:inline-flex!important;align-items:center!important;
+/* ── footnote 上標連結：隱藏 Word 原始內容，顯示 badge ── */
+a[href*="#_ftn"], a[href*="#_edn"] {
+  /* 外層 a：縮到接近零的字體，子節點繼承後也接近零 */
+  font-size: 1px !important;
+  line-height: 0 !important;
+  vertical-align: baseline !important;
+  text-decoration: none !important;
+  border-bottom: none !important;
+  cursor: help !important;
+  /* inline-flex 讓 badge 能用 align-items 垂直對齊 */
+  display: inline-flex !important;
+  align-items: center !important;
 }
-a[href*="#_ftn"] *,a[href*="#_edn"] *{font-size:0!important;line-height:0!important;}
-.fn-badge{
-  display:inline-block;font-size:9.5px!important;font-weight:500!important;
-  font-style:normal!important;line-height:1.5!important;vertical-align:middle!important;
-  background:rgba(107,47,160,0.13)!important;color:#5A2090!important;
-  border-radius:4px!important;padding:0 4px!important;margin:0 2px!important;
-  cursor:help!important;transition:background 0.15s!important;
-  white-space:nowrap!important;letter-spacing:0!important;text-decoration:none!important;
+/* Word 原始子元素（sup/span/i/b）：字體縮到 1px 讓它們隱形 */
+a[href*="#_ftn"] > *:not(.fn-badge),
+a[href*="#_edn"] > *:not(.fn-badge) {
+  font-size: 1px !important;
+  line-height: 0 !important;
+  color: transparent !important;
+  pointer-events: none !important;
+  /* 遞迴縮小孫層 */
 }
-a[href*="#_ftn"]:hover .fn-badge{background:rgba(107,47,160,0.26)!important;color:#3D1060!important;}
-body.dark-mode .fn-badge{background:rgba(200,168,232,0.18)!important;color:#C9A8E8!important;}
+a[href*="#_ftn"] > *:not(.fn-badge) *,
+a[href*="#_edn"] > *:not(.fn-badge) * {
+  font-size: 1px !important;
+  line-height: 0 !important;
+  color: transparent !important;
+}
+/* badge span：用最高優先度選擇器確保不被 * 規則覆蓋 */
+a[href*="#_ftn"] > span.fn-badge,
+a[href*="#_edn"] > span.fn-badge,
+a[href*="#_ftn"] .fn-badge,
+a[href*="#_edn"] .fn-badge,
+.fn-badge {
+  display: inline-block !important;
+  font-size: 9.5px !important;
+  font-weight: 500 !important;
+  font-style: normal !important;
+  line-height: 1.5 !important;
+  vertical-align: middle !important;
+  background: rgba(107,47,160,0.13) !important;
+  color: #5A2090 !important;
+  border-radius: 4px !important;
+  padding: 0 4px !important;
+  margin: 0 2px !important;
+  cursor: help !important;
+  transition: background 0.15s !important;
+  white-space: nowrap !important;
+  letter-spacing: 0 !important;
+  text-decoration: none !important;
+  pointer-events: auto !important;
+}
+a[href*="#_ftn"]:hover .fn-badge,
+a[href*="#_edn"]:hover .fn-badge {
+  background: rgba(107,47,160,0.26) !important;
+  color: #3D1060 !important;
+}
+body.dark-mode .fn-badge {
+  background: rgba(200,168,232,0.18) !important;
+  color: #C9A8E8 !important;
+}
+body.dark-mode a[href*="#_ftn"]:hover .fn-badge {
+  background: rgba(200,168,232,0.32) !important;
+}
 body.dark-mode #footnote-bar{background:#3D1B6E;border-top:2px solid #C9A8E8;}
 #fn-inner{display:flex;align-items:flex-start;gap:10px;}
 #fn-num{flex-shrink:0;font-size:13px;font-weight:bold;color:#fff;min-width:28px;padding-top:2px;}
@@ -139958,21 +140005,23 @@ color:black'> </span></p>
   document.getElementById('fn-close').addEventListener('click',function(e){e.stopPropagation();hideFn();});
 
   content.addEventListener('click',function(e){
-    var ref=e.target.closest('a[href]'); if(!ref) return;
+    /* 支援點擊 badge span 或直接點 a 本身 */
+    var ref=e.target.closest('a[href*="#_ftn"],a[href*="#_edn"]');
+    if(!ref) return;
     var h=ref.getAttribute('href')||'';
-    if(!/^#_ftn\d+$/.test(h)) return;
+    if(!/#_(?:ftn|edn)\d+$/.test(h)) return;
     e.preventDefault();
     if(activeRef===ref&&fnBar.classList.contains('open')){window.__fnSkip=true;hideFn();}
     else{window.__fnSkip=true;showFn(ref);}
   });
   if(!isTouch){
     content.addEventListener('mouseover',function(e){
-      var r=e.target.closest('a[href]');
-      if(r&&/^#_ftn\d+$/.test(r.getAttribute('href')||'')) showFn(r);
+      var r=e.target.closest('a[href*="#_ftn"],a[href*="#_edn"]');
+      if(r) showFn(r);
     });
     content.addEventListener('mouseout',function(e){
-      var r=e.target.closest('a[href]');
-      if(r&&/^#_ftn\d+$/.test(r.getAttribute('href')||'')){
+      var r=e.target.closest('a[href*="#_ftn"],a[href*="#_edn"]');
+      if(r){
         if(!e.relatedTarget||!e.relatedTarget.closest('#footnote-bar')) hideFn();
       }
     });
