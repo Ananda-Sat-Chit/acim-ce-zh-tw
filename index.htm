@@ -9,8 +9,8 @@
 <link rel="apple-touch-icon" href="pwa-192x192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet"></noscript>
 
 <script>
 /* SW 清除：登出所有舊版 SW 並清空所有快取 */
@@ -85,6 +85,7 @@ html{scroll-behavior:smooth;}
 body.dark-mode .info-appeal{color:#A890D0!important;}
 .info-section{margin-bottom:3px;}
 .info-section h4{margin:0;color:#3D1560;font-size:10.5px;font-weight:700;display:inline;}
+#content-area h4{display:block !important;}
 .info-section h4::after{content:" ";}
 body.dark-mode .info-section h4{color:var(--c-accent)!important;}
 .info-section p{margin:0;font-size:11px;display:inline;}
@@ -223,20 +224,30 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
 #content-area,
 #content-area p, #content-area span,
 #content-area div, #content-area td, #content-area li {
-  font-family:"Noto Serif TC","LXGW WenKai TC","新細明體",serif !important;
+  font-family:"LXGW WenKai TC","新細明體",serif !important;
 }
 #content-area h1,#content-area h2,#content-area h3,
 #content-area h4,#content-area h5,#content-area h6 {
-  font-family:"Noto Serif TC","新細明體",serif !important;
+  font-family:"新細明體",serif !important;
+  display: block !important;
+}
+/* 課程標題 border div：確保 h4 完整撐開父容器 */
+#content-area div[style*="border-top"] h4,
+#content-area div[style*="border-bottom"] h4 {
+  display: block !important;
+  margin: 0.4em 0 !important;
+  line-height: 1.6 !important;
 }
 /* 保留標楷體用於特別標楷樣式 */
 #content-area [style*="標楷體"],#content-area [style*="DFKai-SB"],
 #content-area [style*="BiauKai"] {
-  font-family:"LXGW WenKai TC","Kaiti TC","STKaiti","標楷體","Noto Serif TC",serif !important;
+  font-family:"LXGW WenKai TC","Kaiti TC","STKaiti","標楷體",serif !important;
 }
 
 /* ── 閱讀內容區 ── */
 #content-area {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 800px;
   flex:1 1 0; min-width:0;
   padding:52px 5% 80px;
   background:var(--c-bg);
@@ -468,48 +479,34 @@ body.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-b
 
 /* 腳注編號樣式 — 移除：已由 fn-badge 系統接管，保留此區塊會覆蓋隱藏規則 */
 
-/* ══ 課程標題框：深色模式完整覆蓋（純 CSS，不需 JS 遍歷）══ */
-
-/* ── 邊線顏色（所有 Word 格式）── */
+/* ══ 課程標題框（Word border-top/bottom div）深色模式修正 ══ */
+#content-area div[style*="border-top"],
+#content-area div[style*="border-bottom"] {
+  padding-top:    10px !important;
+  padding-bottom: 10px !important;
+}
+body.dark-mode #content-area div[style*="border-top"],
+body.dark-mode #content-area div[style*="border-bottom"] {
+  border-color: rgba(180,160,240,0.7) !important;
+}
 body.dark-mode #content-area [style*="border-top"],
 body.dark-mode #content-area [style*="border-bottom"],
-body.dark-mode #content-area [style*="border:"],
 body.dark-mode #content-area [style*="border-top:solid"],
-body.dark-mode #content-area [style*="border-bottom:solid"] {
-  border-color: rgba(180,160,240,0.75) !important;
-}
-/* windowtext（預設文字色，深色時等於黑）*/
-body.dark-mode #content-area [style*="windowtext"] {
-  border-color: rgba(180,160,240,0.75) !important;
-  color: var(--c-text) !important;
-}
-/* black 或 #000 邊線 */
+body.dark-mode #content-area [style*="border-bottom:solid"],
 body.dark-mode #content-area [style*="solid black"],
-body.dark-mode #content-area [style*="solid #000"] {
-  border-color: rgba(180,160,240,0.75) !important;
+body.dark-mode #content-area [style*="solid windowtext"] {
+  border-top-color: rgba(180,160,240,0.85) !important;
+  border-bottom-color: rgba(180,160,240,0.85) !important;
+  border-color: rgba(180,160,240,0.85) !important;
 }
-
-/* ── 文字顏色（Word 黑色文字在深色背景下不可見）── */
+body.dark-mode #content-area [style*="windowtext"] {
+  border-color: rgba(180,160,240,0.5) !important;
+}
 body.dark-mode #content-area [style*="color:black"],
-body.dark-mode #content-area [style*="color: black"],
 body.dark-mode #content-area [style*="color:windowtext"],
-body.dark-mode #content-area [style*="color: windowtext"],
 body.dark-mode #content-area [style*="color:#000"],
-body.dark-mode #content-area [style*="color:#1C1E21"] {
+body.dark-mode #content-area [style*="color: black"] {
   color: var(--c-text) !important;
-}
-/* blue 連結色在深色模式改為亮紫 */
-body.dark-mode #content-area [style*="color:blue"] {
-  color: #C9A8E8 !important;
-}
-
-/* ── 白底色在深色模式改為透明 ── */
-body.dark-mode #content-area [style*="background:white"],
-body.dark-mode #content-area [style*="background-color:white"],
-body.dark-mode #content-area [style*="background:#fff"],
-body.dark-mode #content-area [style*="background-color:#fff"],
-body.dark-mode #content-area [style*="background-color: white"] {
-  background-color: transparent !important;
 }
 body.dark-mode #content-area [style*="background:white"],
 body.dark-mode #content-area [style*="background-color:white"],
@@ -135573,10 +135570,7 @@ color:black'> </span></p>
   var body = document.body;
 
   /* 套用儲存的深色模式 */
-  if (localStorage.getItem('acim-dark') === '1') {
-    body.classList.add('dark-mode');
-    document.documentElement.classList.add('dark-mode');
-  }
+  if (localStorage.getItem('acim-dark') === '1') body.classList.add('dark-mode');
 
   /* ── 工具按鈕建立 ── */
   /* ── 回頂按鈕（靜態 HTML，只控制顯隱） ── */
@@ -135651,7 +135645,42 @@ color:black'> </span></p>
 
   /* ── 深色模式 ── */
   var btnDark = document.getElementById('btn-dark');
-  /* applyDarkFixes: 已改為純 CSS，無需 JS 遍歷 */
+  function applyDarkFixes(isDark) {
+    var ca = document.getElementById('content-area');
+    if (!ca) return;
+    var els = ca.querySelectorAll('[style]');
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      var st = el.getAttribute('style') || '';
+      var hasBT = st.indexOf('border-top') !== -1;
+      var hasBB = st.indexOf('border-bottom') !== -1;
+      var hasWB = (hasBT || hasBB || st.indexOf('border') !== -1) &&
+                  (st.indexOf('windowtext') !== -1 || /black|#000/.test(st));
+      var hasWC = /color\s*:\s*(black|windowtext|#000|#1[Cc]1[Ee]21)/.test(st);
+      var hasBG = /background(-color)?\s*:\s*(white|#[Ff]{3,6})/.test(st);
+      if (isDark) {
+        if (hasWB || hasBT || hasBB) {
+          el.style.borderColor = 'rgba(180,160,240,0.7)';
+          if (hasBT && hasBB) {
+            el.style.paddingTop    = '10px';
+            el.style.paddingBottom = '10px';
+          }
+        }
+        if (hasWC) el.style.color = '#EAE0F8';
+        if (hasBG) el.style.backgroundColor = 'transparent';
+      } else {
+        if (hasWB || hasBT || hasBB) {
+          el.style.borderColor = '';
+          if (hasBT && hasBB) {
+            el.style.paddingTop    = '';
+            el.style.paddingBottom = '';
+          }
+        }
+        if (hasWC) el.style.color = '';
+        if (hasBG) el.style.backgroundColor = '';
+      }
+    }
+  }
 
   function syncDark() {
     var dark = body.classList.contains('dark-mode');
@@ -135665,6 +135694,7 @@ color:black'> </span></p>
     document.documentElement.classList.toggle('dark-mode', body.classList.contains('dark-mode'));
     localStorage.setItem('acim-dark', body.classList.contains('dark-mode')?'1':'0');
     syncDark();
+    applyDarkFixes(body.classList.contains('dark-mode'));
   });
 
   /* ── 進度條（rAF throttle，避免強迫同步 layout）── */
@@ -135829,14 +135859,12 @@ color:black'> </span></p>
     requestIdleCallback(buildTOC,{timeout:2000});
     requestIdleCallback(injectFnBadges,{timeout:3000});
     if(localStorage.getItem('acim-dark')==='1')
-      requestIdleCallback(function(){
-},{timeout:4000});
+      requestIdleCallback(function(){applyDarkFixes(true);},{timeout:4000});
   } else {
     setTimeout(buildTOC,200);
     setTimeout(injectFnBadges,600);
     if(localStorage.getItem('acim-dark')==='1')
-      setTimeout(function(){
-},800);
+      setTimeout(function(){applyDarkFixes(true);},800);
   }
 
   function injectFnBadges(){
