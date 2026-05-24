@@ -270,6 +270,19 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
   /* content-visibility 不能加在整個 content-area:
      會使 scrollIntoView() 無法定位視口外的 headings（跳到頁頂）*/
 }
+/* ── 覆蓋 Word 寫死的 line-height:14.4pt（共2848個段落）──
+   Word inline style 優先度高於 CSS class，但低於 !important。
+   14.4pt ≈ 19px，在字型放大或 sup badge 出現時會截斷文字下緣。
+   統一改為 1.9，比 Word 值寬鬆，與我們的 --lh:1.95 接近。        */
+#content-area p,
+#content-area li,
+#content-area td {
+  line-height: 1.9 !important;
+}
+/* h4 課程標題稍微緊一點但夠用 */
+#content-area h4 {
+  line-height: 1.6 !important;
+}
 /* 內文最佳行寬容器 */
 #content-area > *:not(#reading-progress) {
   max-width:var(--content-max);
