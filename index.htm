@@ -259,7 +259,26 @@ body.dark-mode .sr-item{color:var(--c-muted)!important;border-color:#3D2060!impo
   box-shadow:0 -4px 20px rgba(80,0,120,0.3);
   transition:bottom var(--spd);
 }
-#footnote-bar.open{bottom:0;}
+#footnote-bar.open, #footnote-bar.fn-visible { bottom:0; }
+
+/* ── pill badge ── */
+a[href*="#_ftn"],a[href*="#_edn"]{
+  font-size:0!important;line-height:0!important;
+  vertical-align:baseline!important;text-decoration:none!important;
+  border-bottom:none!important;cursor:help!important;
+  display:inline-flex!important;align-items:center!important;
+}
+a[href*="#_ftn"] *,a[href*="#_edn"] *{font-size:0!important;line-height:0!important;}
+.fn-badge{
+  display:inline-block;font-size:9.5px!important;font-weight:500!important;
+  font-style:normal!important;line-height:1.5!important;vertical-align:middle!important;
+  background:rgba(107,47,160,0.13)!important;color:#5A2090!important;
+  border-radius:4px!important;padding:0 4px!important;margin:0 2px!important;
+  cursor:help!important;transition:background 0.15s!important;
+  white-space:nowrap!important;letter-spacing:0!important;text-decoration:none!important;
+}
+a[href*="#_ftn"]:hover .fn-badge{background:rgba(107,47,160,0.26)!important;color:#3D1060!important;}
+body.dark-mode .fn-badge{background:rgba(200,168,232,0.18)!important;color:#C9A8E8!important;}
 body.dark-mode #footnote-bar{background:#3D1B6E;border-top:2px solid #C9A8E8;}
 #fn-inner{display:flex;align-items:flex-start;gap:10px;}
 #fn-num{flex-shrink:0;font-size:13px;font-weight:bold;color:#fff;min-width:28px;padding-top:2px;}
@@ -139623,6 +139642,32 @@ color:black'> </span></p>
     window.scrollTo({top:0, behavior:'smooth'});
   });
 
+  /* ── 側邊欄（最先宣告，buildTOC 用到 closeSidebar）── */
+  var sidebar = document.getElementById('sidebar-toc');
+  var overlay = document.getElementById('sidebar-overlay');
+
+  function openSidebar(){
+    sidebar.classList.add('mobile-open');
+    overlay.style.display='block';
+    requestAnimationFrame(function(){ overlay.style.opacity='1'; });
+  }
+  function closeSidebar(){
+    sidebar.classList.remove('mobile-open');
+    overlay.style.opacity='0';
+    setTimeout(function(){ overlay.style.display='none'; }, 280);
+  }
+  document.getElementById('crumb-text').parentElement.addEventListener('click', function(){
+    sidebar.classList.contains('mobile-open') ? closeSidebar() : openSidebar();
+  });
+  document.getElementById('btn-toc').addEventListener('click', function(){
+    if(window.innerWidth<=768){
+      sidebar.classList.contains('mobile-open') ? closeSidebar() : openSidebar();
+    } else {
+      sidebar.style.display = sidebar.style.display==='none' ? 'flex' : 'none';
+    }
+  });
+  overlay.addEventListener('click', closeSidebar);
+
   /* ── 字型縮放 ── */
   var content = document.getElementById('content-area');
   var zSteps = [0.78, 0.89, 1.0, 1.12, 1.24];
@@ -139778,7 +139823,22 @@ color:black'> </span></p>
 
   if(window.requestIdleCallback){
     requestIdleCallback(buildTOC,{timeout:2000});
-  } else { setTimeout(buildTOC,200); }
+    requestIdleCallback(injectFnBadges,{timeout:3000});
+  } else {
+    setTimeout(buildTOC,200);
+    setTimeout(injectFnBadges,600);
+  }
+
+  function injectFnBadges(){
+    content.querySelectorAll('a[href*="#_ftn"],a[href*="#_edn"]').forEach(function(a){
+      if(a.querySelector('.fn-badge')) return;
+      var m=(a.getAttribute('href')||'').match(/#_(?:ftn|edn)(\d+)$/);
+      if(!m) return;
+      var b=document.createElement('span');
+      b.className='fn-badge'; b.textContent=m[1];
+      a.appendChild(b);
+    });
+  }
 
   /* ── 搜尋 ── */
   function buildIndex(){
@@ -139843,32 +139903,7 @@ color:black'> </span></p>
     }
   }
 
-  /* ── 側邊欄開關 ── */
-  var sidebar=document.getElementById('sidebar-toc');
-  var overlay=document.getElementById('sidebar-overlay');
-
-  function openSidebar(){
-    sidebar.classList.add('mobile-open');
-    overlay.style.display='block';
-    requestAnimationFrame(function(){overlay.style.opacity='1';});
-  }
-  function closeSidebar(){
-    sidebar.classList.remove('mobile-open');
-    overlay.style.opacity='0';
-    setTimeout(function(){overlay.style.display='none';},280);
-  }
-
-  document.getElementById('crumb-text').parentElement.addEventListener('click',function(){
-    sidebar.classList.contains('mobile-open')?closeSidebar():openSidebar();
-  });
-  document.getElementById('btn-toc').addEventListener('click',function(){
-    if(window.innerWidth<=768){
-      sidebar.classList.contains('mobile-open')?closeSidebar():openSidebar();
-    } else {
-      sidebar.style.display=sidebar.style.display==='none'?'flex':'none';
-    }
-  });
-  overlay.addEventListener('click',closeSidebar);
+  /* sidebar-block-placeholder */
 
   /* ── 鍵盤 ── */
   document.addEventListener('keydown',function(e){
