@@ -286,15 +286,15 @@ a[href*="#_edn"]:not([data-fn-done]) * {
 /* badge：sup 元素，直接顯示在文字上標位置，帶灰色小框 */
 sup.fn-badge {
   display: inline !important;
-  font-size: 10px !important;
-  font-weight: 600 !important;
+  font-size: 7.5px !important;
+  font-weight: 700 !important;
   font-style: normal !important;
   line-height: 1 !important;
   vertical-align: super !important;
   background: rgba(107,47,160,0.18) !important;
   color: #5A2090 !important;
   border-radius: 3px !important;
-  padding: 1px 3px !important;
+  padding: 1px 2.5px !important;
   margin: 0 1px !important;
   cursor: help !important;
   transition: background 0.15s !important;
@@ -302,7 +302,6 @@ sup.fn-badge {
   letter-spacing: 0 !important;
   text-decoration: none !important;
   pointer-events: auto !important;
-  /* 確保不被父層 font-size 壓縮 */
   font-family: -apple-system, sans-serif !important;
 }
 sup.fn-badge:hover {
@@ -139702,8 +139701,8 @@ color:black'> </span></p>
 
   /* ── 字型縮放 ── */
   var content = document.getElementById('content-area');
-  var zSteps = [0.78, 0.89, 1.0, 1.12, 1.24];
-  var fi = Math.max(0, Math.min(4, parseInt(localStorage.getItem('acim-fs')||'2')));
+  var zSteps = [0.78, 0.89, 1.0, 1.12, 1.24, 1.38, 1.54];
+  var fi = Math.max(0, Math.min(6, parseInt(localStorage.getItem('acim-fs')||'2')));
   var hasZoom = typeof CSS !== 'undefined' && CSS.supports && CSS.supports('zoom','1');
 
   function applyZoom() {
@@ -139719,7 +139718,7 @@ color:black'> </span></p>
     }
     localStorage.setItem('acim-fs', fi);
     var u = document.getElementById('btn-fup'), d = document.getElementById('btn-fdn');
-    if (u) u.style.opacity = fi >= 4 ? '0.38' : '1';
+    if (u) u.style.opacity = fi >= 6 ? '0.38' : '1';
     if (d) d.style.opacity = fi <= 0 ? '0.38' : '1';
   }
   applyZoom();
@@ -139729,7 +139728,7 @@ color:black'> </span></p>
     setTimeout(function(){ btn.classList.remove('at-limit'); }, 350);
   }
   document.getElementById('btn-fup').addEventListener('click', function(){
-    if (fi < 4){ fi++; applyZoom(); } else shake(this);
+    if (fi < 6){ fi++; applyZoom(); } else shake(this);
   });
   document.getElementById('btn-fdn').addEventListener('click', function(){
     if (fi > 0){ fi--; applyZoom(); } else shake(this);
@@ -139965,7 +139964,7 @@ color:black'> </span></p>
       else shake(document.getElementById('btn-fdn'));
     }
     if((e.ctrlKey||e.metaKey)&&e.key===']'){
-      e.preventDefault(); if(fi<4){fi++;applyZoom();}
+      e.preventDefault(); if(fi<6){fi++;applyZoom();}
       else shake(document.getElementById('btn-fup'));
     }
   });
