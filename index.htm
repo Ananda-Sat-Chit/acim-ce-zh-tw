@@ -468,24 +468,48 @@ body.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-b
 
 /* 腳注編號樣式 — 移除：已由 fn-badge 系統接管，保留此區塊會覆蓋隱藏規則 */
 
-/* ══ 課程標題框（Word border-top/bottom div）深色模式修正 ══ */
-#content-area div[style*="border-top"],
-#content-area div[style*="border-bottom"] {
-  padding-top:    10px !important;
-  padding-bottom: 10px !important;
+/* ══ 課程標題框：深色模式完整覆蓋（純 CSS，不需 JS 遍歷）══ */
+
+/* ── 邊線顏色（所有 Word 格式）── */
+body.dark-mode #content-area [style*="border-top"],
+body.dark-mode #content-area [style*="border-bottom"],
+body.dark-mode #content-area [style*="border:"],
+body.dark-mode #content-area [style*="border-top:solid"],
+body.dark-mode #content-area [style*="border-bottom:solid"] {
+  border-color: rgba(180,160,240,0.75) !important;
 }
-body.dark-mode #content-area div[style*="border-top"],
-body.dark-mode #content-area div[style*="border-bottom"] {
-  border-color: rgba(180,160,240,0.7) !important;
-}
+/* windowtext（預設文字色，深色時等於黑）*/
 body.dark-mode #content-area [style*="windowtext"] {
-  border-color: rgba(180,160,240,0.5) !important;
-}
-body.dark-mode #content-area [style*="color:black"],
-body.dark-mode #content-area [style*="color:windowtext"],
-body.dark-mode #content-area [style*="color:#000"],
-body.dark-mode #content-area [style*="color: black"] {
+  border-color: rgba(180,160,240,0.75) !important;
   color: var(--c-text) !important;
+}
+/* black 或 #000 邊線 */
+body.dark-mode #content-area [style*="solid black"],
+body.dark-mode #content-area [style*="solid #000"] {
+  border-color: rgba(180,160,240,0.75) !important;
+}
+
+/* ── 文字顏色（Word 黑色文字在深色背景下不可見）── */
+body.dark-mode #content-area [style*="color:black"],
+body.dark-mode #content-area [style*="color: black"],
+body.dark-mode #content-area [style*="color:windowtext"],
+body.dark-mode #content-area [style*="color: windowtext"],
+body.dark-mode #content-area [style*="color:#000"],
+body.dark-mode #content-area [style*="color:#1C1E21"] {
+  color: var(--c-text) !important;
+}
+/* blue 連結色在深色模式改為亮紫 */
+body.dark-mode #content-area [style*="color:blue"] {
+  color: #C9A8E8 !important;
+}
+
+/* ── 白底色在深色模式改為透明 ── */
+body.dark-mode #content-area [style*="background:white"],
+body.dark-mode #content-area [style*="background-color:white"],
+body.dark-mode #content-area [style*="background:#fff"],
+body.dark-mode #content-area [style*="background-color:#fff"],
+body.dark-mode #content-area [style*="background-color: white"] {
+  background-color: transparent !important;
 }
 body.dark-mode #content-area [style*="background:white"],
 body.dark-mode #content-area [style*="background-color:white"],
@@ -135549,7 +135573,10 @@ color:black'> </span></p>
   var body = document.body;
 
   /* 套用儲存的深色模式 */
-  if (localStorage.getItem('acim-dark') === '1') body.classList.add('dark-mode');
+  if (localStorage.getItem('acim-dark') === '1') {
+    body.classList.add('dark-mode');
+    document.documentElement.classList.add('dark-mode');
+  }
 
   /* ── 工具按鈕建立 ── */
   /* ── 回頂按鈕（靜態 HTML，只控制顯隱） ── */
@@ -135624,42 +135651,7 @@ color:black'> </span></p>
 
   /* ── 深色模式 ── */
   var btnDark = document.getElementById('btn-dark');
-  function applyDarkFixes(isDark) {
-    var ca = document.getElementById('content-area');
-    if (!ca) return;
-    var els = ca.querySelectorAll('[style]');
-    for (var i = 0; i < els.length; i++) {
-      var el = els[i];
-      var st = el.getAttribute('style') || '';
-      var hasBT = st.indexOf('border-top') !== -1;
-      var hasBB = st.indexOf('border-bottom') !== -1;
-      var hasWB = (hasBT || hasBB || st.indexOf('border') !== -1) &&
-                  (st.indexOf('windowtext') !== -1 || /black|#000/.test(st));
-      var hasWC = /color\s*:\s*(black|windowtext|#000|#1[Cc]1[Ee]21)/.test(st);
-      var hasBG = /background(-color)?\s*:\s*(white|#[Ff]{3,6})/.test(st);
-      if (isDark) {
-        if (hasWB || hasBT || hasBB) {
-          el.style.borderColor = 'rgba(180,160,240,0.7)';
-          if (hasBT && hasBB) {
-            el.style.paddingTop    = '10px';
-            el.style.paddingBottom = '10px';
-          }
-        }
-        if (hasWC) el.style.color = '#EAE0F8';
-        if (hasBG) el.style.backgroundColor = 'transparent';
-      } else {
-        if (hasWB || hasBT || hasBB) {
-          el.style.borderColor = '';
-          if (hasBT && hasBB) {
-            el.style.paddingTop    = '';
-            el.style.paddingBottom = '';
-          }
-        }
-        if (hasWC) el.style.color = '';
-        if (hasBG) el.style.backgroundColor = '';
-      }
-    }
-  }
+  /* applyDarkFixes: 已改為純 CSS，無需 JS 遍歷 */
 
   function syncDark() {
     var dark = body.classList.contains('dark-mode');
@@ -135673,7 +135665,6 @@ color:black'> </span></p>
     document.documentElement.classList.toggle('dark-mode', body.classList.contains('dark-mode'));
     localStorage.setItem('acim-dark', body.classList.contains('dark-mode')?'1':'0');
     syncDark();
-    applyDarkFixes(body.classList.contains('dark-mode'));
   });
 
   /* ── 進度條（rAF throttle，避免強迫同步 layout）── */
@@ -135838,12 +135829,14 @@ color:black'> </span></p>
     requestIdleCallback(buildTOC,{timeout:2000});
     requestIdleCallback(injectFnBadges,{timeout:3000});
     if(localStorage.getItem('acim-dark')==='1')
-      requestIdleCallback(function(){applyDarkFixes(true);},{timeout:4000});
+      requestIdleCallback(function(){
+},{timeout:4000});
   } else {
     setTimeout(buildTOC,200);
     setTimeout(injectFnBadges,600);
     if(localStorage.getItem('acim-dark')==='1')
-      setTimeout(function(){applyDarkFixes(true);},800);
+      setTimeout(function(){
+},800);
   }
 
   function injectFnBadges(){
