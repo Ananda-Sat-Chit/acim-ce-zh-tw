@@ -13,8 +13,18 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet"></noscript>
 
 <script>
-/* SW 註冊 */
+/* SW：先清除所有舊版，再重新註冊 v7 */
 if ('serviceWorker' in navigator) {
+  // 立即清除所有舊 SW 和快取
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(reg) { reg.unregister(); });
+  });
+  caches.keys().then(function(keys) {
+    keys.forEach(function(k) {
+      if (k.indexOf('v7') === -1) caches.delete(k);
+    });
+  });
+  // 重新註冊
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('./sw.js')
       .catch(function(e){ console.log('SW error:', e); });
@@ -4747,6 +4757,19 @@ ul
 </head>
 
 <body>
+<!-- 載入確認：如果你看到這行說明 HTML 有正確載入 -->
+<div id="load-check" style="position:fixed;top:0;left:0;right:0;z-index:9999999;
+  background:#6B2FA0;color:#fff;text-align:center;padding:8px;font-size:13px;
+  font-family:sans-serif;">
+  ✓ 奇蹟課程 v8 載入中… 若頁面仍空白請按 Ctrl+Shift+Delete 清除快取
+</div>
+<script>
+  /* 3 秒後自動移除提示 */
+  setTimeout(function(){ 
+    var el = document.getElementById('load-check');
+    if (el) el.style.display = 'none';
+  }, 3000);
+</script>
 <!-- ═══ 固定 DOM 結構（不靠 JS 搬移） ═══ -->
 <div id="reading-progress"></div>
 

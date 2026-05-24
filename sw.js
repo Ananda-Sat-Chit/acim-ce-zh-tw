@@ -1,6 +1,6 @@
-/* Service Worker v7 — 版本更新會自動清除 v6 舊快取 */
-const CACHE_CORE = 'acim-core-v7';
-const CACHE_FONT = 'acim-font-v7';
+/* Service Worker v8 */
+const CACHE_CORE = 'acim-core-v8';
+const CACHE_FONT = 'acim-font-v8';
 
 const CORE_FILES = [
   './',
@@ -11,71 +11,58 @@ const CORE_FILES = [
   './icon-512.png'
 ];
 
-self.addEventListener('install', function (event) {
+self.addEventListener('install', function(event) {
   event.waitUntil(
-    caches.open(CACHE_CORE).then(function (cache) {
-      return cache.addAll(CORE_FILES);
-    }).then(function () {
-      return self.skipWaiting(); // 強制立即取代舊 SW
-    })
+    caches.open(CACHE_CORE)
+      .then(function(cache) { return cache.addAll(CORE_FILES); })
+      .then(function() { return self.skipWaiting(); })
   );
 });
 
-self.addEventListener('activate', function (event) {
+self.addEventListener('activate', function(event) {
   event.waitUntil(
-    caches.keys().then(function (keys) {
+    caches.keys().then(function(keys) {
       return Promise.all(
-        keys.filter(function (k) {
-          return k !== CACHE_CORE && k !== CACHE_FONT;
-        }).map(function (k) {
-          console.log('[SW] 刪除舊快取:', k);
-          return caches.delete(k);
-        })
+        keys.filter(function(k) { return k !== CACHE_CORE && k !== CACHE_FONT; })
+            .map(function(k) { return caches.delete(k); })
       );
-    }).then(function () {
-      return self.clients.claim(); // 立即接管所有分頁
-    })
+    }).then(function() { return self.clients.claim(); })
   );
 });
 
-self.addEventListener('fetch', function (event) {
+self.addEventListener('fetch', function(event) {
   var url = event.request.url;
 
-  /* Google Fonts → staleWhileRevalidate */
+  /* Google Fonts → stale-while-revalidate */
   if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
     event.respondWith(
-      caches.open(CACHE_FONT).then(function (cache) {
-        return cache.match(event.request).then(function (cached) {
-          var fetchPromise = fetch(event.request).then(function (response) {
-            if (response && response.status === 200) {
-              cache.put(event.request, response.clone());
-            }
-            return response;
-          }).catch(function () { return cached; });
-          return cached || fetchPromise;
+      caches.open(CACHE_FONT).then(function(cache) {
+        return cache.match(event.request).then(function(cached) {
+          var fresh = fetch(event.request).then(function(res) {
+            if (res && res.status === 200) cache.put(event.request, res.clone());
+            return res;
+          }).catch(function() { return cached; });
+          return cached || fresh;
         });
       })
     );
     return;
   }
 
-  /* 核心檔案 → network-first（確保拿到最新版） */
-  if (url.includes('index.htm') || url.endsWith('/') || url.includes('manifest.json')) {
+  /* index.htm → network-first（永遠拿最新版） */
+  if (url.includes('index.htm') || url.endsWith('/') || url.endsWith('/acim-ce-zh-tw/')) {
     event.respondWith(
-      fetch(event.request).then(function (response) {
-        var clone = response.clone();
-        caches.open(CACHE_CORE).then(function (cache) { cache.put(event.request, clone); });
-        return response;
-      }).catch(function () {
-        return caches.match(event.request);
-      })
+      fetch(event.request).then(function(res) {
+        caches.open(CACHE_CORE).then(function(c) { c.put(event.request, res.clone()); });
+        return res;
+      }).catch(function() { return caches.match(event.request); })
     );
     return;
   }
 
-  /* 其他靜態資源 → cache-first */
+  /* 其他 → cache-first */
   event.respondWith(
-    caches.match(event.request).then(function (cached) {
+    caches.match(event.request).then(function(cached) {
       return cached || fetch(event.request);
     })
   );
