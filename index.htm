@@ -14,6 +14,9 @@
 <meta name="twitter:card"       content="summary">
 <meta name="twitter:title"      content="完整加註版奇蹟課程">
 <meta name="twitter:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
+<meta name="twitter:image" content="https://ananda-sat-chit.github.io/acim-ce-zh-tw/pwa-192x192.png">
+<link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
+<meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#403053">
 <title>完整加註版奇蹟課程</title>
 <link rel="manifest" href="manifest.json">
@@ -72,8 +75,14 @@ if ('serviceWorker' in navigator) {
 }
 /* 早期套用深色模式，防止白閃 */
 (function(){
-  if (localStorage.getItem('acim-dark') === '1')
+  var stored = localStorage.getItem('acim-dark');
+  if (stored === '1') {
     document.documentElement.classList.add('dark-mode');
+  } else if (stored === null &&
+             window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    /* 使用者從未手動設定 → 跟隨 OS 深色模式 */
+    document.documentElement.classList.add('dark-mode');
+  }
 })();
 </script>
 
@@ -682,6 +691,21 @@ ul{margin-bottom:0;}
 <!-- ========================================== -->
 
 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Book",
+  "name": "完整加註版奇蹟課程",
+  "inLanguage": "zh-TW",
+  "url": "https://ananda-sat-chit.github.io/acim-ce-zh-tw/",
+  "description": "奇蹟課程完整加註版（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。",
+  "author": { "@type": "Person", "name": "Helen Schucman" },
+  "editor": { "@type": "Person", "name": "Robert Perry" },
+  "translator": { "@type": "Person", "name": "慧軍" },
+  "publisher": { "@type": "Organization", "name": "Circle of Atonement" },
+  "image": "https://ananda-sat-chit.github.io/acim-ce-zh-tw/pwa-192x192.png"
+}
+</script>
 </head>
 
 <body>
@@ -714,8 +738,8 @@ ul{margin-bottom:0;}
           <input id="toc-search-input" type="search" placeholder="搜尋內文關鍵字…" autocomplete="off" spellcheck="false">
           <button id="toc-search-clear" aria-label="清除搜尋">✕</button>
         </div>
-        <div id="search-count-badge"></div>
-        <div id="toc-search-results"></div>
+        <div id="search-count-badge" role="status" aria-live="polite" aria-atomic="true"></div>
+        <div id="toc-search-results" role="region" aria-label="搜尋結果" aria-live="polite"></div>
       </div>
     </div>
     <div id="toc-wrapper"></div>
@@ -47916,10 +47940,22 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       var en=searchIndex[i]; if(!rx.test(en.text)){rx.lastIndex=0;continue;}
       rx.lastIndex=0; count++;
       var ex=en.text.slice(0,88);
-      var hl=ex.replace(rx,function(m){return '<mark style="background:#ffe066;border-radius:2px;padding:0 2px;">'+m+'</mark>';});
       rx.lastIndex=0;
       var item=document.createElement('div'); item.className='sr-item';
-      item.innerHTML=hl+'<span class="sr-hint">點擊跳至段落</span>';
+      /* XSS fix: build highlight nodes via DOM API, not innerHTML */
+      var parts=ex.split(rx); rx.lastIndex=0;
+      var matches=ex.match(rx)||[]; rx.lastIndex=0;
+      parts.forEach(function(part,pi){
+        if(part) item.appendChild(document.createTextNode(part));
+        if(pi<matches.length){
+          var mk=document.createElement('mark');
+          mk.style.cssText='background:#ffe066;border-radius:2px;padding:0 2px;';
+          mk.textContent=matches[pi];
+          item.appendChild(mk);
+        }
+      });
+      var hint=document.createElement('span'); hint.className='sr-hint'; hint.textContent='點擊跳至段落';
+      item.appendChild(hint);
       (function(nd){
         item.addEventListener('click',function(){
           content.querySelectorAll('mark.search-hl').forEach(function(el){el.outerHTML=el.textContent;});

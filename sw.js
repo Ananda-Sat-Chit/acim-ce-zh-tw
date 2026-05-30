@@ -118,7 +118,12 @@ self.addEventListener('install', function(event) {
   self.skipWaiting();
   event.waitUntil(
     caches.open(SHELL_CACHE).then(function(cache) {
-      return cache.addAll(['./', './index.htm', './manifest.json']);
+      return cache.addAll([
+        './',
+        './index.htm',
+        './manifest.json',
+        'https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap'
+      ]);
     })
   );
 });

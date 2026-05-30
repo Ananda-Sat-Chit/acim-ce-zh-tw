@@ -26,6 +26,22 @@
     "books",
     "education"
   ],
+  "screenshots": [
+    {
+      "src": "screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "桌面閱讀介面"
+    },
+    {
+      "src": "screenshot-narrow.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "手機閱讀介面"
+    }
+  ],
   "shortcuts": [
     {
       "name": "繼續閱讀",
