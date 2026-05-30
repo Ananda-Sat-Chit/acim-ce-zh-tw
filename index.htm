@@ -135944,11 +135944,23 @@ color:black'> </span></p>
         e.preventDefault();
         var el=document.getElementById(a.dataset.id);
         if(!el) return;
-        /* getBoundingClientRect + scrollBy：比 scrollIntoView 更可靠，
-           不受 content-visibility 或 sticky header 影響 */
+        /* 捲動內文到目標 heading */
         var rect = el.getBoundingClientRect();
-        var offset = window.scrollY + rect.top - 56; /* 56px = crumb bar 高度 */
+        var offset = window.scrollY + rect.top - 56;
         window.scrollTo({top: Math.max(0, offset), behavior:'smooth'});
+        /* 展開此連結的所有直接父層（確保在已收合群組內的連結也能被看到）*/
+        var p = a.parentElement;
+        while(p && p !== tocWrapper){
+          if(p.classList.contains('toc-children') && !p.classList.contains('open')){
+            p.classList.add('open');
+            var rowEl = p.previousElementSibling;
+            var arrEl = rowEl && rowEl.querySelector('.toc-arrow');
+            if(arrEl) arrEl.textContent = '▼';
+            var linkInRow = rowEl && rowEl.querySelector('.toc-link');
+            if(linkInRow && linkInRow.dataset.id) saveTocState(linkInRow.dataset.id, true);
+          }
+          p = p.parentElement;
+        }
         if(window.innerWidth<=768) closeSidebar();
       });
       return a;
@@ -136043,21 +136055,9 @@ color:black'> </span></p>
           Object.values(links).forEach(function(l){l.classList.remove('toc-active');});
           var al=links[e.target.id]; if(!al) return;
           al.classList.add('toc-active');
-          /* ── 展開「直接父層」toc-children（只展開包住自己那條鏈，不動其他 h1）── */
-          var p=al.parentElement;
-          while(p&&p!==tocWrapper){
-            if(p.classList.contains('toc-children')&&!p.classList.contains('open')){
-              p.classList.add('open');
-              /* 更新箭頭符號 */
-              var rowEl=p.previousElementSibling;
-              var arrEl=rowEl&&rowEl.querySelector('.toc-arrow');
-              if(arrEl) arrEl.textContent='▼';
-              /* 記住這次自動展開的狀態 */
-              var linkInRow=rowEl&&rowEl.querySelector('.toc-link');
-              if(linkInRow && linkInRow.dataset.id) saveTocState(linkInRow.dataset.id, true);
-            }
-            p=p.parentElement;
-          }
+          /* ── IntersectionObserver 只負責高亮 + breadcrumb + 捲動 TOC ──
+             不自動展開任何 toc-children：展開/收合由使用者點箭頭決定，
+             避免捲動時多個 heading 同時進入視窗造成多群組被意外展開。 */
           var wr=tocWrapper.getBoundingClientRect(), lr=al.getBoundingClientRect();
           if(lr.top<wr.top||lr.bottom>wr.bottom) al.scrollIntoView({block:'nearest',behavior:'smooth'});
           /* breadcrumb：組合 h1 › h2 › h3 路徑 */
