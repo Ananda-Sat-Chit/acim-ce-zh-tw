@@ -13,17 +13,23 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet"></noscript>
 
 <script>
-/* SW 清除：登出所有舊版 SW 並清空所有快取 */
+/* Service Worker 登記 — v10 Workbox 離線支援 */
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(function(regs) {
-    regs.forEach(function(reg) { reg.unregister(); });
-  });
-  caches.keys().then(function(keys) {
-    keys.forEach(function(k) { caches.delete(k); });
-  });
-  /* 用 pass-through SW 確保舊快取真的清掉 */
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js').catch(function(){});
+    navigator.serviceWorker.register('./sw.js')
+      .then(function(reg) {
+        reg.addEventListener('updatefound', function() {
+          var nw = reg.installing;
+          if (nw) {
+            nw.addEventListener('statechange', function() {
+              if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                console.info('[ACIM] 新版本已快取，下次啟動生效');
+              }
+            });
+          }
+        });
+      })
+      .catch(function(err) { console.warn('[ACIM] SW 登記失敗:', err); });
   });
 }
 /* 早期套用深色模式，防止白閃 */
