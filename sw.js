@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   Service Worker v10 — 完整加註版奇蹟課程 PWA
+   Service Worker v11 — 完整加註版奇蹟課程 PWA
    策略：
      Shell (HTML / manifest / icons)  → CacheFirst
      Google Fonts CSS                 → StaleWhileRevalidate
@@ -21,7 +21,7 @@ const { ExpirationPlugin }       = workbox.expiration;
 const { CacheableResponsePlugin }= workbox.cacheableResponse;
 
 /* ── 快取名稱 ── */
-const SHELL_CACHE   = 'acim-shell-v2';
+const SHELL_CACHE   = 'acim-shell-v3';
 const FONT_CACHE    = 'acim-fonts-v1';
 const IMAGE_CACHE   = 'acim-images-v1';
 const CONTENT_CACHE = 'acim-content-v1';
@@ -116,9 +116,12 @@ registerRoute(
    ────────────────────────────────────────────────────── */
 self.addEventListener('install', function(event) {
   self.skipWaiting();
+  /* 使用絕對路徑，與 manifest.json 的 scope (/acim-ce-zh-tw/) 完全一致，
+     避免 SW 攔截範圍與 manifest scope 因相對路徑解析差異而不吻合 */
+  var BASE = '/acim-ce-zh-tw/';
   event.waitUntil(
     caches.open(SHELL_CACHE).then(function(cache) {
-      return cache.addAll(['./', './index.htm', './manifest.json']);
+      return cache.addAll([BASE, BASE + 'index.htm', BASE + 'manifest.json']);
     })
   );
 });
@@ -138,4 +141,18 @@ self.addEventListener('activate', function(event) {
       return self.clients.claim();
     })
   );
+});
+
+/* ──────────────────────────────────────────────────────
+   Background Sync（預留框架）
+   目前 PWA 僅用 localStorage 儲存閱讀位置與設定，
+   不需要伺服器同步，故 sync 事件僅做 console 記錄。
+   未來若加入書籤、筆記、進度雲端同步功能，
+   請在此擴充對應 tag 的處理邏輯。
+   ────────────────────────────────────────────────────── */
+self.addEventListener('sync', function(event) {
+  if (event.tag === 'acim-reading-progress') {
+    /* 未來：同步閱讀進度至後端 */
+    console.log('[ACIM SW] Background sync triggered:', event.tag);
+  }
 });
