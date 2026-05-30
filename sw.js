@@ -21,7 +21,7 @@ const { ExpirationPlugin }       = workbox.expiration;
 const { CacheableResponsePlugin }= workbox.cacheableResponse;
 
 /* ── 快取名稱 ── */
-const SHELL_CACHE   = 'acim-shell-v1';
+const SHELL_CACHE   = 'acim-shell-v2';
 const FONT_CACHE    = 'acim-fonts-v1';
 const IMAGE_CACHE   = 'acim-images-v1';
 const CONTENT_CACHE = 'acim-content-v1';
@@ -111,10 +111,16 @@ registerRoute(
 /* ──────────────────────────────────────────────────────
    Install & Activate
    skipWaiting + clientsClaim → 新 SW 立刻生效
+   precache Shell → 安裝時預先快取主文件，確保離線可用
    清理舊版快取（名稱不在白名單內的）
    ────────────────────────────────────────────────────── */
 self.addEventListener('install', function(event) {
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(SHELL_CACHE).then(function(cache) {
+      return cache.addAll(['./', './index.htm', './manifest.json']);
+    })
+  );
 });
 
 self.addEventListener('activate', function(event) {

@@ -135820,16 +135820,34 @@ color:black'> </span></p>
     });
   }, {passive:true});
 
-  /* ── 記住位置 ── */
+  /* ── 記住位置（scrollY + 章節錨點雙軌）── */
   var savedY = parseInt(localStorage.getItem('acim-scroll')||'0');
-  if (savedY > 100) setTimeout(function(){ window.scrollTo(0, savedY); }, 300);
+  var savedAnchor = localStorage.getItem('acim-anchor');
+  if (savedAnchor && document.getElementById(savedAnchor)) {
+    setTimeout(function(){
+      var el = document.getElementById(savedAnchor);
+      var offset = window.scrollY + el.getBoundingClientRect().top - 60;
+      window.scrollTo(0, Math.max(0, offset));
+    }, 300);
+  } else if (savedY > 100) {
+    setTimeout(function(){ window.scrollTo(0, savedY); }, 300);
+  }
+  function saveProgress(){
+    localStorage.setItem('acim-scroll', Math.round(window.scrollY));
+    var heads = content.querySelectorAll('h1,h2,h3,h4');
+    var best = null;
+    heads.forEach(function(h){
+      if (h.getBoundingClientRect().top <= 80) best = h.id;
+    });
+    if (best) localStorage.setItem('acim-anchor', best);
+  }
   var saveT;
   window.addEventListener('scroll', function(){
     clearTimeout(saveT);
-    saveT = setTimeout(function(){ localStorage.setItem('acim-scroll', Math.round(window.scrollY)); }, 2000);
+    saveT = setTimeout(saveProgress, 2000);
   }, {passive:true});
   document.addEventListener('visibilitychange', function(){
-    if (document.hidden) localStorage.setItem('acim-scroll', Math.round(window.scrollY));
+    if (document.hidden) saveProgress();
   });
 
   /* ── 目錄建立 ── */
