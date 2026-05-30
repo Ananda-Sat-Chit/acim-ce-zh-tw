@@ -47949,15 +47949,37 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     return s.replace(/[\\^$.|?*+(){}\[\]]/g,'\\$&');
   }
 
-  /* ── 全文高亮：用 TreeWalker 走訪所有文字節點，安全拆分插入 <mark> ── */
-  function highlightAll(rx){
-    clearHighlight(); /* 先清除上一次 */
-    var walker=document.createTreeWalker(
-      content, NodeFilter.SHOW_TEXT, null, false
-    );
+  /* ── 非同步分批工具：把陣列切成 chunkSize 小批，每批之間讓主執行緒喘息 ── */
+  var _hlAbort = null; /* 用來中止進行中的高亮/清除任務 */
+
+  function runChunks(items, chunkSize, processFn, doneFn) {
+    var aborted = false;
+    var token = { abort: function(){ aborted = true; } };
+    var i = 0;
+    function step(){
+      if(aborted) return;
+      var end = Math.min(i + chunkSize, items.length);
+      for(; i < end; i++) processFn(items[i]);
+      if(i < items.length){
+        setTimeout(step, 0);
+      } else {
+        if(doneFn) doneFn();
+      }
+    }
+    setTimeout(step, 0);
+    return token;
+  }
+
+  /* ── 全文高亮：分兩階段非同步執行（收集節點 → 插入 mark）不阻塞主執行緒 ── */
+  function highlightAll(rx, doneCb){
+    /* 先中止可能進行中的前一次任務 */
+    if(_hlAbort){ _hlAbort.abort(); _hlAbort=null; }
+
+    /* 階段一：同步走訪收集命中節點（TreeWalker 本身不修改 DOM，速度可接受）
+       若仍需非同步化可同樣切塊，但通常收集比操作 DOM 快很多 */
+    var walker=document.createTreeWalker(content, NodeFilter.SHOW_TEXT, null, false);
     var hits=[], nd;
     while((nd=walker.nextNode())){
-      /* 跳過 script/style/footnote-bar/已是 mark 內的節點 */
       var p=nd.parentNode;
       if(!p) continue;
       var tag=(p.tagName||'').toUpperCase();
@@ -47967,13 +47989,15 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       if(rx.test(nd.nodeValue)) hits.push(nd);
     }
     rx.lastIndex=0;
-    hits.forEach(function(nd){
+
+    /* 階段二：分批替換 DOM（每批 200 個節點，讓瀏覽器每批後重新繪製）*/
+    _hlAbort = runChunks(hits, 200, function(nd){
       var val=nd.nodeValue, parent=nd.parentNode;
-      if(!parent) return;
+      if(!parent || !parent.isConnected) return;
       rx.lastIndex=0;
       var parts=val.split(rx);
-      var matches=val.match(rx)||[];
-      if(parts.length<=1){rx.lastIndex=0;return;}
+      var matches=val.match(new RegExp(rx.source, rx.flags))||[];
+      if(parts.length<=1){ rx.lastIndex=0; return; }
       var frag=document.createDocumentFragment();
       parts.forEach(function(part,pi){
         if(part) frag.appendChild(document.createTextNode(part));
@@ -47986,19 +48010,22 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       });
       parent.replaceChild(frag,nd);
       rx.lastIndex=0;
-    });
+    }, doneCb);
   }
 
-  /* ── 清除全文高亮：把 <mark.search-hl> 換回純文字節點 ── */
-  function clearHighlight(){
-    /* 批次處理，先收集再操作，避免 live NodeList 問題 */
+  /* ── 清除全文高亮：分批移除 <mark.search-hl>，用 data 屬性記錄原文取代 normalize() ── */
+  function clearHighlight(doneCb){
+    if(_hlAbort){ _hlAbort.abort(); _hlAbort=null; }
     var marks=Array.from(content.querySelectorAll('mark.search-hl'));
-    marks.forEach(function(mk){
+    if(!marks.length){ if(doneCb) doneCb(); return; }
+
+    /* 分批把每個 <mark> 替換回純文字節點；不呼叫 normalize()
+       （相鄰文字節點對渲染和搜尋均無影響，且 normalize() 是 O(全文) 的高成本操作）*/
+    _hlAbort = runChunks(marks, 300, function(mk){
+      if(!mk.parentNode) return;
       var txt=document.createTextNode(mk.textContent);
-      mk.parentNode.replaceChild(txt,mk);
-    });
-    /* 合併相鄰文字節點，恢復原始 DOM 結構 */
-    content.normalize();
+      mk.parentNode.replaceChild(txt, mk);
+    }, doneCb);
   }
 
   /* ── 建立單筆結果列表項目 ── */
@@ -48035,6 +48062,8 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
   /* ── 主搜尋函式 ── */
   var _lastResults=[], _lastRx=null, _shownCount=0;
+  /* _searchToken 用來取消過期的搜尋（使用者快速連打時）*/
+  var _searchToken = 0;
 
   function renderBatch(results, rx, from, append){
     var frag=document.createDocumentFragment();
@@ -48069,6 +48098,8 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   function doSearch(kw){
     sr.innerHTML=''; sb.style.display='none'; _shownCount=0;
     var k=kw.trim();
+    var myToken = ++_searchToken;
+
     if(k.length<2){
       sr.classList.remove('visible');
       clearHighlight();
@@ -48088,19 +48119,27 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     });
     _lastResults=results;
 
-    /* 全文高亮（TreeWalker，不破壞 HTML）*/
-    highlightAll(new RegExp(esc(k),'gi'));
+    /* 顯示「搜尋中」提示，讓使用者知道正在處理 */
+    sb.style.display='block';
+    sb.textContent='正在標示「'+k+'」…';
 
-    if(results.length>0){
-      /* 顯示第一批 */
-      renderBatch(results,new RegExp(esc(k),'gi'),0,false);
-      sb.style.display='block';
-      sb.textContent='共找到 '+results.length+' 個段落，全文已標示';
-    } else {
-      var no=document.createElement('div'); no.className='sr-no-result';
-      no.textContent='找不到「'+k+'」';
-      sr.appendChild(no); sr.classList.add('visible');
-    }
+    /* 先非同步清除上一次高亮，清除完後再高亮新字串 */
+    clearHighlight(function(){
+      if(myToken !== _searchToken) return; /* 已被新搜尋取代，放棄 */
+      highlightAll(new RegExp(esc(k),'gi'), function(){
+        if(myToken !== _searchToken) return;
+        /* 高亮完成，顯示結果 */
+        if(results.length>0){
+          renderBatch(results,new RegExp(esc(k),'gi'),0,false);
+          sb.textContent='共找到 '+results.length+' 個段落，全文已標示';
+        } else {
+          sb.style.display='none';
+          var no=document.createElement('div'); no.className='sr-no-result';
+          no.textContent='找不到「'+k+'」';
+          sr.innerHTML=''; sr.appendChild(no); sr.classList.add('visible');
+        }
+      });
+    });
   }
 
   si.addEventListener('input',function(){
