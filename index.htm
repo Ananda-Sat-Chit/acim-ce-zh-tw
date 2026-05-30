@@ -35,7 +35,33 @@ if ('serviceWorker' in navigator) {
           if (nw) {
             nw.addEventListener('statechange', function() {
               if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                console.info('[ACIM] 新版本已快取，下次啟動生效');
+                /* 顯示可點擊的更新 Toast，讓讀者主動重新整理 */
+                var toast = document.createElement('div');
+                toast.id = 'acim-update-toast';
+                toast.textContent = '📖 書籍內容已更新，點此重新整理 →';
+                toast.style.cssText = [
+                  'position:fixed;bottom:88px;left:50%;transform:translateX(-50%)',
+                  'background:#403053;color:#fff;padding:10px 20px',
+                  'border-radius:24px;font-size:14px;cursor:pointer',
+                  'z-index:999999;box-shadow:0 4px 16px rgba(0,0,0,.35)',
+                  'white-space:nowrap;user-select:none',
+                  'animation:acimFadeIn .3s ease'
+                ].join(';');
+                toast.onclick = function() { window.location.reload(); };
+                /* 淡入動畫 keyframe（只注入一次）*/
+                if (!document.getElementById('acim-toast-style')) {
+                  var s = document.createElement('style');
+                  s.id = 'acim-toast-style';
+                  s.textContent = '@keyframes acimFadeIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+                  document.head.appendChild(s);
+                }
+                document.body.appendChild(toast);
+                /* 12 秒後自動淡出消失 */
+                setTimeout(function() {
+                  toast.style.transition = 'opacity .4s';
+                  toast.style.opacity = '0';
+                  setTimeout(function() { toast.remove(); }, 400);
+                }, 12000);
               }
             });
           }
@@ -135867,7 +135893,7 @@ color:black'> </span></p>
   var saveT;
   window.addEventListener('scroll', function(){
     clearTimeout(saveT);
-    saveT = setTimeout(saveProgress, 2000);
+    saveT = setTimeout(saveProgress, 800); /* 原為 2000ms，降低邊緣情況遺失風險 */
   }, {passive:true});
   document.addEventListener('visibilitychange', function(){
     if (document.hidden) saveProgress();
@@ -136235,6 +136261,36 @@ color:black'> </span></p>
   document.addEventListener('click',function(){
     if(window.__fnSkip){window.__fnSkip=false;return;} hideFn();
   });
+
+  /* ── 離線 / 上線狀態橫幅 ── */
+  (function(){
+    var BAR_ID = 'acim-offline-bar';
+    function showOffline() {
+      if (document.getElementById(BAR_ID)) return;
+      var bar = document.createElement('div');
+      bar.id = BAR_ID;
+      bar.textContent = '📵  目前離線 — 正在使用快取版本，所有內容可正常閱讀';
+      bar.style.cssText = [
+        'position:fixed;top:0;left:0;right:0',
+        'background:#403053;color:#e8d9ff',
+        'text-align:center;font-size:13px;padding:7px 16px',
+        'z-index:999998;letter-spacing:.01em',
+        'animation:acimFadeIn .3s ease'
+      ].join(';');
+      document.body.prepend(bar);
+    }
+    function hideOffline() {
+      var bar = document.getElementById(BAR_ID);
+      if (!bar) return;
+      bar.style.transition = 'opacity .4s';
+      bar.style.opacity = '0';
+      setTimeout(function() { bar.remove(); }, 400);
+    }
+    window.addEventListener('offline', showOffline);
+    window.addEventListener('online',  hideOffline);
+    /* 頁面載入時若已離線，立即顯示 */
+    if (!navigator.onLine) showOffline();
+  })();
 
 })();
 </script>
