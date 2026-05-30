@@ -230,38 +230,50 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
 
 /* TOC 階層 */
 .toc-group{margin-bottom:2px;}
-.toc-h1-row{display:flex;align-items:center;}
+/* ── row：固定 arrow 寬度讓有無箭頭的項目文字對齊 ── */
+.toc-h1-row,
 .toc-h2-row{display:flex;align-items:center;}
 .toc-h1-row .toc-arrow,
 .toc-h2-row .toc-arrow{
-  flex-shrink:0;width:20px;cursor:pointer;font-size:9px;
-  color:var(--c-accent2);padding:4px 2px 4px 4px;
-  user-select:none;-webkit-user-select:none;
+  flex-shrink:0;width:18px;min-width:18px;cursor:pointer;font-size:8px;
+  color:var(--c-accent2);padding:4px 2px 4px 3px;
+  user-select:none;-webkit-user-select:none;line-height:1;text-align:center;
 }
 .toc-h1-row .toc-arrow:hover,
 .toc-h2-row .toc-arrow:hover{color:var(--c-gold);}
-.toc-h1-row .toc-link{flex-grow:1;}
-.toc-h2-row .toc-link{flex-grow:1;}
-.toc-children{display:none;padding-left:4px;}
-.toc-children.open{display:block;}
-/* 各層縮排、字體大小、顏色 */
-.toc-h1{font-weight:700;margin-top:12px;color:#3D1560;font-size:14.5px;}
-.toc-h2{
-  margin-left:14px;font-size:13.5px;color:#5B3A8E;
-  padding-left:6px;
-  border-left:2px solid rgba(107,47,160,0.22);
+/* 無箭頭時補佔位，讓文字與有箭頭的項目對齊 */
+.toc-h1-row .toc-arrow-placeholder,
+.toc-h2-row .toc-arrow-placeholder{
+  flex-shrink:0;width:18px;min-width:18px;display:inline-block;
 }
+.toc-h1-row .toc-link,
+.toc-h2-row .toc-link{flex-grow:1;min-width:0;}
+.toc-children{display:none;}
+.toc-children.open{display:block;}
+/* ── 各層縮排 / 字級 / 顏色：以 h1 基線為準，逐層收縮 ── */
+/* h1：不縮排，是基準層 */
+.toc-h1{font-weight:700;margin-top:10px;color:#3D1560;font-size:14px;}
+/* h2：在 h1 的 toc-children 內，加左縮排 + 導引線 */
+.toc-h2{
+  font-size:13px;color:#5B3A8E;font-weight:600;
+  padding-left:5px;
+  border-left:2px solid rgba(107,47,160,0.25);
+  margin-left:4px;
+}
+/* h3+ 在 h2 的 toc-children 內，再加縮排 */
 .toc-h3{
-  margin-left:26px;font-size:13px;color:#7B4AAE;
+  font-size:12.5px;color:#7B4AAE;
   padding-left:5px;
   border-left:2px solid rgba(155,106,200,0.18);
+  margin-left:10px;
 }
 .toc-h4{
-  margin-left:38px;font-size:12.5px;color:#9B6AC8;
+  font-size:12px;color:#9B6AC8;
   padding-left:4px;
   border-left:2px solid rgba(168,128,204,0.14);
+  margin-left:18px;
 }
-.toc-h5{margin-left:46px;font-size:12px;color:#A880CC;}
+.toc-h5{font-size:11.5px;color:#A880CC;margin-left:24px;padding-left:4px;}
 
 /* ── 字型策略：保留 Word 原始細明體/標楷體差異，只補系統 fallback ── */
 /*
@@ -135957,6 +135969,19 @@ color:black'> </span></p>
       }
     });
 
+    /* ── TOC 展開狀態儲存 ── */
+    /* key: heading id, value: '1' (open) */
+    function tocStateKey(id){ return 'toc-open:' + id; }
+    function saveTocState(id, open){
+      try {
+        if(open) localStorage.setItem(tocStateKey(id),'1');
+        else localStorage.removeItem(tocStateKey(id));
+      } catch(e){}
+    }
+    function loadTocState(id){
+      try { return localStorage.getItem(tocStateKey(id))==='1'; } catch(e){ return false; }
+    }
+
     /* 遞迴渲染一個 group */
     function renderGroup(g, depth){
       var cls='toc-h'+(depth+1);
@@ -135969,16 +135994,28 @@ color:black'> </span></p>
         g.kids.forEach(function(k){
           childWrap.appendChild(renderGroup(k.node, depth+1));
         });
+        /* 恢復上次展開狀態 */
+        var gid = g.h ? g.h.id : '';
+        if(gid && loadTocState(gid)){
+          childWrap.classList.add('open');
+          arr.textContent='▼';
+        }
         arr.addEventListener('click',function(e){
           e.stopPropagation();
           var open=childWrap.classList.contains('open');
           childWrap.classList.toggle('open',!open);
           arr.textContent=open?'▶':'▼';
+          if(gid) saveTocState(gid, !open);
         });
         if(g.h){ row.appendChild(arr); row.appendChild(mkLink(g.h, cls)); }
         wrap.appendChild(row); wrap.appendChild(childWrap);
       } else {
-        if(g.h){ row.appendChild(mkLink(g.h, cls)); }
+        /* 無子項目：加佔位元素讓文字基線與有箭頭的項目對齊 */
+        if(g.h){
+          var ph=document.createElement('span'); ph.className='toc-arrow-placeholder';
+          row.appendChild(ph);
+          row.appendChild(mkLink(g.h, cls));
+        }
         wrap.appendChild(row);
       }
       return wrap;
@@ -136006,13 +136043,18 @@ color:black'> </span></p>
           Object.values(links).forEach(function(l){l.classList.remove('toc-active');});
           var al=links[e.target.id]; if(!al) return;
           al.classList.add('toc-active');
-          /* 展開父層 toc-children */
+          /* ── 展開「直接父層」toc-children（只展開包住自己那條鏈，不動其他 h1）── */
           var p=al.parentElement;
           while(p&&p!==tocWrapper){
             if(p.classList.contains('toc-children')&&!p.classList.contains('open')){
               p.classList.add('open');
-              var arr=p.previousElementSibling&&p.previousElementSibling.querySelector('.toc-arrow');
-              if(arr) arr.textContent='▼';
+              /* 更新箭頭符號 */
+              var rowEl=p.previousElementSibling;
+              var arrEl=rowEl&&rowEl.querySelector('.toc-arrow');
+              if(arrEl) arrEl.textContent='▼';
+              /* 記住這次自動展開的狀態 */
+              var linkInRow=rowEl&&rowEl.querySelector('.toc-link');
+              if(linkInRow && linkInRow.dataset.id) saveTocState(linkInRow.dataset.id, true);
             }
             p=p.parentElement;
           }
