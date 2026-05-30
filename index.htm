@@ -298,9 +298,9 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
   不做全域覆蓋，讓 inline style 的優先度正常運作。
 */
 
-/* 基底字型：套用在沒有 inline font-family 的元素 */
+/* 基底字型：文章主體為新細明體，無 inline font-family 的元素繼承此設定 */
 #content-area {
-  font-family: "LXGW WenKai TC", "Noto Serif TC", "新細明體", "PMingLiU", serif;
+  font-family: "新細明體", "PMingLiU", "MingLiU", "Noto Serif TC", serif;
 }
 
 /* 細明體系列 fallback：補上跨平台字型，不用 !important 讓 inline style 可覆蓋 */
@@ -321,7 +321,7 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
 /* 標題字型：明體系列 */
 #content-area h1,#content-area h2,#content-area h3,
 #content-area h4,#content-area h5,#content-area h6 {
-  font-family: "LXGW WenKai TC", "Noto Serif TC", "新細明體", serif;
+  font-family: "LXGW WenKai TC", "新細明體", "PMingLiU", "Noto Serif TC", serif;
   display: block !important;
 }
 
