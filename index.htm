@@ -318,10 +318,10 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
   font-family: "標楷體", "DFKai-SB", "LXGW WenKai TC", "Kaiti TC", "STKaiti", cursive !important;
 }
 
-/* 標題字型：明體系列 */
+/* 標題字型：主體為明體（與正文一致），LXGW 作 fallback */
 #content-area h1,#content-area h2,#content-area h3,
 #content-area h4,#content-area h5,#content-area h6 {
-  font-family: "LXGW WenKai TC", "新細明體", "PMingLiU", "Noto Serif TC", serif;
+  font-family: "新細明體", "PMingLiU", "MingLiU", "LXGW WenKai TC", "Noto Serif TC", serif;
   display: block !important;
 }
 
@@ -454,6 +454,7 @@ body.fn-open #pwa-tools{
   transition:bottom 0.3s cubic-bezier(0.4,0,0.2,1);
   border-top:1px solid rgba(212,184,255,0.2);
   border-radius:16px 16px 0 0;
+  font-family: "新細明體", "PMingLiU", "MingLiU", "Noto Serif TC", serif;
 }
 #footnote-bar.open, #footnote-bar.fn-visible { bottom:0; }
 
