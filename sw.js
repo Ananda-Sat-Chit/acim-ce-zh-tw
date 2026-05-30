@@ -21,7 +21,7 @@ const { ExpirationPlugin }       = workbox.expiration;
 const { CacheableResponsePlugin }= workbox.cacheableResponse;
 
 /* ── 快取名稱 ── */
-const SHELL_CACHE   = 'acim-shell-v4';
+const SHELL_CACHE   = 'acim-shell-v5';
 const FONT_CACHE    = 'acim-fonts-v1';
 const IMAGE_CACHE   = 'acim-images-v1';
 const CONTENT_CACHE = 'acim-content-v1';
