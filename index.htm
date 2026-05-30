@@ -1,7 +1,19 @@
-<html>
+<html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
+<meta property="og:title"       content="完整加註版奇蹟課程">
+<meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
+<meta property="og:image"       content="https://ananda-sat-chit.github.io/acim-ce-zh-tw/pwa-192x192.png">
+<meta property="og:image:width"  content="192">
+<meta property="og:image:height" content="192">
+<meta property="og:type"        content="book">
+<meta property="og:url"         content="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
+<meta property="og:locale"      content="zh_TW">
+<meta name="twitter:card"       content="summary">
+<meta name="twitter:title"      content="完整加註版奇蹟課程">
+<meta name="twitter:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
 <meta name="theme-color" content="#6B2FA0">
 <title>完整加註版奇蹟課程</title>
 <link rel="manifest" href="manifest.json">
@@ -594,6 +606,22 @@ body.dark-mode #content-area [style*="background-color:white"],
 body.dark-mode #content-area [style*="background: white"],
 body.dark-mode #content-area [style*="background:#fff"] {
   background-color: transparent !important;
+}
+
+/* ── 列印樣式 ── */
+@media print {
+  #sidebar-toc,#pwa-tools,#reading-progress,#chapter-crumb,
+  #footnote-bar,#sidebar-overlay { display:none !important; }
+  #book-container { display:block !important; }
+  #content-area {
+    padding:0 !important; max-width:100% !important;
+    width:100% !important; margin:0 !important;
+  }
+  body { background:#fff !important; color:#000 !important; }
+  a[href]::after { content:" (" attr(href) ")"; font-size:10pt; color:#555; }
+  sup.fn-badge { display:none !important; }
+  h1,h2,h3 { page-break-after:avoid; }
+  p { orphans:3; widows:3; }
 }
 
 </style>
@@ -135844,6 +135872,8 @@ color:black'> </span></p>
   document.addEventListener('visibilitychange', function(){
     if (document.hidden) saveProgress();
   });
+  /* iOS Safari 用 pagehide 取代 visibilitychange（分頁凍結時不觸發後者）*/
+  window.addEventListener('pagehide', saveProgress);
 
   /* ── 目錄建立 ── */
   var tocWrapper = document.getElementById('toc-wrapper');
