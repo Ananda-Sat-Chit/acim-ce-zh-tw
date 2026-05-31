@@ -381,8 +381,15 @@ body.dark-mode #book-container,
 body.dark-mode #content-area,
 body.dark-mode div,body.dark-mode p,
 body.dark-mode table,
-body.dark-mode tr,body.dark-mode td,body.dark-mode font {
+body.dark-mode tr,body.dark-mode td,body.dark-mode th,body.dark-mode font {
   background-color:var(--c-bg)!important; color:var(--c-text)!important;
+}
+/* 深色模式：覆蓋 Word 輸出的 inline black 表格邊線（thead 表頭列也包含在內）*/
+body.dark-mode #content-area table td,
+body.dark-mode #content-area table th,
+body.dark-mode #content-area thead td,
+body.dark-mode #content-area thead th {
+  border-color:var(--c-border)!important;
 }
 /* span 單獨處理：排除有彩色 inline style 的 span，避免蓋掉有語義的顏色 */
 body.dark-mode span:not([style*="color:#7030A0"]):not([style*="color:#C00000"]):not([style*="color:#0070C0"]):not([style*="color:#0000CC"]) {
@@ -520,6 +527,12 @@ body.dark-mode #footnote-bar{background:#3D1B6E;border-top:2px solid #C9A8E8;}
 #fn-num{flex-shrink:0;font-size:13px;font-weight:bold;color:#fff;min-width:28px;padding-top:2px;}
 #fn-text{flex-grow:1;line-height:1.75;font-size:14px;}
 #fn-text *{color:#EDE6F8!important;background:transparent!important;}
+/* 保留標楷體等明確設定的 font-family，不強制覆蓋 */
+#fn-text [style*="標楷體"],
+#fn-text [style*="DFKai-SB"],
+#fn-text [style*="BiauKai"] {
+  font-family:"標楷體","DFKai-SB","LXGW WenKai TC","Kaiti TC","STKaiti",cursive!important;
+}
 #fn-text a{color:#C9A8E8!important;text-decoration:underline!important;}
 #fn-close{
   flex-shrink:0;width:28px;height:28px;border-radius:50%;
@@ -668,6 +681,11 @@ html.dark-mode #content-area [style*="border-bottom"],
 html.dark-mode #content-area [style*="windowtext"] {
   border-color: rgba(180,160,240,0.7) !important;
 }
+/* Word 表格 inline border shorthand「border: solid black」（thead 表頭列也適用）*/
+html.dark-mode #content-area [style*="border: solid black"],
+html.dark-mode #content-area [style*="border:solid black"] {
+  border-color: var(--c-border) !important;
+}
 
 /* Word black / windowtext 文字色 → 正文色 */
 html.dark-mode #content-area [style*="color:black"],
@@ -789,6 +807,9 @@ ul{margin-bottom:0;}
         信箱：<a href="mailto:chang.wenchih@gmail.com">chang.wenchih@gmail.com</a></p></div>
     </div>
     <div id="sidebar-header">
+      <div id="app-version-info" style="font-size:10px;color:var(--c-muted);margin-bottom:7px;line-height:1.5;opacity:0.82;">
+        <span style="font-weight:600;letter-spacing:0.02em;">最後修正：</span><span id="app-version-date">2025-05-31 00:00</span>
+      </div>
       <h3>《完整加註版奇蹟課程》目錄</h3>
       <div id="toc-search-box" role="search" aria-label="搜尋書籍內文">
         <div id="toc-search-frame">
