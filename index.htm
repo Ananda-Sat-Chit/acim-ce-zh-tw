@@ -384,12 +384,13 @@ body.dark-mode table,
 body.dark-mode tr,body.dark-mode td,body.dark-mode th,body.dark-mode font {
   background-color:var(--c-bg)!important; color:var(--c-text)!important;
 }
-/* 深色模式：覆蓋 Word 輸出的 inline black 表格邊線（thead 表頭列也包含在內）*/
+/* 深色模式：覆蓋 Word 輸出的 inline black 表格邊線（thead 表頭列也包含在內）
+   統一使用亮紫色，與資料列框線顏色一致 */
 body.dark-mode #content-area table td,
 body.dark-mode #content-area table th,
 body.dark-mode #content-area thead td,
 body.dark-mode #content-area thead th {
-  border-color:var(--c-border)!important;
+  border-color: rgba(180,160,240,0.7) !important;
 }
 /* span 單獨處理：排除有彩色 inline style 的 span，避免蓋掉有語義的顏色 */
 body.dark-mode span:not([style*="color:#7030A0"]):not([style*="color:#C00000"]):not([style*="color:#0070C0"]):not([style*="color:#0000CC"]) {
@@ -681,10 +682,11 @@ html.dark-mode #content-area [style*="border-bottom"],
 html.dark-mode #content-area [style*="windowtext"] {
   border-color: rgba(180,160,240,0.7) !important;
 }
-/* Word 表格 inline border shorthand「border: solid black」（thead 表頭列也適用）*/
+/* Word 表格 inline border shorthand「border: solid black」（thead 表頭列也適用）
+   統一改成亮紫色，與 border-top/border-bottom 規則一致 */
 html.dark-mode #content-area [style*="border: solid black"],
 html.dark-mode #content-area [style*="border:solid black"] {
-  border-color: var(--c-border) !important;
+  border-color: rgba(180,160,240,0.7) !important;
 }
 
 /* Word black / windowtext 文字色 → 正文色 */
@@ -808,7 +810,7 @@ ul{margin-bottom:0;}
     </div>
     <div id="sidebar-header">
       <div id="app-version-info" style="font-size:10px;color:var(--c-muted);margin-bottom:7px;line-height:1.5;opacity:0.82;">
-        <span style="font-weight:600;letter-spacing:0.02em;">最後修正：</span><span id="app-version-date">2025-05-31 00:00</span>
+        <span style="font-weight:600;letter-spacing:0.02em;">最後修正：</span><span id="app-version-date">2026-05-31</span>
       </div>
       <h3>《完整加註版奇蹟課程》目錄</h3>
       <div id="toc-search-box" role="search" aria-label="搜尋書籍內文">
@@ -46942,6 +46944,16 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     window.addEventListener('online',  hideOffline);
     /* 頁面載入時若已離線，立即顯示 */
     if (!navigator.onLine) showOffline();
+  })();
+
+  /* ── 版本日期：顯示當前時間（時:分）── */
+  (function(){
+    var el = document.getElementById('app-version-date');
+    if (!el) return;
+    var now = new Date();
+    var hh = String(now.getHours()).padStart(2,'0');
+    var mm = String(now.getMinutes()).padStart(2,'0');
+    el.textContent = el.textContent + ' ' + hh + ':' + mm;
   })();
 
 })();
