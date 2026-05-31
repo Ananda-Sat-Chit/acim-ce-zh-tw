@@ -28,7 +28,7 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet"></noscript>
 
 <script>
-/* Service Worker 登記 — v11 Workbox 離線支援 */
+/* Service Worker 登記 — v12 Workbox 離線支援 */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('./sw.js')
@@ -46491,6 +46491,13 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
           arr.textContent=open?'▶':'▼'; arr.setAttribute('aria-label',open?'展開章節':'收合章節'); arr.setAttribute('aria-expanded',open?'false':'true');
           if(gid) saveTocState(gid, !open);
         });
+        /* WCAG 2.1 AA：鍵盤使用者 Tab 到箭頭後可用 Enter / Space 展開收合 */
+        arr.addEventListener('keydown',function(e){
+          if(e.key==='Enter'||e.key===' '){
+            e.preventDefault();
+            arr.click();
+          }
+        });
         if(g.h){ row.appendChild(arr); row.appendChild(mkLink(g.h, cls)); }
         wrap.appendChild(row); wrap.appendChild(childWrap);
       } else {
@@ -46946,14 +46953,30 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     if (!navigator.onLine) showOffline();
   })();
 
-  /* ── 版本日期：顯示當前時間（時:分）── */
+  /* ── 版本日期：讀取 HTTP Last-Modified 標頭（document.lastModified），
+     格式化為 YYYY-MM-DD HH:MM 後覆蓋 HTML 中預設的 build date。
+     若伺服器未回傳 Last-Modified（返回當下時間），則只顯示日期部分，
+     避免每次重整都顯示不同時間造成誤解。                               ── */
   (function(){
     var el = document.getElementById('app-version-date');
     if (!el) return;
-    var now = new Date();
-    var hh = String(now.getHours()).padStart(2,'0');
-    var mm = String(now.getMinutes()).padStart(2,'0');
-    el.textContent = el.textContent + ' ' + hh + ':' + mm;
+    var lm = document.lastModified;          /* 瀏覽器從 HTTP header 取得 */
+    if (!lm) return;
+    var d = new Date(lm);
+    if (isNaN(d.getTime())) return;
+    /* 判斷是否為「伺服器真實 Last-Modified」：
+       GitHub Pages 會回傳實際檔案時間，其秒數通常非 :00。
+       若秒數為 00 且毫秒為 0，高機率是瀏覽器用當下時間填充（無 header）。
+       此情況下只顯示日期，不顯示時分，避免誤導。                       */
+    var isRealDate = (d.getSeconds() !== 0 || d.getMilliseconds() !== 0);
+    var yyyy = d.getFullYear();
+    var mo   = String(d.getMonth() + 1).padStart(2, '0');
+    var dd   = String(d.getDate()).padStart(2, '0');
+    var hh   = String(d.getHours()).padStart(2, '0');
+    var mm   = String(d.getMinutes()).padStart(2, '0');
+    el.textContent = isRealDate
+      ? (yyyy + '-' + mo + '-' + dd + ' ' + hh + ':' + mm)
+      : (yyyy + '-' + mo + '-' + dd);
   })();
 
 })();
