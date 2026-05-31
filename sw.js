@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   Service Worker v11 — 完整加註版奇蹟課程 PWA
+   Service Worker v12 — 完整加註版奇蹟課程 PWA
    策略：
      Shell (HTML / manifest / icons)  → CacheFirst
      Google Fonts CSS                 → StaleWhileRevalidate
@@ -21,10 +21,12 @@ const { ExpirationPlugin }       = workbox.expiration;
 const { CacheableResponsePlugin }= workbox.cacheableResponse;
 
 /* ── 快取名稱 ── */
-const SHELL_CACHE   = 'acim-shell-v5';
-const FONT_CACHE    = 'acim-fonts-v1';
-const IMAGE_CACHE   = 'acim-images-v1';
-const CONTENT_CACHE = 'acim-content-v1';
+/* ── 快取版本統一管理：更新內容時只需改此處 ── */
+const CACHE_VERSION = 'v12';
+const SHELL_CACHE   = 'acim-shell-'   + CACHE_VERSION;
+const FONT_CACHE    = 'acim-fonts-'   + CACHE_VERSION;
+const IMAGE_CACHE   = 'acim-images-'  + CACHE_VERSION;
+const CONTENT_CACHE = 'acim-content-' + CACHE_VERSION;
 
 /* ──────────────────────────────────────────────────────
    1. Shell：HTML 主文件 + manifest + icons

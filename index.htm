@@ -94,6 +94,7 @@ if ('serviceWorker' in navigator) {
   --c-accent2:#8B5BAE; --c-gold:#C9A227; --c-border:#C0A0DC;
   --sidebar-w:300px; --fs-base:18px; --lh:1.95; --spd:0.25s;
   --content-max:780px; /* 最佳閱讀行寬 */
+  color-scheme: light dark;
 }
 html.dark-mode, body.dark-mode {
   --c-bg:#180828; --c-sidebar:#24133E; --c-page:#100520;
@@ -263,7 +264,7 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
 .toc-children.open{display:block;}
 /* ── 各層縮排 / 字級 / 顏色：以 h1 基線為準，逐層收縮 ── */
 /* h1：不縮排，是基準層 */
-.toc-h1{font-weight:700;margin-top:10px;color:#3D1560;font-size:14px;}
+.toc-h1{font-weight:700;margin-top:10px;color:#3D1560;font-size:14px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
 /* h2：在 h1 的 toc-children 內，加左縮排 + 導引線 */
 .toc-h2{
   font-size:13px;color:#5B3A8E;font-weight:600;
@@ -321,7 +322,7 @@ body.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgb
 /* 標題字型：主體為明體（與正文一致），LXGW 作 fallback */
 #content-area h1,#content-area h2,#content-area h3,
 #content-area h4,#content-area h5,#content-area h6 {
-  font-family: "新細明體", "PMingLiU", "MingLiU", "LXGW WenKai TC", "Noto Serif TC", serif;
+  font-family: "新細明體", "PMingLiU", "MingLiU", "Noto Serif TC", serif;
   display: block !important;
 }
 
@@ -693,6 +694,7 @@ html.dark-mode #content-area [style*="border-top"][style*="border-bottom"] {
 }
 
 /* ── 列印樣式 ── */
+@page { margin: 2cm; }
 @media print {
   #sidebar-toc,#pwa-tools,#reading-progress,#chapter-crumb,
   #footnote-bar,#sidebar-overlay,#skip-link { display:none !important; }
@@ -46448,7 +46450,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       var row=document.createElement('div'); row.className=(depth===0?'toc-h1-row':'toc-h2-row');
       if(g.kids && g.kids.length){
         var arr=document.createElement('span');
-        arr.className='toc-arrow'; arr.textContent='▶'; arr.setAttribute('aria-label','展開章節'); arr.setAttribute('role','button'); arr.setAttribute('tabindex','0');
+        arr.className='toc-arrow'; arr.textContent='▶'; arr.setAttribute('aria-label','展開章節'); arr.setAttribute('role','button'); arr.setAttribute('tabindex','0'); arr.setAttribute('aria-expanded','false');
         var childWrap=document.createElement('div'); childWrap.className='toc-children';
         g.kids.forEach(function(k){
           childWrap.appendChild(renderGroup(k.node, depth+1));
@@ -46457,13 +46459,13 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
         var gid = g.h ? g.h.id : '';
         if(gid && loadTocState(gid)){
           childWrap.classList.add('open');
-          arr.textContent='▼'; arr.setAttribute('aria-label','收合章節');
+          arr.textContent='▼'; arr.setAttribute('aria-label','收合章節'); arr.setAttribute('aria-expanded','true');
         }
         arr.addEventListener('click',function(e){
           e.stopPropagation();
           var open=childWrap.classList.contains('open');
           childWrap.classList.toggle('open',!open);
-          arr.textContent=open?'▶':'▼'; arr.setAttribute('aria-label',open?'展開章節':'收合章節');
+          arr.textContent=open?'▶':'▼'; arr.setAttribute('aria-label',open?'展開章節':'收合章節'); arr.setAttribute('aria-expanded',open?'false':'true');
           if(gid) saveTocState(gid, !open);
         });
         if(g.h){ row.appendChild(arr); row.appendChild(mkLink(g.h, cls)); }
@@ -46852,6 +46854,8 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     })(clone);
     fnText.innerHTML=clone.innerHTML.trim();
     fnBar.classList.add('open'); document.body.classList.add('fn-open'); activeRef=ref;
+    /* 無障礙：將 focus 移入腳注列，讓鍵盤/螢幕閱讀器使用者可直接閱讀 */
+    fnBar.setAttribute('tabindex','-1'); fnBar.focus({preventScroll:true});
   }
   function hideFn(){ fnBar.classList.remove('open'); document.body.classList.remove('fn-open'); activeRef=null; }
 
