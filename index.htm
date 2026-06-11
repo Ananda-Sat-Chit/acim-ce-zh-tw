@@ -28,6 +28,21 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&display=swap" rel="stylesheet"></noscript>
 
 <script>
+/* ── PWA 安裝提示捕捉（必須在所有 JS 最前面）── */
+window._pwaInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();                        /* 阻止瀏覽器自動彈出 */
+  window._pwaInstallPrompt = e;              /* 存起來，等使用者點按鈕再觸發 */
+  /* 顯示自訂安裝提示條 */
+  var bar = document.getElementById('pwa-install-bar');
+  if(bar) bar.style.display = 'flex';
+});
+window.addEventListener('appinstalled', function(){
+  window._pwaInstallPrompt = null;
+  var bar = document.getElementById('pwa-install-bar');
+  if(bar) bar.style.display = 'none';
+});
+
 /* Service Worker 登記 — v12 Workbox 離線支援 */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
@@ -535,6 +550,14 @@ body.dark-mode #footnote-bar{background:#3D1B6E;border-top:2px solid #C9A8E8;}
   font-family:"標楷體","DFKai-SB","LXGW WenKai TC","Kaiti TC","STKaiti",cursive!important;
 }
 #fn-text a{color:#C9A8E8!important;text-decoration:underline!important;}
+/* 腳注內底線樣式：與正文一致（淡色、細線、與文字有間距）*/
+#fn-text u,
+#fn-text [style*="underline"]{
+  text-decoration:underline!important;
+  text-decoration-color:rgba(237,230,248,0.35)!important;
+  text-decoration-thickness:1px!important;
+  text-underline-offset:4px!important;
+}
 #fn-actions{display:flex;align-items:center;flex-shrink:0;gap:5px;}
 .fn-action-btn,#fn-close{
   flex-shrink:0;width:28px;height:28px;border-radius:50%;
@@ -730,17 +753,40 @@ html.dark-mode #content-area [style*="border-top"][style*="border-bottom"] {
   opacity:0.35;transition:opacity 0.2s,background 0.2s,border-color 0.2s;
   color:var(--c-muted);padding:0;flex-shrink:0;
   font-family:-apple-system,sans-serif;
-  /* 按鈕本身無文字，用 ::before 顯示圖示，避免語音引擎讀出「音量」*/
 }
-/* 用 CSS 偽元素顯示喇叭圖示，不佔 DOM 文字節點 */
-.tts-btn::before{content:'🔊';font-size:1em;line-height:1;speak:never;aria-hidden:true;}
+/* 句子編號統一字型：同時覆蓋 U+00B9/B2/B3（¹²³）和 U+2070/2074-2079（⁰⁴⁵⁶⁷⁸⁹）
+   Calibri → Windows 最佳；Helvetica Neue → macOS/iOS 最佳；Arial → 通用兜底
+   三者對這兩個 Unicode 區塊的字形設計風格最統一，¹⁰、¹⁴ 等組合不再突兀 */
+span.sent-num{
+  font-family:Calibri,"Helvetica Neue",Arial,sans-serif!important;
+  font-size:0.65em;
+  vertical-align:super;
+  line-height:1;
+  letter-spacing:0;
+  font-weight:normal;
+  font-style:normal;
+}
+
+/* SVG background-image 喇叭圖示：base64 編碼，跨瀏覽器最可靠 */
+.tts-btn::before{
+  content:'';display:block;
+  width:0.9em;height:0.9em;
+  background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iIzVCM0E4RSI+PHBhdGggZD0iTTExIDMuNWEuNS41IDAgMCAwLS44MzItLjM3NEw2LjMyNyA2LjVIMy41QTEuNSAxLjUgMCAwIDAgMiA4djRhMS41IDEuNSAwIDAgMCAxLjUgMS41aDIuODI3bDMuODQxIDMuMzc0QS41LjUgMCAwIDAgMTEgMTYuNVYzLjV6TTEzLjUgN2EuNS41IDAgMCAxIC43MDcgMCA1IDUgMCAwIDEgMCA2IC41LjUgMCAxIDEtLjcwNy0uNzA3IDQgNCAwIDAgMCAwLTQuNTg2QS41LjUgMCAwIDEgMTMuNSA3em0xLjk1Ny0xLjk1N2EuNS41IDAgMCAxIC43MDcgMCA4IDggMCAwIDEgMCA5LjkxNC41LjUgMCAwIDEtLjcwNy0uNzA3IDcgNyAwIDAgMCAwLTguNS41LjUgMCAwIDEgMC0uNzA3eiIvPjwvc3ZnPg==");
+  background-repeat:no-repeat;
+  background-size:contain;
+  background-position:center;
+  speak:never;
+}
 .tts-btn:hover{opacity:0.85;background:rgba(107,47,160,0.08);}
 .tts-btn.tts-active{
   opacity:1;background:rgba(107,47,160,0.18);
   border-color:var(--c-accent);color:var(--c-accent);
 }
+.tts-btn.tts-active::before{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iIzZCMkZBMCI+PHBhdGggZD0iTTExIDMuNWEuNS41IDAgMCAwLS44MzItLjM3NEw2LjMyNyA2LjVIMy41QTEuNSAxLjUgMCAwIDAgMiA4djRhMS41IDEuNSAwIDAgMCAxLjUgMS41aDIuODI3bDMuODQxIDMuMzc0QS41LjUgMCAwIDAgMTEgMTYuNVYzLjV6TTEzLjUgN2EuNS41IDAgMCAxIC43MDcgMCA1IDUgMCAwIDEgMCA2IC41LjUgMCAxIDEtLjcwNy0uNzA3IDQgNCAwIDAgMCAwLTQuNTg2QS41LjUgMCAwIDEgMTMuNSA3em0xLjk1Ny0xLjk1N2EuNS41IDAgMCAxIC43MDcgMCA4IDggMCAwIDEgMCA5LjkxNC41LjUgMCAwIDEtLjcwNy0uNzA3IDcgNyAwIDAgMCAwLTguNS41LjUgMCAwIDEgMC0uNzA3eiIvPjwvc3ZnPg==");}
 body.dark-mode .tts-btn{border-color:var(--c-border);color:var(--c-muted);}
+body.dark-mode .tts-btn::before{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iI0MwQTBEQyI+PHBhdGggZD0iTTExIDMuNWEuNS41IDAgMCAwLS44MzItLjM3NEw2LjMyNyA2LjVIMy41QTEuNSAxLjUgMCAwIDAgMiA4djRhMS41IDEuNSAwIDAgMCAxLjUgMS41aDIuODI3bDMuODQxIDMuMzc0QS41LjUgMCAwIDAgMTEgMTYuNVYzLjV6TTEzLjUgN2EuNS41IDAgMCAxIC43MDcgMCA1IDUgMCAwIDEgMCA2IC41LjUgMCAxIDEtLjcwNy0uNzA3IDQgNCAwIDAgMCAwLTQuNTg2QS41LjUgMCAwIDEgMTMuNSA3em0xLjk1Ny0xLjk1N2EuNS41IDAgMCAxIC43MDcgMCA4IDggMCAwIDEgMCA5LjkxNC41LjUgMCAwIDEtLjcwNy0uNzA3IDcgNyAwIDAgMCAwLTguNS41LjUgMCAwIDEgMC0uNzA3eiIvPjwvc3ZnPg==");}
 body.dark-mode .tts-btn.tts-active{background:rgba(212,184,255,0.2);border-color:var(--c-accent);color:var(--c-accent);}
+body.dark-mode .tts-btn.tts-active::before{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0iIzZCMkZBMCI+PHBhdGggZD0iTTExIDMuNWEuNS41IDAgMCAwLS44MzItLjM3NEw2LjMyNyA2LjVIMy41QTEuNSAxLjUgMCAwIDAgMiA4djRhMS41IDEuNSAwIDAgMCAxLjUgMS41aDIuODI3bDMuODQxIDMuMzc0QS41LjUgMCAwIDAgMTEgMTYuNVYzLjV6TTEzLjUgN2EuNS41IDAgMCAxIC43MDcgMCA1IDUgMCAwIDEgMCA2IC41LjUgMCAxIDEtLjcwNy0uNzA3IDQgNCAwIDAgMCAwLTQuNTg2QS41LjUgMCAwIDEgMTMuNSA3em0xLjk1Ny0xLjk1N2EuNS41IDAgMCAxIC43MDcgMCA4IDggMCAwIDEgMCA5LjkxNC41LjUgMCAwIDEtLjcwNy0uNzA3IDcgNyAwIDAgMCAwLTguNS41LjUgMCAwIDEgMC0uNzA3eiIvPjwvc3ZnPg==");}
 
 #tts-bar {
   position:fixed;bottom:76px;left:50%;transform:translateX(-50%);
@@ -811,6 +857,27 @@ body.dark-mode p.tts-reading{
   }
   #tts-bar-label{max-width:72px;}
   #tts-rate-slider{width:50px;}
+}
+
+/* ── PWA 安裝提示條 ── */
+#pwa-install-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:999996;
+  display:flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,#2D1B4E,#1E0F38);
+  color:#EDE6F8;padding:10px 16px;
+  box-shadow:0 -2px 12px rgba(0,0,0,0.35);
+  font-size:13px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+#pwa-install-text{flex:1;line-height:1.4;}
+#pwa-install-btn{
+  background:#6B2FA0;color:#fff;border:none;
+  border-radius:14px;padding:5px 16px;font-size:13px;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+}
+#pwa-install-btn:hover{background:#8B5BAE;}
+#pwa-install-close{
+  background:none;border:none;color:#c9a8e8;
+  font-size:16px;cursor:pointer;padding:2px 6px;flex-shrink:0;
 }
 
 /* ── 列印樣式 ── */
@@ -46290,6 +46357,13 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
 </div><!-- #book-container -->
 
+<!-- PWA 安裝提示條（beforeinstallprompt 觸發後顯示）-->
+<div id="pwa-install-bar" style="display:none">
+  <span id="pwa-install-text">📖 將此書加入主畫面，隨時離線閱讀</span>
+  <button id="pwa-install-btn">安裝</button>
+  <button id="pwa-install-close" title="關閉">✕</button>
+</div>
+
 <!-- 工具按鈕（JS 建立） -->
 <div id="pwa-tools">
   <div class="pwa-btn-wrap" data-tip="回到頂部" id="wrap-top" style='display: none'>
@@ -46448,6 +46522,26 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     localStorage.setItem('acim-dark', body.classList.contains('dark-mode')?'1':'0');
     syncDark();
   });
+
+  /* ── PWA 安裝提示條按鈕 ── */
+  var pwaInstallBtn   = document.getElementById('pwa-install-btn');
+  var pwaInstallClose = document.getElementById('pwa-install-close');
+  var pwaInstallBar   = document.getElementById('pwa-install-bar');
+  if(pwaInstallBtn){
+    pwaInstallBtn.addEventListener('click', function(){
+      if(!window._pwaInstallPrompt) return;
+      window._pwaInstallPrompt.prompt();
+      window._pwaInstallPrompt.userChoice.then(function(result){
+        window._pwaInstallPrompt = null;
+        if(pwaInstallBar) pwaInstallBar.style.display = 'none';
+      });
+    });
+  }
+  if(pwaInstallClose){
+    pwaInstallClose.addEventListener('click', function(){
+      if(pwaInstallBar) pwaInstallBar.style.display = 'none';
+    });
+  }
 
   /* ── 進度條（rAF throttle，避免強迫同步 layout）── */
   var bar = document.getElementById('reading-progress');
@@ -47230,6 +47324,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   /* ── 停止朗讀 ── */
   function stopTTS(){
     synth.cancel();
+    _queue = []; _queueRunning = false;
     if(currentBtn){ currentBtn.classList.remove('tts-active'); currentBtn.title='朗讀此段'; }
     if(currentPara){ currentPara.classList.remove('tts-reading'); }
     currentBtn = null; currentPara = null;
@@ -47260,6 +47355,49 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     setTimeout(function(){ synth.speak(utter); }, 60);
   }
 
+  /* ── 分句佇列播放（讓句號、逗號停頓更明顯）── */
+  var _queue = [];
+  var _queueRunning = false;
+
+  function splitSentences(text){
+    /* 以句號、問號、驚嘆號為主要分句點（完整停頓）
+       逗號、分號為次要分句點（短停頓，用空白字元模擬）*/
+    var parts = [];
+    /* 先以句末標點切主句 */
+    var chunks = text.split(/(?<=[。！？])/u);
+    chunks.forEach(function(chunk){
+      chunk = chunk.trim();
+      if(!chunk) return;
+      /* 主句內再以逗號切次句，在每個次句後面附加一個短暫停（空 utterance）*/
+      var sub = chunk.split(/(?<=[，；、])/u);
+      sub.forEach(function(s, i){
+        s = s.trim();
+        if(!s) return;
+        parts.push({text: s, pause: 0});
+        /* 逗號後插入 120ms 靜音（空文字 utterance）*/
+        if(i < sub.length - 1) parts.push({text: '　', pause: 1});
+      });
+      /* 句號後插入更長的 250ms 靜音 */
+      parts.push({text: '　　', pause: 2});
+    });
+    return parts.filter(function(p){ return p.text.trim().length > 0 || p.pause > 0; });
+  }
+
+  function runQueue(onDone){
+    if(!_queue.length){ _queueRunning=false; if(onDone) onDone(); return; }
+    _queueRunning = true;
+    var item = _queue.shift();
+    var u = new SpeechSynthesisUtterance(item.text);
+    u.lang  = 'zh-TW';
+    u.rate  = getCurrentRate();
+    u.pitch = 1;
+    /* 靜音段落用最慢語速 */
+    if(item.pause){ u.rate = 0.1; u.volume = 0; }
+    var v = pickZhVoice(); if(v) u.voice = v;
+    u.onend = u.onerror = function(){ runQueue(onDone); };
+    synth.speak(u);
+  }
+
   /* ── 朗讀單一段落 ── */
   function speakPara(para, btn){
     if(currentPara === para){ stopTTS(); return; }
@@ -47269,31 +47407,22 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var text = cleanText(raw);
     if(!text || text.length < 4) return;
 
-    var utter = new SpeechSynthesisUtterance(text);
-    utter.lang  = 'zh-TW';
-    utter.rate  = getCurrentRate();
-    utter.pitch = 1;
+    /* 設定 UI 狀態 */
+    currentBtn  = btn;
+    currentPara = para;
+    btn.classList.add('tts-active');
+    btn.title = '停止朗讀';
+    para.classList.add('tts-reading');
+    barLabel.textContent = '▶ ' + text.slice(0, 16) + '…';
+    ttsBar.classList.add('tts-bar-on');
+    para.scrollIntoView({behavior:'smooth', block:'center'});
 
-    function applyVoice(){ var v=pickZhVoice(); if(v) utter.voice=v; }
-    applyVoice();
-    if(!synth.getVoices().length){
-      speechSynthesis.addEventListener('voiceschanged', applyVoice, {once:true});
-    }
-
-    utter.onstart = function(){
-      currentBtn  = btn;
-      currentPara = para;
-      btn.classList.add('tts-active');
-      btn.title = '停止朗讀';
-      para.classList.add('tts-reading');
-      barLabel.textContent = '🔊 ' + text.slice(0, 16) + '…';
-      ttsBar.classList.add('tts-bar-on');
-      para.scrollIntoView({behavior:'smooth', block:'center'});
-    };
-    utter.onend = utter.onerror = function(){ stopTTS(); };
-
+    /* 建立分句佇列 */
+    _queue = splitSentences(text);
     synth.cancel();
-    setTimeout(function(){ synth.speak(utter); }, 60);
+    setTimeout(function(){
+      runQueue(function(){ stopTTS(); });
+    }, 60);
   }
 
   /* ── 控制列事件 ── */
@@ -47332,34 +47461,90 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   var SELECTOR = '#content-area p.MsoNormal, #content-area p.MsoNoSpacing, #content-area p[class*="Mso"]';
   var FN_SELECTOR = '#content-area [id^="ftn"], #content-area [id^="edn"]';
 
-  function injectButtons(){
-    var fnContainers = Array.from(document.querySelectorAll(FN_SELECTOR));
+  /* 句子編號字元範圍：
+     U+00B9 ¹, U+00B2 ², U+00B3 ³ (Latin-1 Supplement)
+     U+2070 ⁰, U+2074-U+2079 ⁴⁵⁶⁷⁸⁹ (Superscripts block)
+     連續出現時視為同一組（如 ¹⁰、¹⁴ 等）*/
+  var SENT_NUM_RE = /([⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g;
 
-    document.querySelectorAll(SELECTOR).forEach(function(para){
-      if(para.querySelector('.tts-btn')) return;
-      if(fnContainers.some(function(c){ return c.contains(para); })) return;
-      var txt = (para.innerText || para.textContent || '').trim();
-      if(txt.length < 8) return;
-
-      var btn = document.createElement('button');
-      btn.className = 'tts-btn';
-      btn.title     = '朗讀此段';
-      /* aria-label 供螢幕閱讀器，不設 textContent 避免 TTS 引擎讀出「音量」*/
-      btn.setAttribute('aria-label', '朗讀此段');
-      btn.setAttribute('aria-hidden', 'false');
-      /* 不設 textContent — 圖示由 CSS .tts-btn::before 顯示 */
-      btn.addEventListener('click', function(e){
-        e.stopPropagation();
-        speakPara(para, btn);
-      });
-      para.appendChild(btn);
+  function wrapSentNums(para){
+    /* 走訪所有直接文字節點，將句子編號包成 <span class="sent-num"> */
+    var walker = document.createTreeWalker(para, NodeFilter.SHOW_TEXT, null, false);
+    var nodes = [];
+    var node;
+    while((node = walker.nextNode())) nodes.push(node);
+    nodes.forEach(function(tn){
+      /* 跳過已在 sent-num 或 fn-badge 內的節點 */
+      if(tn.parentNode && (
+        tn.parentNode.classList && (
+          tn.parentNode.classList.contains('sent-num') ||
+          tn.parentNode.classList.contains('fn-badge') ||
+          tn.parentNode.classList.contains('tts-btn')
+        )
+      )) return;
+      var text = tn.nodeValue;
+      if(!SENT_NUM_RE.test(text)) return;
+      SENT_NUM_RE.lastIndex = 0;
+      /* 切割文字：非上標 + 上標 交替 */
+      var frag = document.createDocumentFragment();
+      var last = 0, m;
+      while((m = SENT_NUM_RE.exec(text)) !== null){
+        if(m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+        var sp = document.createElement('span');
+        sp.className = 'sent-num';
+        sp.textContent = m[0];
+        frag.appendChild(sp);
+        last = m.index + m[0].length;
+      }
+      if(last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+      tn.parentNode.replaceChild(frag, tn);
     });
   }
 
+  /* 延後 1.2s 才開始注入，確保 PWA install prompt 和首屏渲染都已完成 */
+  function doInject(){
+    var fnContainers = Array.from(document.querySelectorAll(FN_SELECTOR));
+    var allParas = Array.from(document.querySelectorAll(SELECTOR));
+
+    /* 第一輪：所有段落（不論長短）統一包裹句子編號字型
+       短如「⁴我沒有能力。」(7字) 也要處理，避免字型不一致 */
+    var i = 0;
+    function batchWrap(){
+      var end = Math.min(i + 100, allParas.length);
+      for(; i < end; i++) wrapSentNums(allParas[i]);
+      if(i < allParas.length){ setTimeout(batchWrap, 0); } else { setTimeout(batchBtn, 0); }
+    }
+
+    /* 第二輪：所有非腳注段落都注入朗讀按鈕（含短句如「⁴我沒有能力。」）*/
+    var btnParas = allParas.filter(function(para){
+      if(para.querySelector('.tts-btn')) return false;
+      if(fnContainers.some(function(c){ return c.contains(para); })) return false;
+      return (para.innerText || para.textContent || '').trim().length >= 2;
+    });
+    var j = 0;
+    function batchBtn(){
+      var end = Math.min(j + 60, btnParas.length);
+      for(; j < end; j++){
+        var para = btnParas[j];
+        var btn = document.createElement('button');
+        btn.className = 'tts-btn';
+        btn.title     = '朗讀此段';
+        btn.setAttribute('aria-label', '朗讀此段');
+        btn.setAttribute('aria-hidden', 'false');
+        (function(p, b){
+          b.addEventListener('click', function(e){ e.stopPropagation(); speakPara(p, b); });
+        })(para, btn);
+        para.appendChild(btn);
+      }
+      if(j < btnParas.length) setTimeout(batchBtn, 0);
+    }
+
+    batchWrap();
+  }
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', injectButtons);
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(doInject, 1200); });
   } else {
-    setTimeout(injectButtons, 800);
+    setTimeout(doInject, 1200);
   }
 
 })();
