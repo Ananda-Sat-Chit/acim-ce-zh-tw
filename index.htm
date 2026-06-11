@@ -583,6 +583,9 @@ body.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-b
   #pwa-tools .pwa-btn{width:36px;height:36px;font-size:13px;}
   .pwa-btn-wrap::before{display:none;}
   body.fn-open #pwa-tools{bottom:calc(42vh + 10px);}
+  /* 手機：tts-bar 右邊界與 pwa-tools 一致（right:10px + 按鈕36px + gap5px = 54px）*/
+  #tts-bar{right:54px;}
+  body.fn-open #tts-bar{bottom:calc(42vh + 58px);}
 }
 
 /* ── 大螢幕寬度補充 ── */
@@ -800,9 +803,14 @@ body.dark-mode p.tts-reading{
 }
 
 @media(max-width:768px){
-  #tts-bar{bottom:68px;font-size:12px;padding:6px 10px;gap:6px;}
-  #tts-bar-label{max-width:90px;}
-  #tts-rate-slider{width:56px;}
+  #tts-bar{
+    bottom:68px;font-size:12px;padding:6px 10px;gap:6px;
+    /* 手機：左右定位取代水平置中，右側留 58px 給 pwa-tools 浮動鈕 */
+    left:8px;right:58px;transform:none;
+    max-width:none;justify-content:space-between;
+  }
+  #tts-bar-label{max-width:72px;}
+  #tts-rate-slider{width:50px;}
 }
 
 /* ── 列印樣式 ── */
