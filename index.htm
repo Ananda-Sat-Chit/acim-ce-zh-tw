@@ -47156,7 +47156,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   if(!isTouch){
     var fnHideTimer=null;
     function cancelFnHide(){ if(fnHideTimer){clearTimeout(fnHideTimer);fnHideTimer=null;} }
-    function scheduleFnHide(){ cancelFnHide(); fnHideTimer=setTimeout(function(){ hideFn(); },220); }
+    function scheduleFnHide(){ cancelFnHide(); fnHideTimer=setTimeout(function(){ hideFn(); },700); }
 
     content.addEventListener('mouseover',function(e){
       var r=e.target.closest('sup.fn-badge[data-fn-href]')||e.target.closest('a[href*="#_ftn"],a[href*="#_edn"]');
@@ -47625,15 +47625,65 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var SUPER_RE = /[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g;
     fullText = fullText.replace(SUPER_RE, function(m){ return ' '.repeat(m.length); });
 
-    /* 與 splitSentences 相同的主／次分句規則，但保留偏移資訊 */
+    /* ── 建立「影子文字」(shadow)，模擬 cleanText 對括號的處理 ──
+       cleanText 會在（）()前後插入逗號以產生停頓：
+         （ → ，（    ） → ），    ( → ，(    ) → )，
+       並將連續逗號收斂成一個。我們在 shadow 字串上做相同處理，
+       但每個 shadow 字元都記錄其對應的「原始 DOM 文字」字元索引
+       （插入的逗號沒有對應索引，標記為 null），
+       之後即可把 shadow 上的分句切點映射回原始 Range 偏移，
+       使切出的分句數量與朗讀佇列（基於 cleanText 結果）一致。 */
+    var shadowChars = [];
+    for(var ci = 0; ci < fullText.length; ci++){
+      var ch = fullText[ci];
+      if(ch === '（' || ch === '('){
+        shadowChars.push({ch:'，', orig:null});
+        shadowChars.push({ch:ch, orig:ci});
+      } else if(ch === '）' || ch === ')'){
+        shadowChars.push({ch:ch, orig:ci});
+        shadowChars.push({ch:'，', orig:null});
+      } else {
+        shadowChars.push({ch:ch, orig:ci});
+      }
+    }
+    /* 收斂連續逗號（與 cleanText 的 [，]{2,} → ， 規則一致）*/
+    var collapsed = [];
+    for(var ki = 0; ki < shadowChars.length; ki++){
+      if(shadowChars[ki].ch === '，' && collapsed.length && collapsed[collapsed.length-1].ch === '，') continue;
+      collapsed.push(shadowChars[ki]);
+    }
+    shadowChars = collapsed;
+    var shadowText = shadowChars.map(function(c){ return c.ch; }).join('');
+
+    /* shadow 範圍 [s, e) → 原始字元範圍 {start, end} */
+    function shadowRangeToOriginal(s, e){
+      var startOrig = null;
+      for(var i = s; i < e; i++){
+        if(shadowChars[i].orig !== null){ startOrig = shadowChars[i].orig; break; }
+      }
+      if(startOrig === null){
+        for(var i2 = e; i2 < shadowChars.length; i2++){
+          if(shadowChars[i2].orig !== null){ startOrig = shadowChars[i2].orig; break; }
+        }
+        if(startOrig === null) startOrig = fullText.length;
+      }
+      var endOrig = null;
+      for(var j = e - 1; j >= s; j--){
+        if(shadowChars[j].orig !== null){ endOrig = shadowChars[j].orig + 1; break; }
+      }
+      if(endOrig === null) endOrig = startOrig;
+      return { start: startOrig, end: Math.max(endOrig, startOrig) };
+    }
+
+    /* 與 splitSentences 相同的主／次分句規則，在 shadow 上執行 */
     var chunks = [];
-    var mainParts = fullText.split(/(?<=[。！？])/u);
+    var mainParts = shadowText.split(/(?<=[。！？])/u);
     var offset = 0;
     mainParts.forEach(function(chunk){
       if(!chunk) return;
       var subParts = chunk.split(/(?<=[，；、])/u);
       subParts.forEach(function(s){
-        if(s.trim().length > 0) chunks.push({ start: offset, end: offset + s.length });
+        if(s.trim().length > 0) chunks.push(shadowRangeToOriginal(offset, offset + s.length));
         offset += s.length;
       });
     });
