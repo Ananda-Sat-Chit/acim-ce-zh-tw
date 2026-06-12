@@ -47304,7 +47304,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     /* 記錄可用語音供排錯（console）*/
     var allVoices = synth.getVoices();
     var zhList = allVoices.filter(function(v){ return v.lang.indexOf('zh')===0||/Chinese/i.test(v.name); });
-    console.log('[TTS] 偏好:', pref, '| 選出語音:', pickZhVoice() ? pickZhVoice().name : '(無)');
+    console.log('[TTS] 偏好:', pref, '| pitch:', getCurrentPitch(), '| 選出語音:', pickZhVoice() ? pickZhVoice().name : '(無)');
     console.log('[TTS] 可用中文語音:', zhList.map(function(v){ return v.name+'('+v.lang+')'; }).join(', ')||'無');
   }
 
@@ -47313,6 +47313,13 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
   function getCurrentRate(){
     return RATE_MAP[rateSlider.value] ? RATE_MAP[rateSlider.value].rate : 0.90;
+  }
+
+  /* ── 音調：用 pitch 模擬性別（當裝置只有單一語音時仍有感知差異）──
+     Web Speech API pitch 範圍 0~2，預設 1
+     女聲：1.15（稍高）  男聲：0.75（明顯低沉）*/
+  function getCurrentPitch(){
+    return ttsGenderPref === 'm' ? 0.75 : 1.15;
   }
 
   rateSlider.addEventListener('input', function(){
@@ -47511,7 +47518,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var utter = new SpeechSynthesisUtterance(text);
     utter.lang  = 'zh-TW';
     utter.rate  = getCurrentRate();
-    utter.pitch = 1;
+    utter.pitch = getCurrentPitch();
     function applyVoice(){ var v=pickZhVoice(); if(v) utter.voice=v; }
     applyVoice();
     if(!synth.getVoices().length) speechSynthesis.addEventListener('voiceschanged', applyVoice, {once:true});
@@ -47559,9 +47566,9 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var u = new SpeechSynthesisUtterance(item.text);
     u.lang  = 'zh-TW';
     u.rate  = getCurrentRate();
-    u.pitch = 1;
-    /* 靜音段落用最慢語速 */
-    if(item.pause){ u.rate = 0.1; u.volume = 0; }
+    u.pitch = getCurrentPitch();
+    /* 靜音段落用最慢語速，pitch 維持 0（靜音不需 pitch）*/
+    if(item.pause){ u.rate = 0.1; u.volume = 0; u.pitch = 1; }
     var v = pickZhVoice(); if(v) u.voice = v;
     u.onend = u.onerror = function(){ runQueue(onDone); };
     synth.speak(u);
