@@ -811,6 +811,8 @@ body.dark-mode .tts-btn.tts-active::before{background-image:url("data:image/svg+
   transition:background 0.15s;font-family:inherit;
 }
 #tts-bar button:hover{background:rgba(255,255,255,0.12);}
+/* ♀♂ 按鈕有自己的尺寸，明確覆蓋 #tts-bar button 的通用 padding */
+#tts-bar .tts-gender-btn{padding:2px 8px;font-size:13px;}
 /* 音色（男女聲）區 */
 #tts-gender-wrap{
   display:flex;align-items:center;gap:4px;
@@ -870,14 +872,30 @@ body.dark-mode p.tts-reading{
 
 @media(max-width:768px){
   #tts-bar{
-    bottom:68px;font-size:12px;padding:6px 10px;gap:6px;
-    /* 手機：左右定位取代水平置中，右側留 58px 給 pwa-tools 浮動鈕 */
-    left:8px;right:58px;transform:none;
-    max-width:none;justify-content:space-between;
+    bottom:68px;font-size:12px;padding:5px 8px;gap:4px;
+    /* 手機：左右定位取代水平置中，右側留 62px 給 pwa-tools 浮動鈕 */
+    left:6px;right:62px;transform:none;
+    max-width:none;
+    /* 允許 flex 子元素自動縮小以符合可用寬度 */
+    flex-wrap:nowrap;align-items:center;
   }
-  #tts-bar-label{max-width:72px;}
+  /* 朗讀文字標籤：縮短並允許收縮 */
+  #tts-bar-label{
+    max-width:52px;font-size:10px;flex-shrink:1;min-width:0;
+  }
+  /* 暫停/停止按鈕縮短文字 */
+  #tts-pause-btn,#tts-stop-btn{
+    padding:2px 6px;font-size:11px;flex-shrink:0;
+  }
+  /* 音色區：隱藏文字，僅保留 ♀♂ 符號按鈕 */
+  #tts-gender-wrap{padding-left:4px;gap:2px;flex-shrink:0;}
   #tts-gender-label{display:none;}
-  #tts-rate-slider{width:50px;}
+  #tts-bar .tts-gender-btn{padding:1px 6px;font-size:12px;}
+  /* 語速區：隱藏文字標籤，滑桿縮短 */
+  #tts-rate-wrap{padding-left:4px;gap:3px;flex-shrink:0;}
+  #tts-rate-label{display:none;}
+  #tts-rate-slider{width:42px;}
+  #tts-rate-val{min-width:1.8em;font-size:10px;}
 }
 
 /* ── PWA 安裝提示條 ── */
@@ -47277,21 +47295,12 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   }
   applyGenderUI(ttsGenderPref);
 
-  /* 切換音色時，若正在朗讀則重新套用語音（停止後重啟）*/
+  /* 切換音色：純粹儲存偏好 + 更新 UI，不干擾播放狀態
+     （Android Chrome 的 synth.speaking 有已知 bug，避免依賴它來判斷播放中）*/
   function switchGender(pref){
     ttsGenderPref = pref;
     localStorage.setItem('acim-tts-gender', pref);
     applyGenderUI(pref);
-    /* 若正在朗讀，停止並提示使用者重新按播放 */
-    if(_queueRunning || synth.speaking){
-      stopTTS();
-      /* 短暫顯示提示 */
-      barLabel.textContent = '已切換音色，請重新播放';
-      ttsBar.classList.add('tts-bar-on');
-      setTimeout(function(){
-        ttsBar.classList.remove('tts-bar-on');
-      }, 1800);
-    }
     /* 記錄可用語音供排錯（console）*/
     var allVoices = synth.getVoices();
     var zhList = allVoices.filter(function(v){ return v.lang.indexOf('zh')===0||/Chinese/i.test(v.name); });
@@ -47299,8 +47308,8 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     console.log('[TTS] 可用中文語音:', zhList.map(function(v){ return v.name+'('+v.lang+')'; }).join(', ')||'無');
   }
 
-  genderBtnF.addEventListener('click', function(){ switchGender('f'); });
-  genderBtnM.addEventListener('click', function(){ switchGender('m'); });
+  genderBtnF.addEventListener('click', function(e){ e.stopPropagation(); switchGender('f'); });
+  genderBtnM.addEventListener('click', function(e){ e.stopPropagation(); switchGender('m'); });
 
   function getCurrentRate(){
     return RATE_MAP[rateSlider.value] ? RATE_MAP[rateSlider.value].rate : 0.90;
