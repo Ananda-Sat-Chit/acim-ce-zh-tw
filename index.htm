@@ -870,6 +870,16 @@ body.dark-mode p.tts-reading{
   box-shadow:-24px 0 0 0 var(--c-accent), inset 3px 0 0 transparent;
 }
 
+/* ── TTS 朗讀進度 Highlight（CSS Custom Highlight API）──
+   舊版瀏覽器不支援 ::highlight() 時，此規則會被忽略，TTS 仍正常運作 */
+::highlight(tts-sentence){
+  background-color: rgba(201,162,39,0.35);
+  color: inherit;
+}
+body.dark-mode ::highlight(tts-sentence){
+  background-color: rgba(232,200,64,0.35);
+}
+
 @media(max-width:768px){
   #tts-bar{
     bottom:68px;font-size:12px;padding:5px 8px;gap:4px;
@@ -47497,10 +47507,30 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     return null;
   }
 
+  /* ── CSS Custom Highlight API 支援偵測 ──
+     Chrome 105+ / Safari 17.2+ / Firefox 122+。
+     不支援時 ttsHighlight 為 null，所有 highlight 相關呼叫均安全略過，TTS 仍正常。 */
+  var ttsHighlight = null;
+  if (window.Highlight && window.CSS && CSS.highlights) {
+    ttsHighlight = new Highlight();
+    CSS.highlights.set('tts-sentence', ttsHighlight);
+  }
+
+  function clearTtsHighlight(){
+    if (ttsHighlight) ttsHighlight.clear();
+  }
+
+  function setTtsHighlightRange(range){
+    if (!ttsHighlight) return;
+    ttsHighlight.clear();
+    if (range && !range.collapsed) ttsHighlight.add(range);
+  }
+
   /* ── 停止朗讀 ── */
   function stopTTS(){
     synth.cancel();
-    _queue = []; _queueRunning = false;
+    _queue = []; _queueRunning = false; _hlQueue = [];
+    clearTtsHighlight();
     if(currentBtn){ currentBtn.classList.remove('tts-active'); currentBtn.title='朗讀此段'; }
     if(currentPara){ currentPara.classList.remove('tts-reading'); }
     currentBtn = null; currentPara = null;
@@ -47534,6 +47564,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   /* ── 分句佇列播放（讓句號、逗號停頓更明顯）── */
   var _queue = [];
   var _queueRunning = false;
+  var _hlQueue = [];   /* 與 _queue 中「真正朗讀」的項目一一對應的 Range（供 highlight）*/
 
   function splitSentences(text){
     /* 以句號、問號、驚嘆號為主要分句點（完整停頓）
@@ -47559,8 +47590,84 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     return parts.filter(function(p){ return p.text.trim().length > 0 || p.pause > 0; });
   }
 
+  /* ── 依「原始 DOM 文字」建立與朗讀分句一一對應的 Range 陣列 ──
+     不修改 DOM，只走訪文字節點並計算字元偏移，交給 Range + CSS Custom
+     Highlight API 上色。與 splitSentences() 使用相同的標點切分邏輯，
+     確保切出的「真正朗讀」分句數量盡量一致；若數量不符（cleanText 造成
+     文字差異過大），則回傳空陣列，highlight 功能自動停用，但 TTS 仍正常。 */
+  function buildHighlightRanges(para, speakCount){
+    if (!ttsHighlight || !window.Range) return [];
+
+    /* 走訪段落內所有文字節點，跳過朗讀按鈕、句子編號徽章等非正文節點 */
+    var walker = document.createTreeWalker(para, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(tn){
+        var p = tn.parentNode;
+        while(p && p !== para){
+          if(p.classList && (p.classList.contains('tts-btn') || p.classList.contains('fn-badge'))){
+            return NodeFilter.FILTER_REJECT;
+          }
+          p = p.parentNode;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }, false);
+
+    var textNodes = [];
+    var fullText = '';
+    var node;
+    while((node = walker.nextNode())){
+      textNodes.push({ node: node, start: fullText.length, text: node.nodeValue });
+      fullText += node.nodeValue;
+    }
+    if(!fullText) return [];
+
+    /* 移除上標句子編號，避免影響切分對齊（與 cleanText 行為一致）*/
+    var SUPER_RE = /[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g;
+    fullText = fullText.replace(SUPER_RE, function(m){ return ' '.repeat(m.length); });
+
+    /* 與 splitSentences 相同的主／次分句規則，但保留偏移資訊 */
+    var chunks = [];
+    var mainParts = fullText.split(/(?<=[。！？])/u);
+    var offset = 0;
+    mainParts.forEach(function(chunk){
+      if(!chunk) return;
+      var subParts = chunk.split(/(?<=[，；、])/u);
+      subParts.forEach(function(s){
+        if(s.trim().length > 0) chunks.push({ start: offset, end: offset + s.length });
+        offset += s.length;
+      });
+    });
+
+    /* 若切出的「有內容」分句數量與朗讀佇列不一致，放棄 highlight（避免錯誤對應）*/
+    if(chunks.length !== speakCount) return [];
+
+    /* 將字元偏移轉換為 Range（可能跨越多個文字節點）*/
+    function offsetToNodePos(charIdx){
+      for(var i = 0; i < textNodes.length; i++){
+        var tn = textNodes[i];
+        var len = tn.text.length;
+        if(charIdx <= tn.start + len){
+          return { node: tn.node, offset: Math.max(0, Math.min(len, charIdx - tn.start)) };
+        }
+      }
+      var last = textNodes[textNodes.length - 1];
+      return { node: last.node, offset: last.text.length };
+    }
+
+    return chunks.map(function(c){
+      try{
+        var range = document.createRange();
+        var s = offsetToNodePos(c.start);
+        var e = offsetToNodePos(c.end);
+        range.setStart(s.node, s.offset);
+        range.setEnd(e.node, e.offset);
+        return range;
+      }catch(err){ return null; }
+    });
+  }
+
   function runQueue(onDone){
-    if(!_queue.length){ _queueRunning=false; if(onDone) onDone(); return; }
+    if(!_queue.length){ _queueRunning=false; clearTtsHighlight(); if(onDone) onDone(); return; }
     _queueRunning = true;
     var item = _queue.shift();
     var u = new SpeechSynthesisUtterance(item.text);
@@ -47570,6 +47677,11 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     /* 靜音段落用最慢語速，pitch 維持 0（靜音不需 pitch）*/
     if(item.pause){ u.rate = 0.1; u.volume = 0; u.pitch = 1; }
     var v = pickZhVoice(); if(v) u.voice = v;
+    /* 非靜音的「真正朗讀」分句：取出對應的 highlight Range 並上色 */
+    if(!item.pause){
+      var range = _hlQueue.length ? _hlQueue.shift() : null;
+      setTtsHighlightRange(range);
+    }
     u.onend = u.onerror = function(){ runQueue(onDone); };
     synth.speak(u);
   }
@@ -47595,6 +47707,9 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
     /* 建立分句佇列 */
     _queue = splitSentences(text);
+    /* 計算「真正朗讀」（非靜音）分句數量，並嘗試建立對應的 highlight Range */
+    var speakCount = _queue.filter(function(p){ return !p.pause; }).length;
+    _hlQueue = buildHighlightRanges(para, speakCount);
     synth.cancel();
     setTimeout(function(){
       runQueue(function(){ stopTTS(); });
