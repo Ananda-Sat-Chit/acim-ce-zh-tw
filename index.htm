@@ -811,6 +811,26 @@ body.dark-mode .tts-btn.tts-active::before{background-image:url("data:image/svg+
   transition:background 0.15s;font-family:inherit;
 }
 #tts-bar button:hover{background:rgba(255,255,255,0.12);}
+/* 音色（男女聲）區 */
+#tts-gender-wrap{
+  display:flex;align-items:center;gap:4px;
+  border-left:1px solid rgba(212,184,255,0.2);
+  padding-left:8px;
+}
+#tts-gender-label{font-size:11px;opacity:0.7;white-space:nowrap;}
+.tts-gender-btn{
+  background:none;border:1px solid rgba(212,184,255,0.3);
+  border-radius:12px;color:#ede6f8;cursor:pointer;
+  padding:2px 8px;font-size:13px;line-height:1.3;
+  transition:background 0.15s,border-color 0.15s,color 0.15s;
+  font-family:inherit;
+}
+.tts-gender-btn:hover{background:rgba(255,255,255,0.12);}
+.tts-gender-btn.tts-gender-active{
+  background:rgba(212,184,255,0.25);
+  border-color:rgba(212,184,255,0.8);
+  color:#f0e6ff;
+}
 /* 語速區 */
 #tts-rate-wrap{
   display:flex;align-items:center;gap:5px;
@@ -856,6 +876,7 @@ body.dark-mode p.tts-reading{
     max-width:none;justify-content:space-between;
   }
   #tts-bar-label{max-width:72px;}
+  #tts-gender-label{display:none;}
   #tts-rate-slider{width:50px;}
 }
 
@@ -47193,6 +47214,11 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   <span id="tts-bar-label">🔊 朗讀中…</span>
   <button id="tts-pause-btn">⏸ 暫停</button>
   <button id="tts-stop-btn">⏹ 停止</button>
+  <div id="tts-gender-wrap">
+    <span id="tts-gender-label">音色</span>
+    <button id="tts-gender-f" class="tts-gender-btn tts-gender-active" title="女聲">♀</button>
+    <button id="tts-gender-m" class="tts-gender-btn" title="男聲">♂</button>
+  </div>
   <div id="tts-rate-wrap">
     <span id="tts-rate-label">語速</span>
     <input id="tts-rate-slider" type="range" min="1" max="6" step="1" value="3" title="調整語速">
@@ -47219,6 +47245,8 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   var stopBtn     = document.getElementById('tts-stop-btn');
   var rateSlider  = document.getElementById('tts-rate-slider');
   var rateVal     = document.getElementById('tts-rate-val');
+  var genderBtnF  = document.getElementById('tts-gender-f');
+  var genderBtnM  = document.getElementById('tts-gender-m');
 
   /* ── 語速對照表（5段）── */
   var RATE_MAP = {
@@ -47235,6 +47263,44 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   if (!RATE_MAP[savedRate]) savedRate = '3';
   rateSlider.value = savedRate;
   rateVal.textContent = RATE_MAP[savedRate].label;
+
+  /* ── 音色偏好（'f'=女聲, 'm'=男聲，預設女聲）── */
+  var ttsGenderPref = localStorage.getItem('acim-tts-gender') || 'f';
+  function applyGenderUI(pref){
+    if(pref === 'm'){
+      genderBtnM.classList.add('tts-gender-active');
+      genderBtnF.classList.remove('tts-gender-active');
+    } else {
+      genderBtnF.classList.add('tts-gender-active');
+      genderBtnM.classList.remove('tts-gender-active');
+    }
+  }
+  applyGenderUI(ttsGenderPref);
+
+  /* 切換音色時，若正在朗讀則重新套用語音（停止後重啟）*/
+  function switchGender(pref){
+    ttsGenderPref = pref;
+    localStorage.setItem('acim-tts-gender', pref);
+    applyGenderUI(pref);
+    /* 若正在朗讀，停止並提示使用者重新按播放 */
+    if(_queueRunning || synth.speaking){
+      stopTTS();
+      /* 短暫顯示提示 */
+      barLabel.textContent = '已切換音色，請重新播放';
+      ttsBar.classList.add('tts-bar-on');
+      setTimeout(function(){
+        ttsBar.classList.remove('tts-bar-on');
+      }, 1800);
+    }
+    /* 記錄可用語音供排錯（console）*/
+    var allVoices = synth.getVoices();
+    var zhList = allVoices.filter(function(v){ return v.lang.indexOf('zh')===0||/Chinese/i.test(v.name); });
+    console.log('[TTS] 偏好:', pref, '| 選出語音:', pickZhVoice() ? pickZhVoice().name : '(無)');
+    console.log('[TTS] 可用中文語音:', zhList.map(function(v){ return v.name+'('+v.lang+')'; }).join(', ')||'無');
+  }
+
+  genderBtnF.addEventListener('click', function(){ switchGender('f'); });
+  genderBtnM.addEventListener('click', function(){ switchGender('m'); });
 
   function getCurrentRate(){
     return RATE_MAP[rateSlider.value] ? RATE_MAP[rateSlider.value].rate : 0.90;
@@ -47301,23 +47367,117 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
            (ones ? ['','一','二','三','四','五','六','七','八','九'][ones] : '');
   }
 
-  /* ── 語音選擇（優先順序：Meijia > Tingting > zh-TW > zh-HK > zh）── */
+  /* ── 語音選擇（依音色偏好 + 優先順序）── */
+  /*
+   * 各平台已知中文語音性別對照表（從實測 log 補全）
+   *
+   * 女聲：
+   *   macOS/iOS zh-TW : Meijia（美嘉）
+   *   macOS/iOS zh-CN : Tingting（婷婷）、Ting-Ting
+   *   macOS/iOS zh-HK : HiuGaai（曉佳）、HiuMaan（曉曼）
+   *   Windows 舊版 zh-TW : Hanhan（涵涵）、Yating（雅婷）← 用戶實測確認
+   *   Windows 新版 zh-TW : Hsiao-Yu（曉雨）
+   *   Windows zh-CN : Xiaoxiao（曉曉）、Xiaoyi（曉伊）、Xiaomeng、Xiaoshuang、Xiaozhen、Xiaorui
+   *   Windows zh-HK : HiuGaai
+   *
+   * 男聲：
+   *   macOS/iOS zh-HK : SiuCheng（少成）、Siu-Cheng（macOS 13+）
+   *   Windows 舊版 zh-TW : Zhiwei（志威）← 用戶實測確認
+   *   Windows 新版 zh-TW : Yun-Jhe（雲哲）
+   *   Windows zh-CN : Yunyang（雲揚）、Yunxi（雲希）、Yunjian、Yunfeng、Yunhao
+   *   Windows zh-HK : WanLung（雲龍）
+   *
+   * Google 系列同語言只有一個語音，無法選性別，歸為 unknown：
+   *   Google 國語（臺灣）zh-TW、Google 普通话 zh-CN、Google 粤語 zh-HK
+   */
+  var VOICE_GENDER_MAP = {
+    /* ── 女聲 ── */
+    'f': [
+      /Meijia/i,
+      /Ting-Ting|Tingting/i,
+      /HiuGaai/i,
+      /HiuMaan/i,
+      /Hanhan/i,             /* Windows 舊版 zh-TW 女聲（用戶實測）*/
+      /Yating/i,             /* Windows 舊版 zh-TW 女聲（用戶實測）*/
+      /Hsiao-Yu/i,           /* Windows 新版 zh-TW 女聲 */
+      /Xiaoxiao/i,
+      /Xiaoyi/i,
+      /Xiaomeng/i,
+      /Xiaoshuang/i,
+      /Xiaozhen/i,
+      /Xiaorui/i
+    ],
+    /* ── 男聲 ── */
+    'm': [
+      /Zhiwei/i,             /* Windows 舊版 zh-TW 男聲（用戶實測，最優先）*/
+      /Yun-Jhe/i,            /* Windows 新版 zh-TW 男聲 */
+      /WanLung/i,            /* Windows zh-HK 男聲 */
+      /SiuCheng|Siu-Cheng/i, /* macOS/iOS zh-HK 男聲 */
+      /Yunyang/i,            /* Windows zh-CN 男聲 */
+      /Yunxi\b/i,           /* Windows zh-CN 男聲（\b 避免誤配 Yunxia 女聲）*/
+      /Yunjian/i,
+      /Yunfeng/i,
+      /Yunhao/i
+    ]
+  };
+
+  function guessGender(voice){
+    var n = voice.name;
+    for(var i = 0; i < VOICE_GENDER_MAP['f'].length; i++){
+      if(VOICE_GENDER_MAP['f'][i].test(n)) return 'f';
+    }
+    for(var j = 0; j < VOICE_GENDER_MAP['m'].length; j++){
+      if(VOICE_GENDER_MAP['m'][j].test(n)) return 'm';
+    }
+    return 'u'; /* unknown — 交由語言代碼排序決定 */
+  }
+
   function pickZhVoice(){
     var voices = synth.getVoices();
     if(!voices.length) return null;
-    var priority = [
-      function(v){ return /Meijia/i.test(v.name); },              /* macOS 美嘉（台灣中文，最自然）*/
-      function(v){ return /Tingting/i.test(v.name); },            /* macOS 婷婷（普通話）*/
-      function(v){ return v.lang==='zh-TW'||v.lang==='zh_TW'; },  /* 台灣中文 */
-      function(v){ return /Chinese.*Traditional/i.test(v.name); },
-      function(v){ return v.lang==='zh-HK'||v.lang==='zh_HK'; },
-      function(v){ return v.lang.indexOf('zh')===0; },
-      function(v){ return /Chinese/i.test(v.name); }
-    ];
-    for(var i=0;i<priority.length;i++){
-      var found=voices.find(priority[i]);
-      if(found) return found;
+
+    /* 過濾出中文語音（優先 zh-TW，接受所有 zh-* 及含 Chinese 的名稱）*/
+    var zhVoices = voices.filter(function(v){
+      return v.lang.indexOf('zh') === 0 || /Chinese/i.test(v.name);
+    });
+    if(!zhVoices.length) zhVoices = voices.slice();
+
+    var pref = ttsGenderPref; /* 'f' 或 'm' */
+
+    /* 每個語音評分：
+       0 = 性別明確符合偏好（最佳）
+       1 = 性別未知
+       2 = 性別明確但不符合偏好（退路）*/
+    var scored = zhVoices.map(function(v){
+      var g = guessGender(v);
+      return { voice: v, gender: g, score: (g === pref) ? 0 : (g === 'u' ? 1 : 2) };
+    });
+    scored.sort(function(a, b){ return a.score - b.score; });
+
+    /* 在最佳分數群中，按已知優先名稱序列挑選 */
+    var topScore = scored[0].score;
+    var topGroup = scored.filter(function(s){ return s.score === topScore; });
+    var preferredPatterns = VOICE_GENDER_MAP[pref]; /* 偏好性別的優先名稱列表 */
+
+    for(var i = 0; i < preferredPatterns.length; i++){
+      var pat = preferredPatterns[i];
+      var hit = topGroup.find(function(s){ return pat.test(s.voice.name); });
+      if(hit) return hit.voice;
     }
+
+    /* 若最佳群中無任何已知名稱（全為 unknown），
+       依語言代碼品質排：zh-TW > zh-HK > zh-CN > zh-* */
+    topGroup.sort(function(a, b){
+      function langScore(v){
+        var l = v.voice.lang;
+        if(l === 'zh-TW' || l === 'zh_TW') return 0;
+        if(l === 'zh-HK' || l === 'zh_HK') return 1;
+        if(l === 'zh-CN' || l === 'zh_CN') return 2;
+        return 3;
+      }
+      return langScore(a) - langScore(b);
+    });
+    if(topGroup.length) return topGroup[0].voice;
     return null;
   }
 
