@@ -19,7 +19,13 @@
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "description": "完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。",
@@ -32,8 +38,8 @@
   ],
   "screenshots": [
     {
-      "src": "screenshot-wide.png",
-      "sizes": "1280x720",
+      "src": "screenshot-og.png",
+      "sizes": "1200x630",
       "type": "image/png",
       "form_factor": "wide",
       "label": "桌面閱讀介面"

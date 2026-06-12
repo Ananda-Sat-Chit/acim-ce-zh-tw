@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -5,16 +6,16 @@
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
-<meta property="og:image"       content="https://ananda-sat-chit.github.io/acim-ce-zh-tw/pwa-192x192.png">
-<meta property="og:image:width"  content="192">
-<meta property="og:image:height" content="192">
+<meta property="og:image"       content="https://ananda-sat-chit.github.io/acim-ce-zh-tw/screenshot-og.png">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:type"        content="book">
 <meta property="og:url"         content="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta property="og:locale"      content="zh_TW">
 <meta name="twitter:card"       content="summary">
 <meta name="twitter:title"      content="完整加註版奇蹟課程">
 <meta name="twitter:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
-<meta name="twitter:image" content="https://ananda-sat-chit.github.io/acim-ce-zh-tw/pwa-192x192.png">
+<meta name="twitter:image" content="https://ananda-sat-chit.github.io/acim-ce-zh-tw/screenshot-og.png">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#403053">
@@ -467,6 +468,87 @@ body.fn-open #pwa-tools{
 .pwa-btn:active{transform:scale(0.92);}
 @keyframes btn-shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-3px);}75%{transform:translateX(3px);}}
 .pwa-btn.at-limit{animation:btn-shake 0.3s ease;cursor:not-allowed;}
+
+/* ── 書籤系統 ── */
+#bm-panel{
+  position:fixed;bottom:20px;left:16px;z-index:99997;
+  background:linear-gradient(145deg,#2D1B4E 0%,#1A0C30 100%);
+  border:1px solid rgba(201,162,39,0.35);
+  border-radius:14px;padding:0;
+  box-shadow:0 8px 32px rgba(40,0,80,0.5);
+  width:260px;max-height:72vh;
+  display:flex;flex-direction:column;
+  opacity:0;pointer-events:none;
+  transform:translateY(8px) scale(0.97);
+  transition:opacity 0.22s ease,transform 0.22s ease;
+  overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}
+#bm-panel.bm-open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1);}
+#bm-panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px 8px;
+  border-bottom:1px solid rgba(201,162,39,0.2);
+  flex-shrink:0;
+}
+#bm-panel-title{font-size:12px;font-weight:600;color:var(--c-gold);letter-spacing:0.04em;}
+#bm-panel-close{
+  background:none;border:none;color:rgba(212,184,255,0.6);
+  cursor:pointer;font-size:15px;line-height:1;padding:0 2px;
+  transition:color 0.15s;
+}
+#bm-panel-close:hover{color:#EDE6F8;}
+#bm-list{
+  flex:1;overflow-y:auto;padding:6px 0;
+  scrollbar-width:thin;scrollbar-color:rgba(139,91,174,0.4) transparent;
+}
+#bm-list::-webkit-scrollbar{width:4px;}
+#bm-list::-webkit-scrollbar-thumb{background:rgba(139,91,174,0.4);border-radius:2px;}
+.bm-empty{
+  padding:20px 14px;text-align:center;
+  font-size:12px;color:rgba(212,184,255,0.45);line-height:1.6;
+}
+.bm-item{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:7px 14px;cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  transition:background 0.12s;
+}
+.bm-item:last-child{border-bottom:none;}
+.bm-item:hover{background:rgba(139,79,192,0.15);}
+.bm-item-body{flex:1;min-width:0;}
+.bm-item-title{
+  font-size:11.5px;font-weight:500;color:#EDE6F8;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.4;margin-bottom:2px;
+}
+.bm-item-excerpt{
+  font-size:10.5px;color:rgba(201,168,232,0.65);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;line-height:1.45;
+}
+.bm-item-del{
+  background:none;border:none;color:rgba(212,184,255,0.3);
+  cursor:pointer;font-size:13px;padding:0 2px;flex-shrink:0;margin-top:1px;
+  transition:color 0.15s;line-height:1;
+}
+.bm-item-del:hover{color:#e06060;}
+#bm-panel-footer{
+  padding:7px 14px 10px;border-top:1px solid rgba(201,162,39,0.15);
+  flex-shrink:0;display:flex;justify-content:flex-end;
+}
+#bm-clear-all{
+  background:none;border:1px solid rgba(212,184,255,0.18);
+  color:rgba(212,184,255,0.45);font-size:10.5px;border-radius:6px;
+  padding:4px 10px;cursor:pointer;transition:all 0.15s;
+}
+#bm-clear-all:hover{border-color:rgba(224,96,96,0.5);color:#e09090;}
+/* btn-bm 已加入書籤時的高亮狀態 */
+#btn-bm.bm-marked{background:#7B3FA8 !important;box-shadow:0 0 0 2px rgba(201,162,39,0.55),0 3px 10px rgba(60,0,100,0.35);}
+/* 手機版書籤面板靠底部 */
+@media(max-width:768px){
+  #bm-panel{left:8px;right:8px;width:auto;bottom:72px;}
+}
 
 /* ── 註腳彈出列 ── */
 #footnote-bar{
@@ -46430,6 +46512,23 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   <div class="pwa-btn-wrap" data-tip="目錄">
     <button id="btn-toc" class="pwa-btn" title="目錄" aria-label="目錄" style="background:#6B2FA0">☰</button>
   </div>
+  <div class="pwa-btn-wrap" data-tip="書籤">
+    <button id="btn-bm" class="pwa-btn" title="加入/移除書籤" aria-label="加入或移除書籤" style="background:#4A2080">🔖</button>
+  </div>
+</div>
+
+<!-- 書籤面板 -->
+<div id="bm-panel" role="dialog" aria-modal="false" aria-label="我的書籤">
+  <div id="bm-panel-header">
+    <span id="bm-panel-title">🔖 我的書籤</span>
+    <button id="bm-panel-close" aria-label="關閉書籤面板">✕</button>
+  </div>
+  <div id="bm-list" role="list" aria-label="書籤列表">
+    <div class="bm-empty">尚無書籤<br>閱讀時點擊 🔖 可標記當前位置</div>
+  </div>
+  <div id="bm-panel-footer">
+    <button id="bm-clear-all" title="清除所有書籤">清除全部</button>
+  </div>
 </div>
 
 <!-- 註腳彈出列 -->
@@ -47091,6 +47190,262 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       else shake(document.getElementById('btn-fup'));
     }
   });
+
+  /* ══════════════════════════════════════════════════
+     書籤系統（多點書籤，localStorage 持久化）
+     資料結構：acim-bookmarks → JSON 陣列
+       [ { id, anchor, scrollY, title, excerpt, ts }, … ]
+     最多儲存 50 個書籤，依時間戳倒序顯示。
+     ══════════════════════════════════════════════════ */
+  (function(){
+    var BM_KEY   = 'acim-bookmarks';
+    var BM_MAX   = 50;
+    var bmPanel  = document.getElementById('bm-panel');
+    var bmList   = document.getElementById('bm-list');
+    var btnBm    = document.getElementById('btn-bm');
+    var bmOpen   = false;
+
+    /* ── 讀寫 localStorage ── */
+    function bmLoad(){
+      try{ return JSON.parse(localStorage.getItem(BM_KEY)||'[]'); }
+      catch(e){ return []; }
+    }
+    function bmSave(arr){
+      try{ localStorage.setItem(BM_KEY, JSON.stringify(arr)); }
+      catch(e){}
+    }
+
+    /* ── 取得目前最近的 heading anchor（麵包屑同款邏輯）── */
+    function currentAnchor(){
+      var headings = Array.from(document.querySelectorAll('#content-area [id]'));
+      var sy = window.scrollY + 80;
+      var best = null;
+      for(var i=0;i<headings.length;i++){
+        if(headings[i].getBoundingClientRect().top + window.scrollY <= sy) best = headings[i];
+        else break;
+      }
+      return best ? best.id : '';
+    }
+
+    /* ── 取得當前段落摘要文字（從 viewport 頂部附近掃一個段落）── */
+    function currentExcerpt(){
+      var mid = window.scrollY + window.innerHeight * 0.25;
+      var paras = document.querySelectorAll('#content-area p, #content-area h1, #content-area h2, #content-area h3');
+      for(var i=0;i<paras.length;i++){
+        var top = paras[i].getBoundingClientRect().top + window.scrollY;
+        if(top >= window.scrollY && top <= mid){
+          var t = paras[i].textContent.replace(/\s+/g,' ').trim();
+          if(t.length>4) return t.slice(0,60) + (t.length>60?'…':'');
+        }
+      }
+      return '';
+    }
+
+    /* ── 取得書籤標題（優先用麵包屑文字，fallback 用頁面標題）── */
+    function currentTitle(){
+      var crumb = document.getElementById('crumb-text');
+      if(crumb && crumb.textContent.trim()) return crumb.textContent.trim().slice(0,40);
+      return document.title.slice(0,40);
+    }
+
+    /* ── 判斷當前位置是否已有書籤（±300px 容差）── */
+    function currentBmIndex(arr){
+      var sy = window.scrollY;
+      for(var i=0;i<arr.length;i++){
+        if(Math.abs(arr[i].scrollY - sy) < 300) return i;
+      }
+      return -1;
+    }
+
+    /* ── 更新 btn-bm 高亮狀態 ── */
+    function syncBtnState(){
+      var arr = bmLoad();
+      var idx = currentBmIndex(arr);
+      if(idx>=0) btnBm.classList.add('bm-marked');
+      else       btnBm.classList.remove('bm-marked');
+    }
+
+    /* ── 渲染書籤列表 ── */
+    function renderBmList(){
+      var arr = bmLoad();
+      if(arr.length===0){
+        bmList.innerHTML='<div class="bm-empty">尚無書籤<br>閱讀時點擊 🔖 可標記當前位置</div>';
+        return;
+      }
+      /* 依時間戳倒序 */
+      arr = arr.slice().sort(function(a,b){return b.ts-a.ts;});
+      var html='';
+      for(var i=0;i<arr.length;i++){
+        var bm = arr[i];
+        var dt = new Date(bm.ts);
+        var dateStr = (dt.getMonth()+1)+'/'+(dt.getDate())+' '
+                    + String(dt.getHours()).padStart(2,'0')+':'
+                    + String(dt.getMinutes()).padStart(2,'0');
+        html+='<div class="bm-item" role="listitem" data-bm-id="'+encodeURIComponent(bm.id)+'" tabindex="0" aria-label="書籤：'+bm.title+'">'
+          +'<div class="bm-item-body">'
+          +'<div class="bm-item-title">'+escHtml(bm.title)
+          +'<span style="font-size:9.5px;color:rgba(201,168,232,0.45);margin-left:6px;">'+dateStr+'</span></div>'
+          +(bm.excerpt?'<div class="bm-item-excerpt">'+escHtml(bm.excerpt)+'</div>':'')
+          +'</div>'
+          +'<button class="bm-item-del" data-bm-id="'+encodeURIComponent(bm.id)+'" aria-label="刪除此書籤" title="刪除">✕</button>'
+          +'</div>';
+      }
+      bmList.innerHTML=html;
+
+      /* 點擊書籤項目 → 跳轉 */
+      bmList.querySelectorAll('.bm-item').forEach(function(el){
+        el.addEventListener('click',function(e){
+          if(e.target.classList.contains('bm-item-del')) return;
+          var id=decodeURIComponent(el.dataset.bmId);
+          var bm=bmLoad().find(function(b){return b.id===id;});
+          if(!bm) return;
+          closeBmPanel();
+          if(bm.anchor){
+            var target=document.getElementById(bm.anchor);
+            if(target){
+              target.scrollIntoView({behavior:'smooth',block:'start'});
+              return;
+            }
+          }
+          window.scrollTo({top:bm.scrollY,behavior:'smooth'});
+        });
+        el.addEventListener('keydown',function(e){
+          if(e.key==='Enter'||e.key===' ') el.click();
+        });
+      });
+
+      /* 刪除單筆 */
+      bmList.querySelectorAll('.bm-item-del').forEach(function(btn){
+        btn.addEventListener('click',function(e){
+          e.stopPropagation();
+          var id=decodeURIComponent(btn.dataset.bmId);
+          var arr=bmLoad().filter(function(b){return b.id!==id;});
+          bmSave(arr);
+          renderBmList();
+          syncBtnState();
+        });
+      });
+    }
+
+    /* ── HTML 轉義 ── */
+    function escHtml(s){
+      return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    /* ── 面板開關 ── */
+    function openBmPanel(){
+      renderBmList();
+      bmPanel.classList.add('bm-open');
+      bmOpen=true;
+      document.getElementById('bm-panel-close').focus();
+    }
+    function closeBmPanel(){
+      bmPanel.classList.remove('bm-open');
+      bmOpen=false;
+    }
+
+    /* ── btn-bm 點擊：加入 / 移除書籤 ── */
+    btnBm.addEventListener('click',function(){
+      var arr=bmLoad();
+      var idx=currentBmIndex(arr);
+      if(idx>=0){
+        /* 已有書籤 → 移除，並同時開面板確認 */
+        arr.splice(idx,1);
+        bmSave(arr);
+        syncBtnState();
+        /* 若面板已開，重刷；否則短暫 toast */
+        if(bmOpen){ renderBmList(); }
+        else { showBmToast('已移除書籤'); }
+      } else {
+        /* 新增書籤 */
+        if(arr.length>=BM_MAX){
+          showBmToast('書籤已達上限（'+BM_MAX+'個）'); return;
+        }
+        var bm={
+          id: 'bm-'+Date.now(),
+          anchor: currentAnchor(),
+          scrollY: Math.round(window.scrollY),
+          title: currentTitle(),
+          excerpt: currentExcerpt(),
+          ts: Date.now()
+        };
+        arr.push(bm);
+        bmSave(arr);
+        syncBtnState();
+        showBmToast('書籤已加入 🔖');
+        if(bmOpen) renderBmList();
+      }
+    });
+
+    /* ── 關閉按鈕 ── */
+    document.getElementById('bm-panel-close').addEventListener('click', closeBmPanel);
+
+    /* ── 清除全部 ── */
+    document.getElementById('bm-clear-all').addEventListener('click',function(){
+      if(!bmLoad().length) return;
+      bmSave([]);
+      renderBmList();
+      syncBtnState();
+    });
+
+    /* ── 長按 btn-bm（≥500ms）→ 開書籤面板 ── */
+    var bmPressTimer=null;
+    btnBm.addEventListener('pointerdown',function(){
+      bmPressTimer=setTimeout(function(){
+        bmPressTimer=null;
+        bmOpen ? closeBmPanel() : openBmPanel();
+      },500);
+    });
+    btnBm.addEventListener('pointerup',function(){ clearTimeout(bmPressTimer); });
+    btnBm.addEventListener('pointercancel',function(){ clearTimeout(bmPressTimer); });
+
+    /* ── 點擊面板外部 → 關閉 ── */
+    document.addEventListener('pointerdown',function(e){
+      if(bmOpen && !bmPanel.contains(e.target) && e.target!==btnBm)
+        closeBmPanel();
+    },true);
+
+    /* ── ESC 同時關閉書籤面板 ── */
+    document.addEventListener('keydown',function(e){
+      if(e.key==='Escape' && bmOpen) closeBmPanel();
+    });
+
+    /* ── 滾動時同步按鈕高亮（debounce 300ms）── */
+    var bmScrollTimer=null;
+    window.addEventListener('scroll',function(){
+      clearTimeout(bmScrollTimer);
+      bmScrollTimer=setTimeout(syncBtnState, 300);
+    },{passive:true});
+
+    /* ── Toast 提示 ── */
+    var toastEl=null;
+    var toastTimer=null;
+    function showBmToast(msg){
+      if(!toastEl){
+        toastEl=document.createElement('div');
+        toastEl.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);'
+          +'background:rgba(30,10,55,0.93);color:#EDE6F8;font-size:13px;'
+          +'padding:8px 18px;border-radius:20px;z-index:999999;'
+          +'border:1px solid rgba(201,162,39,0.4);white-space:nowrap;'
+          +'box-shadow:0 4px 16px rgba(40,0,80,0.5);'
+          +'transition:opacity 0.25s;opacity:0;pointer-events:none;'
+          +'font-family:-apple-system,sans-serif;';
+        document.body.appendChild(toastEl);
+      }
+      clearTimeout(toastTimer);
+      toastEl.textContent=msg;
+      toastEl.style.opacity='1';
+      toastTimer=setTimeout(function(){toastEl.style.opacity='0';},1800);
+    }
+
+    /* ── 初始化按鈕狀態 ── */
+    syncBtnState();
+
+  })(); /* end bookmark IIFE */
+
+
 
   /* ── 註腳彈出列 ── */
   var fnBar=document.getElementById('footnote-bar');
