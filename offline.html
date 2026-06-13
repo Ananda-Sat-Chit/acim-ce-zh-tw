@@ -28,21 +28,42 @@
     padding: 2rem 1.5rem;
     max-width: 360px;
   }
-  /* 新的圖片容器和圖片樣式，替換舊的 CSS 圖示 */
-  .star-img-container {
-    width: 80px; /* 從原始 72px 放大，以更符合圖示比例 */
-    height: 80px;
+  /* 星芒圖示（純 CSS，不依賴外部資源）*/
+  .star {
+    width: 72px;
+    height: 72px;
     margin: 0 auto 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* 移除原本的不透明度，讓圖片清晰 */
+    position: relative;
+    opacity: 0.75;
   }
-  .star-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* 保持比例 */
-    opacity: 0.85; /* 適當增加一些不透明度，使其更自然 */
+  .star::before, .star::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    background: var(--purple-lt);
+    border-radius: 2px;
+    transform: translate(-50%, -50%);
+  }
+  .star::before { width: 3px; height: 72px; }
+  .star::after  { width: 72px; height: 3px; }
+  .star-diag {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 2px; height: 52px;
+    background: var(--purple-lt);
+    border-radius: 1px;
+    transform-origin: center center;
+    opacity: 0.65;
+  }
+  .star-diag:nth-child(1) { transform: translate(-50%,-50%) rotate(45deg); }
+  .star-diag:nth-child(2) { transform: translate(-50%,-50%) rotate(-45deg); }
+  .dot {
+    width: 10px; height: 10px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
   }
   h1 {
     font-size: 1.25rem;
@@ -88,8 +109,10 @@
 </head>
 <body>
 <div class="container">
-  <div class="star-img-container">
-    <img src="pwa-192x192.png" alt="奇蹟課程星芒圖示" class="star-img">
+  <div class="star">
+    <div class="star-diag"></div>
+    <div class="star-diag"></div>
+    <div class="dot"></div>
   </div>
   <h1>目前處於離線狀態</h1>
   <div class="gold-line"></div>
