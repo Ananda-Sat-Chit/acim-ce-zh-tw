@@ -47680,11 +47680,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     ttsGenderPref = pref;
     localStorage.setItem('acim-tts-gender', pref);
     applyGenderUI(pref);
-    /* 記錄可用語音供排錯（console）*/
-    var allVoices = synth.getVoices();
-    var zhList = allVoices.filter(function(v){ return v.lang.indexOf('zh')===0||/Chinese/i.test(v.name); });
-    console.log('[TTS] 偏好:', pref, '| pitch:', getCurrentPitch(), '| 選出語音:', pickZhVoice() ? pickZhVoice().name : '(無)');
-    console.log('[TTS] 可用中文語音:', zhList.map(function(v){ return v.name+'('+v.lang+')'; }).join(', ')||'無');
+    /* 語音切換完成 */
   }
 
   genderBtnF.addEventListener('click', function(e){ e.stopPropagation(); switchGender('f'); });

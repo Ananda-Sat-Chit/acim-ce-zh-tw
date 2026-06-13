@@ -155,6 +155,5 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('sync', function(event) {
   if (event.tag === 'acim-reading-progress') {
     /* 未來：同步閱讀進度至後端 */
-    console.log('[ACIM SW] Background sync triggered:', event.tag);
   }
 });
