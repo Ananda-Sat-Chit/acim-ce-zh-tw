@@ -44,7 +44,10 @@ window.addEventListener('appinstalled', function(){
   if(bar) bar.style.display = 'none';
 });
 
-/* Service Worker 登記 — v12 Workbox 離線支援 */
+/* ── 版本統一管理（單一真實來源）── */
+var ACIM_VERSION = 'v13';
+
+/* Service Worker 登記 — Workbox 離線支援 */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('./sw.js')
@@ -54,10 +57,12 @@ if ('serviceWorker' in navigator) {
           if (nw) {
             nw.addEventListener('statechange', function() {
               if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                /* 顯示可點擊的更新 Toast，讓讀者主動重新整理 */
+                /* 顯示可點擊的更新 Toast，點擊後透過 postMessage 觸發
+                   SW skipWaiting，再由 controllerchange 事件 reload，
+                   無需強制整頁重整，閱讀進度可由 localStorage 恢復 */
                 var toast = document.createElement('div');
                 toast.id = 'acim-update-toast';
-                toast.textContent = '📖 書籍內容已更新，點此重新整理 →';
+                toast.textContent = '📖 書籍內容已更新，點此套用 →';
                 toast.style.cssText = [
                   'position:fixed;bottom:88px;left:50%;transform:translateX(-50%)',
                   'background:#403053;color:#fff;padding:10px 20px',
@@ -66,7 +71,18 @@ if ('serviceWorker' in navigator) {
                   'white-space:nowrap;user-select:none',
                   'animation:acimFadeIn .3s ease'
                 ].join(';');
-                toast.onclick = function() { window.location.reload(); };
+                toast.onclick = function() {
+                  /* 通知等待中的新 SW 執行 skipWaiting */
+                  if (reg.waiting) {
+                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                  }
+                  toast.remove();
+                };
+                /* controllerchange：新 SW 接管後自動 reload，
+                   localStorage 的閱讀位置會在 reload 後恢復 */
+                navigator.serviceWorker.addEventListener('controllerchange', function() {
+                  window.location.reload();
+                }, { once: true });
                 /* 淡入動畫 keyframe（只注入一次）*/
                 if (!document.getElementById('acim-toast-style')) {
                   var s = document.createElement('style');
@@ -103,7 +119,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <style>
-/* ══ 奇蹟課程 PWA eBook v8 ══ */
+/* ══ 奇蹟課程 PWA eBook — 版本由 ACIM_VERSION 統一管理 ══ */
 :root {
   --c-bg:#FDFBFF; --c-sidebar:#EDE6F8; --c-page:#F2ECFF;
   --c-text:#1A0A2E; --c-muted:#5B3A8E; --c-accent:#6B2FA0;
@@ -1113,7 +1129,9 @@ ul{margin-bottom:0;}
     </div>
     <div id="sidebar-header">
       <div id="app-version-info" style="font-size:10px;color:var(--c-muted);margin-bottom:7px;line-height:1.5;opacity:0.82;">
-        <span style="font-weight:600;letter-spacing:0.02em;">最後修正：</span><span id="app-version-date">2026-05-31</span>
+        <span style="font-weight:600;letter-spacing:0.02em;">最後修正：</span><span id="app-version-date">2026-06-13</span>
+        <span style="margin-left:6px;opacity:0.6;">·</span>
+        <span id="app-version-tag" style="margin-left:4px;"></span>
       </div>
       <h3>《完整加註版奇蹟課程》目錄</h3>
       <div id="toc-search-box" role="search" aria-label="搜尋書籍內文">
@@ -46551,7 +46569,15 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 <div id="sidebar-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:10000; opacity:0; transition:opacity 0.25s"></div>
 
 <script>
-/* ══ 奇蹟課程 eBook v7 — 主控程式（無 DOM 搬移）══ */
+/* ══ 奇蹟課程 eBook — 主控程式（無 DOM 搬移）══ */
+  /* 版本由頁面頂端 ACIM_VERSION 常數統一管理         */
+  (function(){
+    var vt = document.getElementById('app-version-tag');
+    if (vt && typeof ACIM_VERSION !== 'undefined') {
+      vt.textContent = ACIM_VERSION;
+      vt.style.cssText = 'opacity:0.55;letter-spacing:0.02em;';
+    }
+  })();
 (function(){
   var body = document.body;
 

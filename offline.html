@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>離線中 — 完整加註版奇蹟課程</title>
+<style>
+  :root {
+    --bg: #1A0C30;
+    --bg2: #2D1B4E;
+    --gold: #C9A227;
+    --purple-lt: #C9A8E8;
+    --text: #EDE6F8;
+    --muted: rgba(201,168,232,0.55);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: linear-gradient(145deg, var(--bg2) 0%, var(--bg) 100%);
+    color: var(--text);
+    font-family: 'PingFang TC', 'Noto Serif TC', 'Microsoft JhengHei', serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .container {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    max-width: 360px;
+  }
+  /* 星芒圖示（純 CSS，不依賴外部資源）*/
+  .star {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1.5rem;
+    position: relative;
+    opacity: 0.75;
+  }
+  .star::before, .star::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    background: var(--purple-lt);
+    border-radius: 2px;
+    transform: translate(-50%, -50%);
+  }
+  .star::before { width: 3px; height: 72px; }
+  .star::after  { width: 72px; height: 3px; }
+  .star-diag {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 2px; height: 52px;
+    background: var(--purple-lt);
+    border-radius: 1px;
+    transform-origin: center center;
+    opacity: 0.65;
+  }
+  .star-diag:nth-child(1) { transform: translate(-50%,-50%) rotate(45deg); }
+  .star-diag:nth-child(2) { transform: translate(-50%,-50%) rotate(-45deg); }
+  .dot {
+    width: 10px; height: 10px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+  }
+  h1 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: .6rem;
+    letter-spacing: .05em;
+  }
+  .subtitle {
+    font-size: .85rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+  .gold-line {
+    width: 60px; height: 1.5px;
+    background: var(--gold);
+    margin: 1.25rem auto;
+    border-radius: 1px;
+    opacity: .7;
+  }
+  .btn {
+    display: inline-block;
+    padding: .65rem 1.5rem;
+    background: rgba(107,47,160,0.45);
+    border: 1px solid rgba(201,162,39,0.45);
+    border-radius: 24px;
+    color: var(--text);
+    font-size: .9rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .2s;
+    font-family: inherit;
+  }
+  .btn:hover { background: rgba(107,47,160,0.7); }
+  .hint {
+    margin-top: 1.25rem;
+    font-size: .75rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="star">
+    <div class="star-diag"></div>
+    <div class="star-diag"></div>
+    <div class="dot"></div>
+  </div>
+  <h1>目前處於離線狀態</h1>
+  <div class="gold-line"></div>
+  <p class="subtitle">
+    無法連線至網路，<br>
+    且此頁面尚未存入離線快取。<br>
+    請確認網路連線後再試。
+  </p>
+  <button class="btn" onclick="window.history.back()">← 返回上一頁</button>
+  <p class="hint">
+    若曾連線開啟過主頁，<br>
+    可嘗試直接開啟已快取的內容。
+  </p>
+</div>
+</body>
+</html>
