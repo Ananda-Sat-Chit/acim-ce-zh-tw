@@ -47348,6 +47348,8 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
     /* ── btn-bm 點擊：加入 / 移除書籤 ── */
     btnBm.addEventListener('click',function(){
+      /* 長按後忽略這次 click，避免誤加/刪書籤 */
+      if(bmWasLongPress){ bmWasLongPress=false; return; }
       var arr=bmLoad();
       var idx=currentBmIndex(arr);
       if(idx>=0){
@@ -47391,15 +47393,22 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     });
 
     /* ── 長按 btn-bm（≥500ms）→ 開書籤面板 ── */
+    /* bmWasLongPress 旗標：長按觸發後攔截緊接而來的 click，避免誤加/刪書籤 */
     var bmPressTimer=null;
+    var bmWasLongPress=false;
     btnBm.addEventListener('pointerdown',function(){
+      bmWasLongPress=false;
       bmPressTimer=setTimeout(function(){
         bmPressTimer=null;
+        bmWasLongPress=true;          /* 標記為長按，後續 click 需忽略 */
         bmOpen ? closeBmPanel() : openBmPanel();
       },500);
     });
     btnBm.addEventListener('pointerup',function(){ clearTimeout(bmPressTimer); });
-    btnBm.addEventListener('pointercancel',function(){ clearTimeout(bmPressTimer); });
+    btnBm.addEventListener('pointercancel',function(){
+      clearTimeout(bmPressTimer);
+      bmWasLongPress=false;
+    });
 
     /* ── 點擊面板外部 → 關閉 ── */
     document.addEventListener('pointerdown',function(e){
