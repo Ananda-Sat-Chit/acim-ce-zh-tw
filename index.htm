@@ -48651,9 +48651,15 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   function getSelAcimId() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed) return null;
+    /* 從 startContainer 開始向上爬，找最近的帶有 data-acim-id 的 Element */
     var n = sel.getRangeAt(0).startContainer;
+    /* 文字節點先取其父 */
+    if (n.nodeType === 3) n = n.parentNode;
     while (n && n !== document.body) {
-      if (n.nodeType===1 && n.getAttribute('data-acim-id')) return n.getAttribute('data-acim-id');
+      if (n.nodeType === 1) {
+        var aid = n.getAttribute('data-acim-id');
+        if (aid) return aid;
+      }
       n = n.parentNode;
     }
     return null;
@@ -48733,10 +48739,11 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       else clip(url);
     };
     document.addEventListener('pointerdown', function(e) {
-      if (sharePanel.style.display!=='none' &&
-          !sharePanel.contains(e.target) && !shareBar.contains(e.target))
-        sharePanel.style.display='none';
-    }, true);
+      if (sharePanel.style.display !== 'none' &&
+          !sharePanel.contains(e.target) && !shareBar.contains(e.target)) {
+        sharePanel.style.display = 'none';
+      }
+    });
   }
 
   function openPanel() {
@@ -48831,13 +48838,25 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
     window.addEventListener('hashchange', function() { scrollToHash(location.hash); });
 
-    document.addEventListener('selectionchange', function() {
+    /* 用 mouseup + touchend 取代 selectionchange，
+       確保選取完成後才檢查（selectionchange 在 mouseup 之前觸發，時序不穩定）*/
+    function handleSelectionEnd(e) {
+      /* 若點擊的是分享列本身或面板，不處理 */
+      if (shareBar.contains(e.target) || sharePanel.contains(e.target)) return;
       clearTimeout(barTimer);
-      barTimer = setTimeout(onSel, 180);
-    });
+      barTimer = setTimeout(onSel, 150);
+    }
+    document.addEventListener('mouseup',  handleSelectionEnd);
+    document.addEventListener('touchend', handleSelectionEnd);
+
+    /* pointerdown 時若不是點分享列／面板，才隱藏工具列
+       不用 capture:true，避免干擾選取事件 */
     document.addEventListener('pointerdown', function(e) {
-      if (!shareBar.contains(e.target)) shareBar.style.display='none';
-    }, true);
+      if (shareBar.contains(e.target) || sharePanel.contains(e.target)) return;
+      /* 延遲隱藏，給 mouseup 的 onSel 一個機會先執行 */
+      clearTimeout(barTimer);
+      shareBar.style.display = 'none';
+    });
   }
 
   document.readyState==='loading'
