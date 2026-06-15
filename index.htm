@@ -48601,14 +48601,51 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   /* ══════════════════════════════════════════════════
      Hash 跳轉與高亮
      ══════════════════════════════════════════════════ */
+  /* 阿拉伯數字 → 羅馬數字（節號模糊匹配用）*/
+  var TO_ROMAN = ['','I','II','III','IV','V','VI','VII','VIII','IX','X',
+                  'XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
+
+  /* 嘗試將 T-8.1.X → T-8.I.X（節號阿拉伯→羅馬）模糊解析 */
+  function fuzzyFindId(raw) {
+    if (idIndex[raw]) return raw;
+    /* T-{ch}.{arabicSec}.{para} → T-{ch}.{romanSec}.{para} */
+    var m = raw.match(/^(T-\d+)\.(\d+)(\..*)?$/);
+    if (m) {
+      var roman = TO_ROMAN[parseInt(m[2], 10)];
+      if (roman) {
+        var candidate = m[1] + '.' + roman + (m[3] || '');
+        if (idIndex[candidate]) return candidate;
+      }
+    }
+    return null;
+  }
+
   function parseHash(hash) {
     var raw = hash.replace(/^#/,'');
     if (!raw) return null;
+
+    /* 先嘗試直接匹配 */
+    if (idIndex[raw]) return { paraId: raw, sent: 0 };
+
     /* 嘗試最後 .N 是否為句子號 */
     var m = raw.match(/^(.+)\.(\d+)$/);
-    if (m && idIndex[m[1]]) return { paraId: m[1], sent: parseInt(m[2],10) };
-    if (idIndex[raw]) return { paraId: raw, sent: 0 };
-    if (m) return { paraId: m[1], sent: parseInt(m[2],10) };
+    if (m) {
+      /* 先試完整 paraId + sent */
+      var pid = m[1], sn = parseInt(m[2], 10);
+      if (idIndex[pid]) return { paraId: pid, sent: sn };
+      /* 模糊：把節號轉羅馬再試 */
+      var fid = fuzzyFindId(pid);
+      if (fid) return { paraId: fid, sent: sn };
+      /* 最後 fallback：整串當 paraId，sent=0 */
+      var fid2 = fuzzyFindId(raw);
+      if (fid2) return { paraId: fid2, sent: 0 };
+      return { paraId: pid, sent: sn };
+    }
+
+    /* 模糊匹配 */
+    var fid3 = fuzzyFindId(raw);
+    if (fid3) return { paraId: fid3, sent: 0 };
+
     return { paraId: raw, sent: 0 };
   }
 
@@ -48838,24 +48875,34 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
     window.addEventListener('hashchange', function() { scrollToHash(location.hash); });
 
-    /* 用 mouseup + touchend 取代 selectionchange，
-       確保選取完成後才檢查（selectionchange 在 mouseup 之前觸發，時序不穩定）*/
-    function handleSelectionEnd(e) {
-      /* 若點擊的是分享列本身或面板，不處理 */
-      if (shareBar.contains(e.target) || sharePanel.contains(e.target)) return;
-      clearTimeout(barTimer);
-      barTimer = setTimeout(onSel, 150);
-    }
-    document.addEventListener('mouseup',  handleSelectionEnd);
-    document.addEventListener('touchend', handleSelectionEnd);
-
-    /* pointerdown 時若不是點分享列／面板，才隱藏工具列
-       不用 capture:true，避免干擾選取事件 */
+    /* ── 選取工具列觸發邏輯 ──
+       事件順序：pointerdown → pointerup → mouseup → click
+       mouseup 時選取已完成，是最佳觸發時機。
+       pointerdown 記錄「本次點擊是否在分享列外」，
+       mouseup 時若選取有效才顯示工具列，不需 timer。 */
+    var isOutsideClick = false;
     document.addEventListener('pointerdown', function(e) {
-      if (shareBar.contains(e.target) || sharePanel.contains(e.target)) return;
-      /* 延遲隱藏，給 mouseup 的 onSel 一個機會先執行 */
-      clearTimeout(barTimer);
+      /* 點在分享列或面板上：保持顯示，不做任何事 */
+      if (shareBar.contains(e.target) || sharePanel.contains(e.target)) {
+        isOutsideClick = false;
+        return;
+      }
+      isOutsideClick = true;
+      /* 先隱藏舊的工具列（新選取開始前清除） */
       shareBar.style.display = 'none';
+    });
+
+    document.addEventListener('mouseup', function(e) {
+      /* 點在分享列或面板上：不干預 */
+      if (shareBar.contains(e.target) || sharePanel.contains(e.target)) return;
+      /* 延遲一個 tick 讓 selection 穩定後再讀取 */
+      setTimeout(onSel, 10);
+    });
+
+    /* 觸控：touchend 後選取也已完成 */
+    document.addEventListener('touchend', function(e) {
+      if (shareBar.contains(e.target) || sharePanel.contains(e.target)) return;
+      setTimeout(onSel, 50);
     });
   }
 
