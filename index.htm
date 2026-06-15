@@ -48281,5 +48281,571 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
 })();
 </script>
+
+
+<!-- ═══ ACIM 經句永久連結系統 ═══ -->
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   完整加註版奇蹟課程 — 經句永久連結系統 v1.0
+   Phase 1 + Phase 2 完整實作
+   
+   URL 格式（句子分隔符用 . 取代 : 避免 encode 問題）：
+     T-1.1        → 正文第1章第1段
+     T-2.I.1.3    → 正文第2章第I節第1段第3句
+     T-6.VII.C.1  → 正文第6章第VII節C次節第1段
+     T-19.IV.A.1.2 → 正文第19章第IV節A次節（障礙一）第1段第2句
+     W-1.1.3      → 練習手冊第1課第1段第3句
+     W-Re.1.In.1  → 複習一導言第1段
+     W-WI.1.1.2   → 何謂寬恕第1段第2句
+     W-PtII.In.1  → 下篇導言第1段
+     W-FL.In.1    → 最後課程導言第1段
+     W-Ep.1.2     → 結語第1段第2句
+     M-In.1       → 教師指南導言第1段
+     M-1.1.2      → 教師指南第1節第1段第2句
+     C-In.1       → 術語解說導言第1段
+     C-1.1        → 術語解說第1術語第1段
+     C-Ep.1       → 術語解說結語第1段
+   ═══════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  /* ── 中文數字對照表（支援到 31 章）── */
+  var ZH_NUM = {
+    '一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,
+    '十一':11,'十二':12,'十三':13,'十四':14,'十五':15,'十六':16,'十七':17,
+    '十八':18,'十九':19,'二十':20,'二十一':21,'二十二':22,'二十三':23,
+    '二十四':24,'二十五':25,'二十六':26,'二十七':27,'二十八':28,'二十九':29,
+    '三十':30,'三十一':31
+  };
+  var ROMAN = ['','I','II','III','IV','V','VI','VII','VIII','IX','X',
+               'XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
+
+  /* ── 中文 → 數字解析 ── */
+  function zhToNum(str) {
+    var s = str.replace(/[節章、．\s　]/g,'').replace(/&nbsp;/g,'').trim();
+    return ZH_NUM[s] || null;
+  }
+  function parseZhSection(raw) {
+    var m = raw.replace(/&nbsp;/g,' ').match(/第([一二三四五六七八九十百]+)\s*節/);
+    return m ? (ZH_NUM[m[1]] || null) : null;
+  }
+  function parseZhChapter(raw) {
+    var m = raw.replace(/&nbsp;/g,' ').match(/第([一二三四五六七八九十百]+二?十?[一二三四五六七八九]?)\s*章/);
+    return m ? (ZH_NUM[m[1]] || null) : null;
+  }
+
+  /* ── 上標 Unicode → 句子號碼（排除 fn-badge）── */
+  var SUP_CHARS = {
+    '\u00b2':2,'\u00b3':3,'\u2074':4,'\u2075':5,
+    '\u2076':6,'\u2077':7,'\u2078':8,'\u2079':9
+  };
+
+  /* ── 從段落 Element 取句子數量（排除 fn-badge）── */
+  function getSentenceCount(el) {
+    var max = 1;
+    var nodes = el.childNodes;
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      if (n.nodeType === 3) {
+        var txt = n.textContent;
+        for (var ch in SUP_CHARS) {
+          if (txt.indexOf(ch) !== -1) max = Math.max(max, SUP_CHARS[ch]);
+        }
+      }
+      if (n.nodeType === 1 && n.tagName === 'SUP' && !n.classList.contains('fn-badge')) {
+        var num = parseInt(n.textContent.trim(), 10);
+        if (!isNaN(num) && num > 1) max = Math.max(max, num);
+      }
+    }
+    return max;
+  }
+
+  /* ══ id 索引 ══ */
+  var idIndex = {}; // acimId → Element
+
+  function register(el, acimId) {
+    if (!acimId || idIndex[acimId]) return;
+    el.setAttribute('data-acim-id', acimId);
+    idIndex[acimId] = el;
+    if (!el.id) el.id = 'acim-' + acimId.replace(/[^a-zA-Z0-9\-]/g, '-');
+  }
+
+  /* ══════════════════════════════════════════════════
+     狀態機：掃描 content-area，賦予所有段落 ACIM id
+     ══════════════════════════════════════════════════ */
+  function assignIds() {
+    var area = document.getElementById('content-area');
+    if (!area) return;
+
+    /* 書冊狀態 */
+    var book = null; // 'T'|'W'|'M'|'C'
+    /* T */
+    var tCh = 0, tSec = 0, tSub = null, tIn = false;
+    /* W */
+    var wLesson = 0;
+    var wZone = null; // null | 'In' | 'PtI' | 'Re' | 'PtII' | 'WI' | 'FL' | 'Ep'
+    var wReN = 0, wWiN = 0;
+    var wReIsIn = false; // 是否在複習N的導言
+    var wPtIIIn = false, wFlIn = false;
+    /* M */
+    var mCh = 0, mIn = false;
+    /* C */
+    var cCh = 0, cIn = false, cEp = false;
+
+    /* W-Re 中文 → 數字 */
+    var REVIEW_ZH = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6};
+    /* W-WI 中文 → 數字 */
+    var WI_ZH = ZH_NUM;
+
+    /* h4 次節解析（T 專用）*/
+    function parseH4Sub(raw) {
+      var t = raw.replace(/&nbsp;/g,'').trim();
+      var abc = t.match(/^([A-D])\.\s/); if (abc) return abc[1]; // A/B/C/D
+      var bar = t.match(/^([一二三四])[、]/);
+      if (bar) return {'一':'A','二':'B','三':'C','四':'D'}[bar[1]] || null;
+      return null;
+    }
+
+    /* 段落 <b> 取號碼 */
+    function getPNum(el) {
+      var bEl = el.querySelector('b');
+      if (!bEl) return null;
+      var bt = bEl.textContent.replace(/&nbsp;/g,'').replace(/\s/g,'').trim();
+      /* 阿拉伯數字 */
+      var am = bt.match(/^(\d+)$/);
+      if (am) return parseInt(am[1], 10);
+      /* 中文數字（T-1 一二三...）*/
+      var zhm = bt.match(/^([一二三四五六七八九十百]+)[、．]?$/);
+      if (zhm) return ZH_NUM[zhm[1]] || null;
+      /* 中文帶內文（b包含整句，如「一、奇蹟原則...」）—取前綴數字 */
+      var zhm2 = bt.match(/^([一二三四五六七八九十百]+)[、．]/);
+      if (zhm2) return ZH_NUM[zhm2[1]] || null;
+      return null;
+    }
+
+    /* TreeWalker */
+    var walker = document.createTreeWalker(
+      area, NodeFilter.SHOW_ELEMENT,
+      { acceptNode: function(n) {
+          return /^H[1-4]$/.test(n.tagName) || n.tagName === 'P'
+            ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+      }}
+    );
+
+    var node;
+    while ((node = walker.nextNode())) {
+      var tag = node.tagName;
+      var raw = node.textContent.replace(/\s+/g,' ').replace(/&nbsp;/g,' ').trim();
+
+      /* ── H1：書冊切換 ── */
+      if (tag === 'H1') {
+        book = null; tCh=0; tSec=0; tSub=null; tIn=false;
+        wLesson=0; wZone=null; wReN=0; wWiN=0;
+        wReIsIn=false; wPtIIIn=false; wFlIn=false;
+        mCh=0; mIn=false; cCh=0; cIn=false; cEp=false;
+        if (/卷一|Text/.test(raw)) book='T';
+        else if (/卷二|Workbook/.test(raw)) book='W';
+        else if (/卷三|Manual/.test(raw)) book='M';
+        else if (/術語解說|Clarification/.test(raw)) book='C';
+        /* 導言 h1（在卷一之前，屬於 T 書導言 In.N）*/
+        else if (/^導言$/.test(raw)) { book='T'; tIn=true; tCh=0; }
+        continue;
+      }
+      if (!book) continue;
+
+      /* ── H2 ── */
+      if (tag === 'H2') {
+        tSec=0; tSub=null; tIn=false;
+        wZone=null; wReN=0; wWiN=0; wReIsIn=false;
+        wPtIIIn=false; wFlIn=false; wLesson=0;
+        mIn=false; cIn=false; cEp=false;
+
+        if (book==='T') {
+          if (/^導言/.test(raw)) { tIn=true; tCh=0; }
+          else { var cn=parseZhChapter(raw); if (cn) tCh=cn; }
+        }
+        else if (book==='W') {
+          if (/^導言/.test(raw)) wZone='In';
+          else if (/^上篇/.test(raw)) wZone='PtI';
+          else if (/^下篇/.test(raw)) { wZone='PtII'; wPtIIIn=true; }
+          else if (/^結語/.test(raw)) wZone='Ep';
+        }
+        else if (book==='M') {
+          if (/^導言/.test(raw)) mIn=true;
+          else {
+            var mm = raw.match(/^([一二三四五六七八九十百]+)[、．]/);
+            if (mm) mCh = ZH_NUM[mm[1]] || 0;
+          }
+        }
+        else if (book==='C') {
+          if (/^導言/.test(raw)) cIn=true;
+          else if (/^結語/.test(raw)) cEp=true;
+          else {
+            var cm = raw.match(/^([一二三四五六七八九十百]+)[、．]/);
+            if (cm) cCh = ZH_NUM[cm[1]] || 0;
+          }
+        }
+        continue;
+      }
+
+      /* ── H3 ── */
+      if (tag === 'H3') {
+        tSub = null;
+        if (book==='T') {
+          var sn = parseZhSection(raw);
+          if (sn) tSec = sn;
+        }
+        else if (book==='W') {
+          /* 複習N 導言 */
+          var reM = raw.match(/複習([一二三四五六]+)/);
+          if (reM) {
+            wZone='Re'; wReN = REVIEW_ZH[reM[1]] || 0;
+            wReIsIn = /導言/.test(raw);
+            wLesson=0;
+          }
+          /* 181-200課導言（特殊複習區）*/
+          else if (/181/.test(raw) && /導言/.test(raw)) {
+            wZone='Re'; wReN=0; wReIsIn=true; wLesson=0;
+          }
+          /* W-PtII 內的導言 */
+          else if (wZone==='PtII' && /^導言/.test(raw)) {
+            wPtIIIn=true; wLesson=0;
+          }
+          /* W-WI 何謂 */
+          else if (/何謂|什麼是/.test(raw)) {
+            wZone='WI';
+            var wiM = raw.match(/^([一二三四五六七八九十百]+)[、．]/);
+            wWiN = wiM ? (ZH_NUM[wiM[1]] || 0) : 0;
+            wLesson=0;
+          }
+          /* W-FL 最後幾課導言 */
+          else if (/最後幾課|最後課程/.test(raw)) {
+            wZone='FL'; wFlIn=true; wLesson=0;
+          }
+          /* W-FL 內的導言 */
+          else if (/^導言/.test(raw) && wZone==='FL') {
+            wFlIn=true; wLesson=0;
+          }
+        }
+        continue;
+      }
+
+      /* ── H4 ── */
+      if (tag === 'H4') {
+        if (book==='T') {
+          var sub = parseH4Sub(raw);
+          if (sub) tSub=sub; else tSub=null;
+        }
+        else if (book==='W' || (book==='T' && !book)) {
+          /* W 課程號（h4 同時存在 T 和 W 中）*/
+          var lm = raw.match(/第\s*(\d+)\s*課/);
+          if (lm) {
+            wLesson = parseInt(lm[1], 10);
+            wPtIIIn=false; wFlIn=false;
+            /* 課程號決定區域 */
+            if (wLesson >= 361)       wZone='FL';
+            else if (wLesson >= 221)  { if (wZone!=='WI') wZone='PtII'; }
+            else if (wZone==='Re')    { /* 保持複習區 */ }
+            else                       { if (wZone!=='WI') wZone=null; }
+          }
+        }
+        continue;
+      }
+
+      /* ── P 段落 ── */
+      if (tag !== 'P') continue;
+      var pNum = getPNum(node);
+      if (!pNum) continue;
+
+      var id = null;
+
+      if (book==='T') {
+        if (tIn) {
+          id = 'In.' + pNum; // T 書導言
+        } else if (tCh===1 && tSec===0) {
+          /* T-1：中文段號（一~二十四）→ T-1.N
+             阿拉伯數字補充段落亦賦予 id（照 <b> 數字） */
+          id = 'T-1.' + pNum;
+        } else if (tCh && tSec===0 && !tSub) {
+          id = 'T-' + tCh + '.' + pNum;
+        } else if (tCh && tSec && !tSub) {
+          id = 'T-' + tCh + '.' + ROMAN[tSec] + '.' + pNum;
+        } else if (tCh && tSec && tSub) {
+          id = 'T-' + tCh + '.' + ROMAN[tSec] + '.' + tSub + '.' + pNum;
+        }
+      }
+      else if (book==='W') {
+        if (wZone==='In')              id = 'W-In.' + pNum;
+        else if (wZone==='Re' && wReN && wReIsIn) id = 'W-Re.' + wReN + '.In.' + pNum;
+        else if (wZone==='Re' && wLesson)         id = 'W-' + wLesson + '.' + pNum;
+        else if (wZone==='WI' && wWiN)            id = 'W-WI.' + wWiN + '.' + pNum;
+        else if (wZone==='PtII' && wPtIIIn && !wLesson) id = 'W-PtII.In.' + pNum;
+        else if (wZone==='FL' && wFlIn && !wLesson)      id = 'W-FL.In.' + pNum;
+        else if (wZone==='Ep')         id = 'W-Ep.' + pNum;
+        else if (wLesson)              id = 'W-' + wLesson + '.' + pNum;
+      }
+      else if (book==='M') {
+        if (mIn)      id = 'M-In.' + pNum;
+        else if (mCh) id = 'M-' + mCh + '.' + pNum;
+      }
+      else if (book==='C') {
+        if (cIn)      id = 'C-In.' + pNum;
+        else if (cEp) id = 'C-Ep.' + pNum;
+        else if (cCh) id = 'C-' + cCh + '.' + pNum;
+      }
+
+      if (id) register(node, id);
+    }
+  }
+
+  /* ══════════════════════════════════════════════════
+     Hash 跳轉與高亮
+     ══════════════════════════════════════════════════ */
+  function parseHash(hash) {
+    var raw = hash.replace(/^#/,'');
+    if (!raw) return null;
+    /* 嘗試最後 .N 是否為句子號 */
+    var m = raw.match(/^(.+)\.(\d+)$/);
+    if (m && idIndex[m[1]]) return { paraId: m[1], sent: parseInt(m[2],10) };
+    if (idIndex[raw]) return { paraId: raw, sent: 0 };
+    if (m) return { paraId: m[1], sent: parseInt(m[2],10) };
+    return { paraId: raw, sent: 0 };
+  }
+
+  var hlEls = [];
+  function clearHL() {
+    hlEls.forEach(function(e){ e.classList.remove('acim-hl'); });
+    hlEls = [];
+  }
+
+  function scrollToHash(hash) {
+    clearHL();
+    var p = parseHash(hash);
+    if (!p) return;
+    var el = idIndex[p.paraId]
+          || document.getElementById('acim-' + p.paraId.replace(/[^a-zA-Z0-9\-]/g,'-'));
+    if (!el) return;
+    el.classList.add('acim-hl'); hlEls.push(el);
+    setTimeout(function(){ el.scrollIntoView({behavior:'smooth',block:'center'}); }, 80);
+    setTimeout(clearHL, 4500);
+  }
+
+  /* ══════════════════════════════════════════════════
+     英文 acimce.app URL 轉換
+     ══════════════════════════════════════════════════ */
+  function toAcimceUrl(acimId, sent) {
+    /* 本地格式（.分隔） → acimce.app 格式（:分隔句子）
+       T-2.I.1 → :T-2.I.1
+       T-2.I.1 + sent=3 → :T-2.I.1:3
+       W-1.1 → :W-1.1
+       In.1 → :In.1  (T 導言)
+    */
+    var url = 'https://acimce.app/:' + acimId;
+    if (sent && sent > 0) url += ':' + sent;
+    return url;
+  }
+
+  /* ══════════════════════════════════════════════════
+     選取文字 → 分享工具列
+     ══════════════════════════════════════════════════ */
+  function getSelAcimId() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed) return null;
+    var n = sel.getRangeAt(0).startContainer;
+    while (n && n !== document.body) {
+      if (n.nodeType===1 && n.getAttribute('data-acim-id')) return n.getAttribute('data-acim-id');
+      n = n.parentNode;
+    }
+    return null;
+  }
+
+  /* ── UI 建立 ── */
+  var shareBar, sharePanel, barTimer;
+
+  function buildUI() {
+    /* 選取工具列 */
+    shareBar = document.createElement('div');
+    shareBar.id = 'acim-sbar';
+    shareBar.innerHTML = '<button id="acim-sbar-btn">🔗 分享</button>';
+    shareBar.style.cssText = 'position:fixed;z-index:999996;display:none;'
+      + 'background:linear-gradient(135deg,#2D1B4E,#1A0C30);'
+      + 'border:1px solid rgba(201,162,39,.5);border-radius:20px;'
+      + 'padding:5px 12px;box-shadow:0 4px 18px rgba(40,0,80,.5);';
+    document.body.appendChild(shareBar);
+
+    /* 分享面板 */
+    sharePanel = document.createElement('div');
+    sharePanel.id = 'acim-spanel';
+    sharePanel.style.cssText = 'position:fixed;z-index:999997;display:none;'
+      + 'background:linear-gradient(145deg,#2D1B4E,#1A0C30);'
+      + 'border:1px solid rgba(201,162,39,.35);border-radius:14px;'
+      + 'padding:16px 18px;width:310px;max-width:92vw;'
+      + 'box-shadow:0 8px 32px rgba(40,0,80,.6);'
+      + 'font-family:-apple-system,system-ui,sans-serif;font-size:13px;'
+      + 'color:#EDE6F8;left:50%;transform:translateX(-50%);';
+
+    sharePanel.innerHTML = [
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">',
+      '<span style="font-size:12px;font-weight:600;color:#C9A227;letter-spacing:.04em">🔗 分享此段落</span>',
+      '<button id="acim-sp-close" style="background:none;border:none;color:rgba(201,168,232,.55);cursor:pointer;font-size:16px;padding:0;line-height:1">✕</button>',
+      '</div>',
+
+      '<div id="acim-sp-ref" style="font-size:11px;color:#C9A227;margin-bottom:8px;letter-spacing:.03em"></div>',
+
+      '<div style="margin-bottom:10px">',
+      '<div style="font-size:10.5px;color:rgba(201,168,232,.6);margin-bottom:4px">📖 繁體中文版連結</div>',
+      '<div id="acim-sp-zh" style="font-size:11px;background:rgba(255,255,255,.06);border-radius:7px;padding:6px 9px;word-break:break-all;cursor:text;user-select:all;border:.5px solid rgba(201,162,39,.2)"></div>',
+      '<div style="display:flex;gap:6px;margin-top:6px">',
+      '<button id="acim-sp-copy-zh" style="flex:1;background:rgba(107,47,160,.5);border:1px solid rgba(201,162,39,.4);color:#EDE6F8;border-radius:7px;padding:5px;cursor:pointer;font-size:12px">複製</button>',
+      '<button id="acim-sp-native" style="flex:1;background:rgba(107,47,160,.3);border:1px solid rgba(201,168,232,.25);color:#EDE6F8;border-radius:7px;padding:5px;cursor:pointer;font-size:12px">分享…</button>',
+      '</div>',
+      '</div>',
+
+      '<div style="border-top:1px solid rgba(201,162,39,.2);padding-top:10px">',
+      '<div style="font-size:10.5px;color:rgba(201,168,232,.6);margin-bottom:4px">🌐 英文原典 acimce.app</div>',
+      '<div id="acim-sp-en" style="font-size:11px;background:rgba(255,255,255,.06);border-radius:7px;padding:6px 9px;word-break:break-all;cursor:text;user-select:all;border:.5px solid rgba(181,204,245,.15)"></div>',
+      '<div style="display:flex;gap:6px;margin-top:6px">',
+      '<button id="acim-sp-copy-en" style="flex:1;background:rgba(26,93,171,.3);border:1px solid rgba(181,204,245,.25);color:#EDE6F8;border-radius:7px;padding:5px;cursor:pointer;font-size:12px">複製英文連結</button>',
+      '<a id="acim-sp-open-en" href="#" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;background:rgba(26,93,171,.2);border:1px solid rgba(181,204,245,.2);color:#EDE6F8;border-radius:7px;padding:5px;cursor:pointer;font-size:12px;text-decoration:none">開啟原典 ↗</a>',
+      '</div>',
+      '</div>',
+      '<div id="acim-sp-toast" style="display:none;text-align:center;font-size:11.5px;color:#C9A227;margin-top:8px;transition:opacity .3s">✓ 已複製到剪貼簿</div>'
+    ].join('');
+    document.body.appendChild(sharePanel);
+
+    /* 事件 */
+    document.getElementById('acim-sbar-btn').onclick = function(e) {
+      e.stopPropagation(); openPanel();
+    };
+    document.getElementById('acim-sp-close').onclick = function() {
+      sharePanel.style.display='none';
+    };
+    document.getElementById('acim-sp-copy-zh').onclick = function() {
+      clip(document.getElementById('acim-sp-zh').textContent);
+    };
+    document.getElementById('acim-sp-copy-en').onclick = function() {
+      clip(document.getElementById('acim-sp-en').textContent);
+    };
+    document.getElementById('acim-sp-native').onclick = function() {
+      var url = document.getElementById('acim-sp-zh').textContent;
+      var ref = document.getElementById('acim-sp-ref').textContent;
+      if (navigator.share) navigator.share({title:'完整加註版奇蹟課程 '+ref, url:url});
+      else clip(url);
+    };
+    document.addEventListener('pointerdown', function(e) {
+      if (sharePanel.style.display!=='none' &&
+          !sharePanel.contains(e.target) && !shareBar.contains(e.target))
+        sharePanel.style.display='none';
+    }, true);
+  }
+
+  function openPanel() {
+    var acimId = shareBar.dataset.id;
+    var sent   = parseInt(shareBar.dataset.sent||'0',10);
+    if (!acimId) return;
+
+    var zhUrl = location.origin + location.pathname + '#' + acimId;
+    if (sent>0) zhUrl += '.' + sent;
+    var enUrl = toAcimceUrl(acimId, sent);
+
+    document.getElementById('acim-sp-ref').textContent = acimId + (sent>0 ? ':'+sent : '');
+    document.getElementById('acim-sp-zh').textContent  = zhUrl;
+    document.getElementById('acim-sp-en').textContent  = enUrl;
+    document.getElementById('acim-sp-open-en').href    = enUrl;
+
+    sharePanel.style.display='block';
+    var rb = shareBar.getBoundingClientRect();
+    var ph = sharePanel.offsetHeight || 220;
+    var top = rb.top + window.scrollY - ph - 10;
+    if (top < window.scrollY + 10) top = rb.bottom + window.scrollY + 10;
+    sharePanel.style.top = top+'px';
+    sharePanel.style.bottom = 'auto';
+  }
+
+  function clip(text) {
+    var done = function() {
+      var t = document.getElementById('acim-sp-toast');
+      t.style.display='block';
+      setTimeout(function(){ t.style.display='none'; }, 1600);
+    };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done);
+    else {
+      var ta=document.createElement('textarea');
+      ta.value=text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta); done();
+    }
+  }
+
+  /* 監聽選取文字 */
+  function onSel() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.toString().trim().length < 2) {
+      shareBar.style.display='none'; return;
+    }
+    var id = getSelAcimId();
+    if (!id) { shareBar.style.display='none'; return; }
+    shareBar.dataset.id = id;
+    shareBar.dataset.sent = '0';
+    var r = sel.getRangeAt(0).getBoundingClientRect();
+    shareBar.style.display='block';
+    shareBar.style.top  = (r.top + window.scrollY - 46)+'px';
+    shareBar.style.left = Math.max(8, r.left + r.width/2 - 50)+'px';
+  }
+
+  /* ══════════════════════════════════════════════════
+     CSS
+     ══════════════════════════════════════════════════ */
+  function addCSS() {
+    var s=document.createElement('style');
+    s.textContent=[
+      '#acim-sbar button{background:none;border:none;color:#EDE6F8;cursor:pointer;',
+      '  font-size:12.5px;padding:1px 2px;font-family:inherit;letter-spacing:.02em}',
+      '#acim-sbar button:hover{color:#C9A227}',
+      '.acim-hl{',
+      '  background:rgba(201,162,39,.13)!important;',
+      '  border-left:3px solid #C9A227!important;',
+      '  padding-left:7px!important;',
+      '  border-radius:3px!important;',
+      '  transition:background .4s,border-color .4s',
+      '}',
+      '#acim-spanel button:hover,#acim-spanel a:hover{opacity:.82}',
+    ].join('\n');
+    document.head.appendChild(s);
+  }
+
+  /* ══════════════════════════════════════════════════
+     初始化
+     ══════════════════════════════════════════════════ */
+  function init() {
+    addCSS();
+    buildUI();
+
+    function run() {
+      assignIds();
+      if (location.hash) scrollToHash(location.hash);
+    }
+    'requestIdleCallback' in window
+      ? requestIdleCallback(run, {timeout:3000})
+      : setTimeout(run, 600);
+
+    window.addEventListener('hashchange', function() { scrollToHash(location.hash); });
+
+    document.addEventListener('selectionchange', function() {
+      clearTimeout(barTimer);
+      barTimer = setTimeout(onSel, 180);
+    });
+    document.addEventListener('pointerdown', function(e) {
+      if (!shareBar.contains(e.target)) shareBar.style.display='none';
+    }, true);
+  }
+
+  document.readyState==='loading'
+    ? document.addEventListener('DOMContentLoaded', init)
+    : init();
+})();
+
+</script>
+
 </body>
 </html>
