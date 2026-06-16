@@ -48825,16 +48825,27 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   function onSel() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.toString().trim().length < 2) {
-      shareBar.style.display='none'; return;
+      shareBar.style.display = 'none'; return;
     }
     var id = getSelAcimId();
-    if (!id) { shareBar.style.display='none'; return; }
-    shareBar.dataset.id = id;
+    if (!id) { shareBar.style.display = 'none'; return; }
+
+    shareBar.dataset.id   = id;
     shareBar.dataset.sent = '0';
+
+    /* 定位工具列：選取文字正上方，限制不超出視窗左右邊界 */
     var r = sel.getRangeAt(0).getBoundingClientRect();
-    shareBar.style.display='block';
-    shareBar.style.top  = (r.top + window.scrollY - 46)+'px';
-    shareBar.style.left = Math.max(8, r.left + r.width/2 - 50)+'px';
+    var barW = shareBar.offsetWidth || 110;
+    var left = r.left + r.width / 2 - barW / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - barW - 8));
+    /* top 用 fixed 定位（viewport 座標），不用 scrollY */
+    var top = r.top - 52;
+    if (top < 8) top = r.bottom + 8; /* 若選取靠近頂部，改在下方顯示 */
+
+    shareBar.style.position = 'fixed';
+    shareBar.style.top  = top + 'px';
+    shareBar.style.left = left + 'px';
+    shareBar.style.display = 'block';
   }
 
   /* ══════════════════════════════════════════════════
@@ -48869,40 +48880,34 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       assignIds();
       if (location.hash) scrollToHash(location.hash);
     }
-    'requestIdleCallback' in window
-      ? requestIdleCallback(run, {timeout:3000})
-      : setTimeout(run, 600);
+    /* setTimeout(0)：讓頁面先渲染一幀，立即執行 assignIds
+       確保 data-acim-id 在用戶選取文字前已賦予完成 */
+    setTimeout(run, 0);
 
     window.addEventListener('hashchange', function() { scrollToHash(location.hash); });
 
-    /* ── 選取工具列觸發邏輯 ──
-       事件順序：pointerdown → pointerup → mouseup → click
-       mouseup 時選取已完成，是最佳觸發時機。
-       pointerdown 記錄「本次點擊是否在分享列外」，
-       mouseup 時若選取有效才顯示工具列，不需 timer。 */
-    var isOutsideClick = false;
+    /* ── 選取工具列觸發系統（最終版）──
+       設計原則：
+       1. pointerdown：隱藏舊工具列（新選取即將開始），不碰 timer
+       2. mouseup：選取完成，100ms 後讀取（給瀏覽器時間穩定 selection）
+       3. touchend：觸控選取完成，200ms 後讀取（觸控需要更長穩定時間）
+       4. 點擊工具列/面板本身：所有事件均跳過不處理 */
+
     document.addEventListener('pointerdown', function(e) {
-      /* 點在分享列或面板上：保持顯示，不做任何事 */
-      if (shareBar.contains(e.target) || sharePanel.contains(e.target)) {
-        isOutsideClick = false;
-        return;
-      }
-      isOutsideClick = true;
-      /* 先隱藏舊的工具列（新選取開始前清除） */
+      if (shareBar.contains(e.target) || sharePanel.contains(e.target)) return;
       shareBar.style.display = 'none';
     });
 
     document.addEventListener('mouseup', function(e) {
-      /* 點在分享列或面板上：不干預 */
       if (shareBar.contains(e.target) || sharePanel.contains(e.target)) return;
-      /* 延遲一個 tick 讓 selection 穩定後再讀取 */
-      setTimeout(onSel, 10);
+      clearTimeout(barTimer);
+      barTimer = setTimeout(onSel, 100);
     });
 
-    /* 觸控：touchend 後選取也已完成 */
     document.addEventListener('touchend', function(e) {
       if (shareBar.contains(e.target) || sharePanel.contains(e.target)) return;
-      setTimeout(onSel, 50);
+      clearTimeout(barTimer);
+      barTimer = setTimeout(onSel, 200);
     });
   }
 
