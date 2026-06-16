@@ -48512,7 +48512,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
             wPtIIIn=true; wLesson=0;
           }
           /* W-WI 何謂 */
-          else if (/何謂|什麼是/.test(raw)) {
+          else if (/何謂|什麼是|我是什麼/.test(raw)) {
             wZone='WI';
             var wiM = raw.match(/^([一二三四五六七八九十百]+)[、．]/);
             wWiN = wiM ? (ZH_NUM[wiM[1]] || 0) : 0;
@@ -48541,12 +48541,12 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
           var lm = raw.match(/第\s*(\d+)\s*課/);
           if (lm) {
             wLesson = parseInt(lm[1], 10);
-            wPtIIIn=false; wFlIn=false;
-            /* 課程號決定區域 */
+            wPtIIIn=false; wFlIn=false; wReIsIn=false; wWiN=0;
+            /* 課程號決定區域（不管原 wZone，一律依課號更新） */
             if (wLesson >= 361)       wZone='FL';
-            else if (wLesson >= 221)  { if (wZone!=='WI') wZone='PtII'; }
-            else if (wZone==='Re')    { /* 保持複習區 */ }
-            else                       { if (wZone!=='WI') wZone=null; }
+            else if (wLesson >= 221)  wZone='PtII';
+            else if (wZone==='Re')    { /* 保持複習區，以便 W-51~W-180 */ }
+            else                      wZone=null;
           }
         }
         continue;
