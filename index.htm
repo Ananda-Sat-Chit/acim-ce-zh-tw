@@ -48794,16 +48794,24 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   }
 
   function openPanel() {
-    var acimId = shareBar.dataset.id;
-    var sent   = parseInt(shareBar.dataset.sent||'0',10);
+    var acimId  = shareBar.dataset.id;
+    var sent    = parseInt(shareBar.dataset.sent   ||'0', 10);
+    var sentEnd = parseInt(shareBar.dataset.sentEnd||'0', 10);
     if (!acimId) return;
 
-    /* zhUrl：段落用 # 分隔，句子用 : 分隔（與 acimce.app 格式一致）*/
-    var zhUrl = location.origin + location.pathname + '#' + acimId;
-    if (sent > 0) zhUrl += ':' + sent;
+    /* 句子後綴：單句 :N，多句 :N-M */
+    var sentSuffix = '';
+    if (sent > 0) {
+      sentSuffix = ':' + sent;
+      if (sentEnd > sent) sentSuffix += '-' + sentEnd;
+    }
+
+    /* 繁中 URL */
+    var zhUrl = location.origin + location.pathname + '#' + acimId + sentSuffix;
+    /* 英文 acimce.app URL（多句僅給起始句） */
     var enUrl = toAcimceUrl(acimId, sent);
 
-    document.getElementById('acim-sp-ref').textContent = acimId + (sent>0 ? ':'+sent : '');
+    document.getElementById('acim-sp-ref').textContent = acimId + sentSuffix;
     document.getElementById('acim-sp-zh').textContent  = zhUrl;
     document.getElementById('acim-sp-en').textContent  = enUrl;
     document.getElementById('acim-sp-open-en').href    = enUrl;
@@ -48844,48 +48852,90 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   }
 
   /* 監聽選取文字 */
-  /* 取得目前選取範圍位於段落中的第幾句（1-based）
-     原理：從選取起點往前掃描，數非 fn-badge 的句子上標數量
-     上標字符：² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹（Unicode U+00B2~U+2079）*/
-  function getSelSentNum() {
-    var sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return 0;
-    var range   = sel.getRangeAt(0);
-    var startEl = range.startContainer;
-    /* 找到所屬 <p> 段落 */
-    var para = startEl.nodeType === 3 ? startEl.parentNode : startEl;
-    while (para && para.tagName !== 'P') para = para.parentNode;
-    if (!para) return 0;
+  /* ── 句子號偵測工具函數 ──
+     原理：在段落中，上標字符（²³⁴⁵⁶⁷⁸⁹）標記句子分界。
+     第1句 = 段落開頭到第一個上標之前；第N句 = 第(N-1)個上標到第N個上標之間。
+     key insight：上標字符緊接在前一句結束、下一句開始之前，
+     所以「選取起點之前最後一個上標號碼 + 1」= 選取所在的句子號。
+     但若上標字符本身在選取起點之前（startOffset > 上標位置），需含入計數。 */
 
-    /* 上標 Unicode 字元集合 */
-    var SUP_RE = /[²³⁴⁵⁶⁷⁸⁹]/;
+  var SUP_RE = /[²³⁴⁵⁶⁷⁸⁹]/;
+  var SUP_VAL = {'²':2,'³':3,'⁴':4,'⁵':5,'⁶':6,'⁷':7,'⁸':8,'⁹':9};
 
-    /* 遍歷段落子節點，遇到 startContainer 就停止，數上標數 */
-    var sentNum = 1;
+  /* 取得選取節點所在 <p> 段落 */
+  function getParaOfNode(n) {
+    if (n.nodeType === 3) n = n.parentNode;
+    while (n && n.tagName !== 'P') n = n.parentNode;
+    return n;
+  }
+
+  /* 掃描從段落開頭到 targetNode（不含）的上標，回傳最後一個上標值（即前一句號）
+     若 targetNode 是文字節點且含有上標，依 targetOffset 決定是否計入 */
+  function scanSentUpTo(para, targetNode, targetOffset) {
+    var lastSup = 0; /* 0 表示尚未見過上標（還在第1句） */
     var walker = document.createTreeWalker(para, NodeFilter.SHOW_ALL);
     var node;
     while ((node = walker.nextNode())) {
-      /* 到達選取起點就停止 */
-      if (node === startEl) break;
-      if (node === range.startContainer) break;
-      /* 文字節點：數上標字符 */
+      if (node === targetNode) {
+        /* 若 targetNode 是文字節點，處理 targetOffset 之前的字符 */
+        if (node.nodeType === 3 && targetOffset > 0) {
+          var prefix = node.textContent.slice(0, targetOffset);
+          for (var i = 0; i < prefix.length; i++) {
+            if (SUP_VAL[prefix[i]]) lastSup = SUP_VAL[prefix[i]];
+          }
+        }
+        break;
+      }
+      /* 文字節點：掃描所有上標字符 */
       if (node.nodeType === 3) {
         var txt = node.textContent;
-        for (var i = 0; i < txt.length; i++) {
-          if (SUP_RE.test(txt[i])) sentNum++;
+        for (var j = 0; j < txt.length; j++) {
+          if (SUP_VAL[txt[j]]) lastSup = SUP_VAL[txt[j]];
         }
       }
-      /* Element 節點：若是非 fn-badge 的 <sup>，也算一個句子分隔 */
+      /* 非 fn-badge 的 <sup> element（數字形式的上標）*/
       if (node.nodeType === 1 && node.tagName === 'SUP' &&
           !node.classList.contains('fn-badge')) {
         var num = parseInt(node.textContent.trim(), 10);
-        if (!isNaN(num) && num > 1) sentNum = num;
+        if (!isNaN(num) && num > 1) lastSup = num;
       }
     }
-    return sentNum;
+    /* lastSup = 選取點之前最後一個分隔符號值
+       若 lastSup=0 → 在第1句；lastSup=4 → 剛過第4句分隔符，在第5句 */
+    return lastSup === 0 ? 1 : lastSup + 1;
   }
 
-  function onSel() {
+  /* 取得選取起始句號 */
+  function getSelSentNum() {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return 1;
+    var range = sel.getRangeAt(0);
+    var para  = getParaOfNode(range.startContainer);
+    if (!para) return 1;
+    return scanSentUpTo(para, range.startContainer, range.startOffset);
+  }
+
+  /* 取得選取結束句號（用於多句選取） */
+  function getSelEndSentNum() {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return 0;
+    var range = sel.getRangeAt(0);
+    if (range.collapsed) return 0;
+    /* 若 endContainer 和 startContainer 在同一個 <p> */
+    var startPara = getParaOfNode(range.startContainer);
+    var endPara   = getParaOfNode(range.endContainer);
+    if (!endPara || startPara !== endPara) return 0;
+    /* endOffset：選取結束位置；若 endOffset=0 表示游標在節點開頭，往前退一 */
+    var endNode   = range.endContainer;
+    var endOffset = range.endOffset;
+    if (endOffset === 0 && endNode.previousSibling) {
+      endNode   = endNode.previousSibling;
+      endOffset = endNode.textContent ? endNode.textContent.length : 0;
+    }
+    return scanSentUpTo(startPara, endNode, endOffset);
+  }
+
+  function onSel() {  function onSel() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.toString().trim().length < 2) {
       shareBar.style.display = 'none'; return;
@@ -48893,8 +48943,12 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var id = getSelAcimId();
     if (!id) { shareBar.style.display = 'none'; return; }
 
-    shareBar.dataset.id   = id;
-    shareBar.dataset.sent = String(getSelSentNum());
+    shareBar.dataset.id      = id;
+    var sStart = getSelSentNum();
+    var sEnd   = getSelEndSentNum();
+    /* 若結束句 > 起始句，記錄範圍（如 5-6）；否則只記錄起始句 */
+    shareBar.dataset.sent    = String(sStart);
+    shareBar.dataset.sentEnd = (sEnd > sStart) ? String(sEnd) : '';
 
     /* 定位工具列：選取文字正上方，限制不超出視窗左右邊界 */
     var r = sel.getRangeAt(0).getBoundingClientRect();
