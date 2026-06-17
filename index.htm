@@ -48627,7 +48627,17 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     /* 先嘗試直接匹配 */
     if (idIndex[raw]) return { paraId: raw, sent: 0 };
 
-    /* 嘗試最後 .N 是否為句子號 */
+    /* 支援兩種句子分隔符：: （新格式）或 . （舊相容格式）*/
+    /* 優先嘗試 :N 結尾（T-6.VII.3:3）*/
+    var mc = raw.match(/^(.+):(\d+)$/);
+    if (mc) {
+      var pid = mc[1], sn = parseInt(mc[2], 10);
+      if (idIndex[pid]) return { paraId: pid, sent: sn };
+      var fid = fuzzyFindId(pid);
+      if (fid) return { paraId: fid, sent: sn };
+    }
+
+    /* 再嘗試 .N 結尾（向下相容）*/
     var m = raw.match(/^(.+)\.(\d+)$/);
     if (m) {
       /* 先試完整 paraId + sent */
@@ -48788,8 +48798,9 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var sent   = parseInt(shareBar.dataset.sent||'0',10);
     if (!acimId) return;
 
+    /* zhUrl：段落用 # 分隔，句子用 : 分隔（與 acimce.app 格式一致）*/
     var zhUrl = location.origin + location.pathname + '#' + acimId;
-    if (sent>0) zhUrl += '.' + sent;
+    if (sent > 0) zhUrl += ':' + sent;
     var enUrl = toAcimceUrl(acimId, sent);
 
     document.getElementById('acim-sp-ref').textContent = acimId + (sent>0 ? ':'+sent : '');
@@ -48833,6 +48844,47 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   }
 
   /* 監聽選取文字 */
+  /* 取得目前選取範圍位於段落中的第幾句（1-based）
+     原理：從選取起點往前掃描，數非 fn-badge 的句子上標數量
+     上標字符：² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹（Unicode U+00B2~U+2079）*/
+  function getSelSentNum() {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return 0;
+    var range   = sel.getRangeAt(0);
+    var startEl = range.startContainer;
+    /* 找到所屬 <p> 段落 */
+    var para = startEl.nodeType === 3 ? startEl.parentNode : startEl;
+    while (para && para.tagName !== 'P') para = para.parentNode;
+    if (!para) return 0;
+
+    /* 上標 Unicode 字元集合 */
+    var SUP_RE = /[²³⁴⁵⁶⁷⁸⁹]/;
+
+    /* 遍歷段落子節點，遇到 startContainer 就停止，數上標數 */
+    var sentNum = 1;
+    var walker = document.createTreeWalker(para, NodeFilter.SHOW_ALL);
+    var node;
+    while ((node = walker.nextNode())) {
+      /* 到達選取起點就停止 */
+      if (node === startEl) break;
+      if (node === range.startContainer) break;
+      /* 文字節點：數上標字符 */
+      if (node.nodeType === 3) {
+        var txt = node.textContent;
+        for (var i = 0; i < txt.length; i++) {
+          if (SUP_RE.test(txt[i])) sentNum++;
+        }
+      }
+      /* Element 節點：若是非 fn-badge 的 <sup>，也算一個句子分隔 */
+      if (node.nodeType === 1 && node.tagName === 'SUP' &&
+          !node.classList.contains('fn-badge')) {
+        var num = parseInt(node.textContent.trim(), 10);
+        if (!isNaN(num) && num > 1) sentNum = num;
+      }
+    }
+    return sentNum;
+  }
+
   function onSel() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.toString().trim().length < 2) {
@@ -48842,7 +48894,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     if (!id) { shareBar.style.display = 'none'; return; }
 
     shareBar.dataset.id   = id;
-    shareBar.dataset.sent = '0';
+    shareBar.dataset.sent = String(getSelSentNum());
 
     /* 定位工具列：選取文字正上方，限制不超出視窗左右邊界 */
     var r = sel.getRangeAt(0).getBoundingClientRect();
