@@ -48725,7 +48725,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       + 'padding:16px 18px;width:310px;max-width:92vw;'
       + 'box-shadow:0 8px 32px rgba(40,0,80,.6);'
       + 'font-family:-apple-system,system-ui,sans-serif;font-size:13px;'
-      + 'color:#EDE6F8;left:50%;transform:translateX(-50%);';
+      + 'color:#EDE6F8;';
 
     sharePanel.innerHTML = [
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">',
@@ -48797,13 +48797,24 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     document.getElementById('acim-sp-en').textContent  = enUrl;
     document.getElementById('acim-sp-open-en').href    = enUrl;
 
-    sharePanel.style.display='block';
+    /* 先顯示面板以便計算高度 */
+    sharePanel.style.visibility = 'hidden';
+    sharePanel.style.display = 'block';
     var rb = shareBar.getBoundingClientRect();
-    var ph = sharePanel.offsetHeight || 220;
-    var top = rb.top + window.scrollY - ph - 10;
-    if (top < window.scrollY + 10) top = rb.bottom + window.scrollY + 10;
-    sharePanel.style.top = top+'px';
-    sharePanel.style.bottom = 'auto';
+    var ph = sharePanel.offsetHeight || 280;
+    var pw = sharePanel.offsetWidth  || 310;
+
+    /* 使用 viewport 座標（配合 position:fixed）*/
+    var top  = rb.top - ph - 8;
+    if (top < 8) top = rb.bottom + 8;      /* 空間不足時改在下方 */
+    var left = rb.left + rb.width / 2 - pw / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+
+    sharePanel.style.top        = top  + 'px';
+    sharePanel.style.left       = left + 'px';
+    sharePanel.style.bottom     = 'auto';
+    sharePanel.style.transform  = 'none';
+    sharePanel.style.visibility = 'visible';
   }
 
   function clip(text) {
