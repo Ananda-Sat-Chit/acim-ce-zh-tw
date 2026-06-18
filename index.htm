@@ -48902,9 +48902,10 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
         if (!isNaN(num) && num > 1) lastSup = num;
       }
     }
-    /* lastSup = 選取點之前最後一個分隔符號值
-       若 lastSup=0 → 在第1句；lastSup=4 → 剛過第4句分隔符，在第5句 */
-    return lastSup === 0 ? 1 : lastSup + 1;
+    /* lastSup = 選取點前最後見到的上標值
+       上標 N 是第 N 句的「起始標記」，見到上標 N 表示現在在第 N 句
+       lastSup=0 → 在第1句（還未見上標）；lastSup=3 → 在第3句 */
+    return lastSup === 0 ? 1 : lastSup;
   }
 
   /* 取得選取起始句號 */
