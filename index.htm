@@ -48373,6 +48373,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   /* ══════════════════════════════════════════════════
      狀態機：掃描 content-area，賦予所有段落 ACIM id
      ══════════════════════════════════════════════════ */
+  var idsReady = false; /* assignIds 完成後設為 true */
   function assignIds() {
     var area = document.getElementById('content-area');
     if (!area) return;
@@ -48596,6 +48597,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
       if (id) register(node, id);
     }
+    idsReady = true; /* 掃描完成 */
   }
 
   /* ══════════════════════════════════════════════════
@@ -48673,7 +48675,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
           || document.getElementById('acim-' + p.paraId.replace(/[^a-zA-Z0-9\-]/g,'-'));
     if (!el) return;
     el.classList.add('acim-hl'); hlEls.push(el);
-    setTimeout(function(){ el.scrollIntoView({behavior:'smooth',block:'center'}); }, 80);
+    setTimeout(function(){ el.scrollIntoView({behavior:'smooth',block:'center'}); }, 150);
     setTimeout(clearHL, 4500);
   }
 
@@ -48936,6 +48938,12 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   }
 
   function onSel() {  function onSel() {
+    /* 若 assignIds 尚未完成，延遲 200ms 重試（最多重試 5 次） */
+    if (!idsReady) {
+      clearTimeout(barTimer);
+      barTimer = setTimeout(onSel, 200);
+      return;
+    }
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.toString().trim().length < 2) {
       shareBar.style.display = 'none'; return;
@@ -49009,6 +49017,14 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
        2. mouseup：選取完成，100ms 後讀取（給瀏覽器時間穩定 selection）
        3. touchend：觸控選取完成，200ms 後讀取（觸控需要更長穩定時間）
        4. 點擊工具列/面板本身：所有事件均跳過不處理 */
+
+    /* selectionchange：補充觸發，處理鍵盤選取等 mouseup 不觸發的情況 */
+    document.addEventListener('selectionchange', function() {
+      var sel = window.getSelection();
+      if (!sel || sel.isCollapsed || sel.toString().trim().length < 2) return;
+      clearTimeout(barTimer);
+      barTimer = setTimeout(onSel, 300);
+    });
 
     document.addEventListener('pointerdown', function(e) {
       if (shareBar.contains(e.target) || sharePanel.contains(e.target)) return;
