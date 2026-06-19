@@ -48363,11 +48363,14 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   /* ══ id 索引 ══ */
   var idIndex = {}; // acimId → Element
 
+  var lastRegisteredId = null; /* 追蹤最後一個有 id 的段落 */
+
   function register(el, acimId) {
     if (!acimId || idIndex[acimId]) return;
     el.setAttribute('data-acim-id', acimId);
     idIndex[acimId] = el;
     if (!el.id) el.id = 'acim-' + acimId.replace(/[^a-zA-Z0-9\-]/g, '-');
+    lastRegisteredId = acimId;
   }
 
   /* ══════════════════════════════════════════════════
@@ -48556,7 +48559,13 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       /* ── P 段落 ── */
       if (tag !== 'P') continue;
       var pNum = getPNum(node);
-      if (!pNum) continue;
+      /* 無 <b> 段號的 p：若緊接在有 id 的段落後，標記為延伸段落 */
+      if (!pNum) {
+        if (lastRegisteredId) {
+          node.setAttribute('data-acim-parent', lastRegisteredId);
+        }
+        continue;
+      }
 
       var id = null;
 
@@ -48629,8 +48638,14 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     /* 先嘗試直接匹配 */
     if (idIndex[raw]) return { paraId: raw, sent: 0 };
 
-    /* 支援兩種句子分隔符：: （新格式）或 . （舊相容格式）*/
-    /* 優先嘗試 :N 結尾（T-6.VII.3:3）*/
+    /* 支援句子格式：:N 或 :N-M（範圍，跳轉到起始句 N）*/
+    var mcRange = raw.match(/^(.+):(\d+)-(\d+)$/);
+    if (mcRange) {
+      var pid = mcRange[1], sn = parseInt(mcRange[2], 10);
+      if (idIndex[pid]) return { paraId: pid, sent: sn };
+      var fid = fuzzyFindId(pid);
+      if (fid) return { paraId: fid, sent: sn };
+    }
     var mc = raw.match(/^(.+):(\d+)$/);
     if (mc) {
       var pid = mc[1], sn = parseInt(mc[2], 10);
@@ -48675,6 +48690,12 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
           || document.getElementById('acim-' + p.paraId.replace(/[^a-zA-Z0-9\-]/g,'-'));
     if (!el) return;
     el.classList.add('acim-hl'); hlEls.push(el);
+    /* 同時高亮延伸段落（無 <b> 的後續 <p> 屬於同一段落）*/
+    var extEls = document.querySelectorAll('[data-acim-parent="' + p.paraId + '"]');
+    for (var ei = 0; ei < extEls.length; ei++) {
+      extEls[ei].classList.add('acim-hl');
+      hlEls.push(extEls[ei]);
+    }
     setTimeout(function(){ el.scrollIntoView({behavior:'smooth',block:'center'}); }, 150);
     setTimeout(clearHL, 4500);
   }
@@ -48862,7 +48883,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
      但若上標字符本身在選取起點之前（startOffset > 上標位置），需含入計數。 */
 
   var SUP_RE = /[²³⁴⁵⁶⁷⁸⁹]/;
-  var SUP_VAL = {'²':2,'³':3,'⁴':4,'⁵':5,'⁶':6,'⁷':7,'⁸':8,'⁹':9};
+  var SUP_VAL = {'²':2,'³':3,'⁴':4,'⁵':5,'⁶':6,'⁷':7,'⁸':8,'⁹':9,'¹':1};
 
   /* 取得選取節點所在 <p> 段落 */
   function getParaOfNode(n) {
@@ -48879,8 +48900,9 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var node;
     while ((node = walker.nextNode())) {
       if (node === targetNode) {
-        /* 若 targetNode 是文字節點，處理 targetOffset 之前的字符 */
-        if (node.nodeType === 3 && targetOffset > 0) {
+        /* 若 targetNode 是文字節點，掃描 targetOffset 之前（含 offset=0 時整個節點前綴）的上標 */
+        if (node.nodeType === 3) {
+          /* offset=0：游標在節點開頭，不含本節點任何字符 */
           var prefix = node.textContent.slice(0, targetOffset);
           for (var i = 0; i < prefix.length; i++) {
             if (SUP_VAL[prefix[i]]) lastSup = SUP_VAL[prefix[i]];
@@ -48968,9 +48990,22 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var top = r.top - 52;
     if (top < 8) top = r.bottom + 8; /* 若選取靠近頂部，改在下方顯示 */
 
+    /* 手機判斷：若螢幕寬度 <= 768px，改為底部固定顯示
+       避開 Chrome 原生選取菜單（通常在頂部）*/
+    var isMobile = window.innerWidth <= 768;
     shareBar.style.position = 'fixed';
-    shareBar.style.top  = top + 'px';
-    shareBar.style.left = left + 'px';
+    if (isMobile) {
+      /* 手機：固定在底部工具列上方，不跟隨選取位置 */
+      shareBar.style.top    = 'auto';
+      shareBar.style.bottom = '80px';
+      shareBar.style.left   = '50%';
+      shareBar.style.transform = 'translateX(-50%)';
+    } else {
+      shareBar.style.top       = top + 'px';
+      shareBar.style.left      = left + 'px';
+      shareBar.style.bottom    = 'auto';
+      shareBar.style.transform = 'none';
+    }
     shareBar.style.display = 'block';
   }
 
@@ -48989,6 +49024,10 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       '  padding-left:7px!important;',
       '  border-radius:3px!important;',
       '  transition:background .4s,border-color .4s',
+      '}',
+      'body.dark-mode .acim-hl,html.dark-mode .acim-hl{',
+      '  background:rgba(201,162,39,.30)!important;',
+      '  border-left:3px solid #E8C840!important;',
       '}',
       '#acim-spanel button:hover,#acim-spanel a:hover{opacity:.82}',
     ].join('\n');
