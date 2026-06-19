@@ -48703,15 +48703,13 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   /* ══════════════════════════════════════════════════
      英文 acimce.app URL 轉換
      ══════════════════════════════════════════════════ */
-  function toAcimceUrl(acimId, sent) {
-    /* 本地格式（.分隔） → acimce.app 格式（:分隔句子）
-       T-2.I.1 → :T-2.I.1
-       T-2.I.1 + sent=3 → :T-2.I.1:3
-       W-1.1 → :W-1.1
-       In.1 → :In.1  (T 導言)
-    */
+  function toAcimceUrl(acimId, sent, sentEnd) {
     var url = 'https://acimce.app/:' + acimId;
-    if (sent && sent > 0) url += ':' + sent;
+    if (sent && sent > 0) {
+      url += ':' + sent;
+      /* acimce.app 支援範圍格式 :N-M */
+      if (sentEnd && sentEnd > sent) url += '-' + sentEnd;
+    }
     return url;
   }
 
@@ -48721,14 +48719,16 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
   function getSelAcimId() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed) return null;
-    /* 從 startContainer 開始向上爬，找最近的帶有 data-acim-id 的 Element */
     var n = sel.getRangeAt(0).startContainer;
-    /* 文字節點先取其父 */
     if (n.nodeType === 3) n = n.parentNode;
     while (n && n !== document.body) {
       if (n.nodeType === 1) {
+        /* 直接有 id：正常段落 */
         var aid = n.getAttribute('data-acim-id');
         if (aid) return aid;
+        /* 延伸段落：有 data-acim-parent，回傳父段落 id */
+        var parent = n.getAttribute('data-acim-parent');
+        if (parent) return parent;
       }
       n = n.parentNode;
     }
@@ -48831,8 +48831,8 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
     /* 繁中 URL */
     var zhUrl = location.origin + location.pathname + '#' + acimId + sentSuffix;
-    /* 英文 acimce.app URL（多句僅給起始句） */
-    var enUrl = toAcimceUrl(acimId, sent);
+    /* 英文 acimce.app URL：支援範圍格式 :N-M */
+    var enUrl = toAcimceUrl(acimId, sent, sentEnd);
 
     document.getElementById('acim-sp-ref').textContent = acimId + sentSuffix;
     document.getElementById('acim-sp-zh').textContent  = zhUrl;
@@ -48900,21 +48900,44 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var node;
     while ((node = walker.nextNode())) {
       if (node === targetNode) {
-        /* 若 targetNode 是文字節點，掃描 targetOffset 之前（含 offset=0 時整個節點前綴）的上標 */
         if (node.nodeType === 3) {
-          /* offset=0：游標在節點開頭，不含本節點任何字符 */
-          var prefix = node.textContent.slice(0, targetOffset);
-          for (var i = 0; i < prefix.length; i++) {
-            if (SUP_VAL[prefix[i]]) lastSup = SUP_VAL[prefix[i]];
+          var txt2 = node.textContent;
+          /* 掃描用的字串：若 offset=0，掃到第一個字符（含）；否則掃到 offset 之前 */
+          var scanTo = (targetOffset === 0) ? 1 : targetOffset;
+          var k = 0;
+          while (k < scanTo && k < txt2.length) {
+            if (txt2[k] === '¹' && k+1 < scanTo && k+1 < txt2.length) {
+              if (txt2[k+1] === '⁰') { lastSup = 10; k += 2; continue; }
+              if (SUP_VAL[txt2[k+1]]) { lastSup = 10 + SUP_VAL[txt2[k+1]]; k += 2; continue; }
+            }
+            if (SUP_VAL[txt2[k]]) lastSup = SUP_VAL[txt2[k]];
+            k++;
           }
         }
         break;
       }
-      /* 文字節點：掃描所有上標字符 */
+      /* 文字節點：掃描所有上標字符（含雙字符 ¹⁰¹¹¹² 等）*/
       if (node.nodeType === 3) {
         var txt = node.textContent;
-        for (var j = 0; j < txt.length; j++) {
-          if (SUP_VAL[txt[j]]) lastSup = SUP_VAL[txt[j]];
+        var j = 0;
+        while (j < txt.length) {
+          /* 嘗試雙字符組合（¹+數字）：¹⁰=10, ¹¹=11, ¹²=12, ¹³=13... */
+          if (txt[j] === '¹' && j+1 < txt.length && SUP_VAL[txt[j+1]]) {
+            lastSup = 10 + SUP_VAL[txt[j+1]] - 1;
+            /* ¹²=12: ¹+² → 10+(2-1)=11? 不對，直接用映射 */
+            /* ¹⁰=10, ¹¹=11, ¹²=12... → 10 + (SUP_VAL[txt[j+1]]-1) 不對 */
+            /* 正確：¹+² = 12, ¹+³ = 13, 但 ¹+¹ = 11, ¹+⁰? ⁰不在SUP_VAL */
+            /* 重新定義：¹ 後接 ¹=11, ²=12, ³=13... */
+            lastSup = 10 + SUP_VAL[txt[j+1]];
+            j += 2;
+          } else if (txt[j] === '¹' && j+1 < txt.length && txt[j+1] === '⁰') {
+            /* ¹⁰ = 10（⁰ = U+2070，不在SUP_VAL中，特殊處理）*/
+            lastSup = 10; j += 2;
+          } else if (SUP_VAL[txt[j]]) {
+            lastSup = SUP_VAL[txt[j]]; j++;
+          } else {
+            j++;
+          }
         }
       }
       /* 非 fn-badge 的 <sup> element（數字形式的上標）*/
