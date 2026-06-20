@@ -48385,6 +48385,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var book = null; // 'T'|'W'|'M'|'C'
     /* T */
     var tCh = 0, tSec = 0, tSub = null, tIn = false;
+    var t1ZhNum = 0, t1SubNum = 0; /* T-1 奇蹟原則：當前原則號與子段號 */
     /* W */
     var wLesson = 0;
     var wZone = null; // null | 'In' | 'PtI' | 'Re' | 'PtII' | 'WI' | 'FL' | 'Ep'
@@ -48443,7 +48444,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
       /* ── H1：書冊切換 ── */
       if (tag === 'H1') {
-        book = null; tCh=0; tSec=0; tSub=null; tIn=false;
+        book = null; tCh=0; tSec=0; tSub=null; tIn=false; t1ZhNum=0; t1SubNum=0;
         wLesson=0; wZone=null; wReN=0; wWiN=0;
         wReIsIn=false; wPtIIIn=false; wFlIn=false;
         mCh=0; mIn=false; cCh=0; cIn=false; cEp=false;
@@ -48459,7 +48460,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
       /* ── H2 ── */
       if (tag === 'H2') {
-        tSec=0; tSub=null; tIn=false;
+        tSec=0; tSub=null; tIn=false; t1ZhNum=0; t1SubNum=0;
         wZone=null; wReN=0; wWiN=0; wReIsIn=false;
         wPtIIIn=false; wFlIn=false; wLesson=0;
         mIn=false; cIn=false; cEp=false;
@@ -48542,12 +48543,13 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
         }
         else if (book==='W' || (book==='T' && !book)) {
           /* W 課程號（h4 同時存在 T 和 W 中）*/
-          var lm = raw.match(/第\s*(\d+)\s*課/);
+          var lm = raw.match(/第?\s*(\d+)\s*課/);
           if (lm) {
             wLesson = parseInt(lm[1], 10);
             wPtIIIn=false; wFlIn=false; wReIsIn=false; wWiN=0;
             /* 課程號決定區域（不管原 wZone，一律依課號更新） */
-            if (wLesson >= 361)       wZone='FL';
+            if (wLesson >= 361 && /至/.test(raw)) wZone='361-365';
+            else if (wLesson >= 361) wZone='FL';
             else if (wLesson >= 221)  wZone='PtII';
             else if (wZone==='Re')    { /* 保持複習區，以便 W-51~W-180 */ }
             else                      wZone=null;
@@ -48573,9 +48575,23 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
         if (tIn) {
           id = 'In.' + pNum; // T 書導言
         } else if (tCh===1 && tSec===0) {
-          /* T-1：中文段號（一~二十四）→ T-1.N
-             阿拉伯數字補充段落亦賦予 id（照 <b> 數字） */
-          id = 'T-1.' + pNum;
+          /* T-1 奇蹟原則：中文段號一~五十 = T-1.N.1（主段落）
+             後接的阿拉伯數字附屬段落 = T-1.N.M（同一原則的附屬）*/
+          var bt1 = (node.querySelector('b')||{textContent:''}).textContent
+                    .replace(/\s|&nbsp;/g,'').trim();
+          if (/^[一二三四五六七八九十百]+/.test(bt1)) {
+            /* 中文段號：記錄當前原則號，子段號重設為1 */
+            t1ZhNum = pNum;
+            t1SubNum = 1;
+            id = 'T-1.' + pNum + '.1';
+          } else if (/^\d+$/.test(bt1) && t1ZhNum > 0) {
+            /* 阿拉伯附屬段落：使用當前原則號 + 阿拉伯數字作子段號 */
+            t1SubNum = pNum;
+            id = 'T-1.' + t1ZhNum + '.' + pNum;
+          } else {
+            /* 其他（前置說明等）：直接用 pNum */
+            id = 'T-1.' + pNum;
+          }
         } else if (tCh && tSec===0 && !tSub) {
           id = 'T-' + tCh + '.' + pNum;
         } else if (tCh && tSec && !tSub) {
@@ -48586,12 +48602,14 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       }
       else if (book==='W') {
         if (wZone==='In')              id = 'W-In.' + pNum;
+        else if (wZone==='181-200In')  id = 'W-181-200.In.' + pNum;
         else if (wZone==='Re' && wReN && wReIsIn) id = 'W-Re.' + wReN + '.In.' + pNum;
         else if (wZone==='Re' && wLesson)         id = 'W-' + wLesson + '.' + pNum;
         else if (wZone==='WI' && wWiN)            id = 'W-WI.' + wWiN + '.' + pNum;
         else if (wZone==='PtII' && wPtIIIn && !wLesson) id = 'W-PtII.In.' + pNum;
         else if (wZone==='FL' && wFlIn && !wLesson)      id = 'W-FL.In.' + pNum;
         else if (wZone==='Ep')         id = 'W-Ep.' + pNum;
+        else if (wZone==='361-365' && wLesson) id = 'W-361-365.' + pNum;
         else if (wLesson)              id = 'W-' + wLesson + '.' + pNum;
       }
       else if (book==='M') {
