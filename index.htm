@@ -19126,7 +19126,7 @@ clear=all style='page-break-before:always'>
 
 <div style='border-top: solid windowtext 1.0pt; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: none; padding: 1.0pt 0cm 1.0pt 0cm'>
 
-<h4><a name="_jo2c1hf6b00"></a>305<span>課</span><br>
+<h4><a name="_jo2c1hf6b00"></a><span>第</span>305<span>課</span><br>
 <span>有一種平安，出自基督的贈與</span></h4>
 
 </div>
@@ -48309,13 +48309,17 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 (function () {
   'use strict';
 
-  /* ── 中文數字對照表（支援到 31 章）── */
+  /* ── 中文數字對照表（支援到 31 章；T-1 奇蹟原則額外支援到 50）── */
   var ZH_NUM = {
     '一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,
     '十一':11,'十二':12,'十三':13,'十四':14,'十五':15,'十六':16,'十七':17,
     '十八':18,'十九':19,'二十':20,'二十一':21,'二十二':22,'二十三':23,
     '二十四':24,'二十五':25,'二十六':26,'二十七':27,'二十八':28,'二十九':29,
-    '三十':30,'三十一':31
+    '三十':30,'三十一':31,
+    '三十二':32,'三十三':33,'三十四':34,'三十五':35,'三十六':36,'三十七':37,
+    '三十八':38,'三十九':39,'四十':40,'四十一':41,'四十二':42,'四十三':43,
+    '四十四':44,'四十五':45,'四十六':46,'四十七':47,'四十八':48,'四十九':49,
+    '五十':50
   };
   var ROMAN = ['','I','II','III','IV','V','VI','VII','VIII','IX','X',
                'XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
@@ -48510,7 +48514,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
           }
           /* 181-200課導言（特殊複習區）*/
           else if (/181/.test(raw) && /導言/.test(raw)) {
-            wZone='Re'; wReN=0; wReIsIn=true; wLesson=0;
+            wZone='181-200In'; wReN=0; wReIsIn=false; wLesson=0;
           }
           /* W-PtII 內的導言 */
           else if (wZone==='PtII' && /^導言/.test(raw)) {
