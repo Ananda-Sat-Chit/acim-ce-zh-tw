@@ -48397,7 +48397,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var wReIsIn = false; // 是否在複習N的導言
     var wPtIIIn = false, wFlIn = false;
     /* M */
-    var mCh = 0, mIn = false;
+    var mCh = 0, mIn = false, mSec = 0;
     /* C */
     var cCh = 0, cIn = false, cEp = false;
 
@@ -48451,7 +48451,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
         book = null; tCh=0; tSec=0; tSub=null; tIn=false; t1ZhNum=0; t1SubNum=0;
         wLesson=0; wZone=null; wReN=0; wWiN=0;
         wReIsIn=false; wPtIIIn=false; wFlIn=false;
-        mCh=0; mIn=false; cCh=0; cIn=false; cEp=false;
+        mCh=0; mIn=false; mSec=0; cCh=0; cIn=false; cEp=false;
         if (/卷一|Text/.test(raw)) book='T';
         else if (/卷二|Workbook/.test(raw)) book='W';
         else if (/卷三|Manual/.test(raw)) book='M';
@@ -48467,7 +48467,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
         tSec=0; tSub=null; tIn=false; t1ZhNum=0; t1SubNum=0;
         wZone=null; wReN=0; wWiN=0; wReIsIn=false;
         wPtIIIn=false; wFlIn=false; wLesson=0;
-        mIn=false; cIn=false; cEp=false;
+        mIn=false; mSec=0; cIn=false; cEp=false;
 
         if (book==='T') {
           if (/^導言/.test(raw)) { tIn=true; tCh=0; }
@@ -48500,7 +48500,12 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
       /* ── H3 ── */
       if (tag === 'H3') {
         tSub = null;
-        if (book==='T') {
+        if (book==='M') {
+          /* M-4/M-5 節標題：（一）信賴… 格式，對應羅馬節號 */
+          var msM = raw.match(/（([一二三四五六七八九十]+)）/);
+          if (msM) mSec = ZH_NUM[msM[1]] || 0;
+        }
+        else if (book==='T') {
           var sn = parseZhSection(raw);
           if (sn) tSec = sn;
         }
@@ -48617,8 +48622,9 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
         else if (wLesson)              id = 'W-' + wLesson + '.' + pNum;
       }
       else if (book==='M') {
-        if (mIn)      id = 'M-In.' + pNum;
-        else if (mCh) id = 'M-' + mCh + '.' + pNum;
+        if (mIn)                id = 'M-In.' + pNum;
+        else if (mCh && mSec)  id = 'M-' + mCh + '.' + ROMAN[mSec] + '.' + pNum;
+        else if (mCh)           id = 'M-' + mCh + '.' + pNum;
       }
       else if (book==='C') {
         if (cIn)      id = 'C-In.' + pNum;
