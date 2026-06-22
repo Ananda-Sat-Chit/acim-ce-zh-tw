@@ -48400,6 +48400,10 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
     var mCh = 0, mIn = false, mSec = 0;
     /* C */
     var cCh = 0, cIn = false, cEp = false;
+    /* App（附錄一 小品散文 Cameo essays）*/
+    var cameoN = 0;       /* 當前小品編號（1-33）*/
+    var cameoMode = false; /* 是否在小品散文區段 */
+    var cameoPNum = 0;    /* 當前小品內的段落序號（自動遞增）*/
 
     /* W-Re 中文 → 數字 */
     var REVIEW_ZH = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6};
@@ -48452,12 +48456,15 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
         wLesson=0; wZone=null; wReN=0; wWiN=0;
         wReIsIn=false; wPtIIIn=false; wFlIn=false;
         mCh=0; mIn=false; mSec=0; cCh=0; cIn=false; cEp=false;
+        cameoN=0; cameoMode=false; cameoPNum=0;
         if (/卷一|Text/.test(raw)) book='T';
         else if (/卷二|Workbook/.test(raw)) book='W';
         else if (/卷三|Manual/.test(raw)) book='M';
         else if (/術語解說|Clarification/.test(raw)) book='C';
         /* 導言 h1（在卷一之前，屬於 T 書導言 In.N）*/
         else if (/^導言$/.test(raw)) { book='T'; tIn=true; tCh=0; }
+        /* 附錄 h1（附錄一小品散文、附錄二、附錄三）*/
+        else if (/附錄|Appendix/.test(raw)) book='App';
         continue;
       }
       if (!book) continue;
@@ -48468,6 +48475,7 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
         wZone=null; wReN=0; wWiN=0; wReIsIn=false;
         wPtIIIn=false; wFlIn=false; wLesson=0;
         mIn=false; mSec=0; cIn=false; cEp=false;
+        cameoMode=false; cameoN=0; cameoPNum=0;
 
         if (book==='T') {
           if (/^導言/.test(raw)) { tIn=true; tCh=0; }
@@ -48493,6 +48501,11 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
             var cm = raw.match(/^([一二三四五六七八九十百]+)[、．]/);
             if (cm) cCh = ZH_NUM[cm[1]] || 0;
           }
+        }
+        else if (book==='App') {
+          /* 附錄一「小品散文」區段 */
+          if (/小品散文|Cameo/.test(raw)) { cameoMode=true; cameoN=0; cameoPNum=0; }
+          /* 附錄二、附錄三等：cameoMode 已在上面重設為 false */
         }
         continue;
       }
@@ -48541,6 +48554,15 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
             wFlIn=true; wLesson=0;
           }
         }
+        else if (book==='App' && cameoMode) {
+          /* 小品N  「標題」── 提取小品編號，並將 h3 本身登記為 Cameo-N */
+          var caM = raw.match(/小品\s*(\d+)/);
+          if (caM) {
+            cameoN = parseInt(caM[1], 10);
+            cameoPNum = 0; /* 新小品，段落序號歸零 */
+            register(node, 'Cameo-' + cameoN);
+          }
+        }
         continue;
       }
 
@@ -48569,6 +48591,17 @@ href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli
 
       /* ── P 段落 ── */
       if (tag !== 'P') continue;
+
+      /* ── 附錄一 Cameo 小品散文：段落無 <b> 段號，改用序號自動計數 ── */
+      if (book === 'App') {
+        if (cameoMode && cameoN) {
+          cameoPNum++;
+          var cameoId = 'Cameo-' + cameoN + '.' + cameoPNum;
+          register(node, cameoId);
+        }
+        continue;
+      }
+
       var pNum = getPNum(node);
       /* 無 <b> 段號的 p：若緊接在有 id 的段落後，標記為延伸段落 */
       if (!pNum) {
