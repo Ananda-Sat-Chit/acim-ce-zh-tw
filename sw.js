@@ -1,4 +1,4 @@
-/* ACIM CE PWA Service Worker v18 — 小幅修正，與 index.htm 同版。 */
+/* ACIM CE PWA Service Worker v19 — 小幅修正，與 index.htm 同版。 */
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-sw.js');
 workbox.setConfig({debug:false});
 const {registerRoute,setCatchHandler}=workbox.routing;
@@ -6,7 +6,7 @@ const {CacheFirst,NetworkFirst,StaleWhileRevalidate}=workbox.strategies;
 const {ExpirationPlugin}=workbox.expiration;
 const {CacheableResponsePlugin}=workbox.cacheableResponse;
 
-const CACHE_VERSION='v18';
+const CACHE_VERSION='v19';
 const SHELL_CACHE='acim-shell-'+CACHE_VERSION;
 const FONT_CACHE='acim-fonts-'+CACHE_VERSION;
 const IMAGE_CACHE='acim-images-'+CACHE_VERSION;

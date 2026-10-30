@@ -45,7 +45,7 @@ window.addEventListener('appinstalled', function(){
 });
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v18';
+var ACIM_VERSION = 'v19';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -24992,12 +24992,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if('IntersectionObserver' in window){
       var links={};
       tocWrapper.querySelectorAll('.toc-link').forEach(function(l){links[l.dataset.id]=l;});
+      var previousActive=null;
       var io=new IntersectionObserver(function(entries){
         entries.forEach(function(e){
           if(!e.isIntersecting) return;
-          Object.values(links).forEach(function(l){l.classList.remove('toc-active');});
           var al=links[e.target.id]; if(!al) return;
+          if(previousActive && previousActive!==al) previousActive.classList.remove('toc-active');
           al.classList.add('toc-active');
+          previousActive=al;
           /* ── IntersectionObserver 只負責高亮 + breadcrumb + 捲動 TOC ──
              不自動展開任何 toc-children：展開/收合由使用者點箭頭決定，
              避免捲動時多個 heading 同時進入視窗造成多群組被意外展開。 */
@@ -25018,10 +25020,6 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       headings.forEach(function(h){io.observe(h);});
     }
 
-    /* 搜尋索引 */
-    if(window.requestIdleCallback){
-      requestIdleCallback(buildIndex,{timeout:3000});
-    } else { setTimeout(buildIndex,600); }
 
     /* ── 進度恢復（buildTOC 末尾：此時 heading id 已全數賦予）── */
     if (!progressRestored) {
@@ -25068,15 +25066,50 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
      ══════════════════════════════════════════════════════ */
   var BATCH = 20; /* 每批顯示筆數，使用者可點「顯示更多」繼續 */
 
-  function buildIndex(){
-    searchIndex=[];
-    content.querySelectorAll('p,h1,h2,h3,h4,h5,h6,td,li').forEach(function(n,i){
-      var t=(n.textContent||'').replace(/\s+/g,' ').trim();
-      if(!t) return;
-      if(!n.id) n.id='si'+i;
-      searchIndex.push({id:n.id,text:t});
-    });
+  /* v19: 主畫面不必等待全文索引。首次搜尋時以小批次建立，
+     並在讀者閒置後預先暖機；保留既有 siN 錨點命名及搜尋範圍。 */
+  var _indexJob = null;
+  window.__acimV19Stats = {indexState:'pending', indexCount:0, indexYieldCount:0, ttsButtons:0};
+  function buildIndex(onReady, urgent){
+    if(searchIndex){ if(onReady) onReady(); return; }
+    if(!_indexJob){
+      var job = {nodes:content.querySelectorAll('p,h1,h2,h3,h4,h5,h6,td,li'),
+                 cursor:0, entries:[], listeners:[], urgent:false};
+      _indexJob = job;
+      window.__acimV19Stats.indexState='building';
+      function schedule(){
+        if(job.urgent || !window.requestIdleCallback) setTimeout(step, 0);
+        else requestIdleCallback(step, {timeout:220});
+      }
+      function step(){
+        var started=performance.now(), used=0;
+        /* 每批至多 180 筆或約 5 ms；無論書稿長度都定期讓出主執行緒。 */
+        while(job.cursor<job.nodes.length && used<180 && performance.now()-started<5){
+          var i=job.cursor++, n=job.nodes[i];
+          var t=(n.textContent||'').replace(/\s+/g,' ').trim();
+          used++;
+          if(!t) continue;
+          if(!n.id) n.id='si'+i;
+          job.entries.push({id:n.id, node:n, text:t, lower:t.toLowerCase()});
+        }
+        window.__acimV19Stats.indexCount=job.entries.length;
+        if(job.cursor<job.nodes.length){
+          window.__acimV19Stats.indexYieldCount++;
+          schedule();
+        } else {
+          searchIndex=job.entries;
+          _indexJob=null;
+          window.__acimV19Stats.indexState='ready';
+          job.listeners.forEach(function(cb){try{cb();}catch(err){console.error(err);}});
+        }
+      }
+      schedule();
+    }
+    if(onReady) _indexJob.listeners.push(onReady);
+    if(urgent) _indexJob.urgent=true;
   }
+  /* 預先暖機不擋首屏；第一個搜尋時可立即提高優先程度。 */
+  setTimeout(function(){buildIndex(null,false);}, 6500);
 
   var si=document.getElementById('toc-search-input'),
       sc=document.getElementById('toc-search-clear'),
@@ -25113,20 +25146,27 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   }
 
   /* ── 全文高亮：分兩階段非同步執行（收集節點 → 插入 mark）不阻塞主執行緒 ── */
-  function highlightAll(rx, doneCb){
+  function highlightAll(rx, results, doneCb){
     if(_hlAbort){ _hlAbort.abort(); _hlAbort=null; }
 
-    var walker=document.createTreeWalker(content, NodeFilter.SHOW_TEXT, null, false);
-    var hits=[], nd;
-    while((nd=walker.nextNode())){
-      var p=nd.parentNode;
-      if(!p) continue;
-      var tag=(p.tagName||'').toUpperCase();
-      if(tag==='SCRIPT'||tag==='STYLE'||tag==='MARK') continue;
-      if(p.closest && p.closest('#footnote-bar,#toc-wrapper,#pwa-tools,#chapter-crumb')) continue;
-      rx.lastIndex=0;
-      if(rx.test(nd.nodeValue)) hits.push(nd);
-    }
+    /* 搜尋索引已有命中段落；只掃描這些段落的文字，避免每次遍歷全書。
+       <td> 與子 <p> 可能同時命中，以 Set 去重，維持原本一次高亮的結果。 */
+    var hits=[], seen=new Set();
+    results.forEach(function(en){
+      if(!en.node || !en.node.isConnected) return;
+      var walker=document.createTreeWalker(en.node,NodeFilter.SHOW_TEXT);
+      var nd;
+      while((nd=walker.nextNode())){
+        if(seen.has(nd)) continue;
+        seen.add(nd);
+        var p=nd.parentNode;
+        if(!p) continue;
+        var tag=(p.tagName||'').toUpperCase();
+        if(tag==='SCRIPT'||tag==='STYLE'||tag==='MARK') continue;
+        rx.lastIndex=0;
+        if(rx.test(nd.nodeValue)) hits.push(nd);
+      }
+    });
     rx.lastIndex=0;
 
     if(_nativeSearchHighlight){
@@ -25276,57 +25316,56 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       sr.classList.remove('visible');
       clearHighlight();
       _lastResults=[]; _lastRx=null;
+      document.dispatchEvent(new Event('acim:search-cleared'));
       return;
     }
-    if(!searchIndex) buildIndex();
-    var rx=new RegExp(esc(k),'gi');
-    _lastRx=rx;
-
-    /* 找出所有命中段落（無上限）*/
-    var results=[];
-    searchIndex.forEach(function(en){
-      rx.lastIndex=0;
-      if(rx.test(en.text)){results.push(en);}
-      rx.lastIndex=0;
-    });
-    _lastResults=results;
-
-    /* 顯示「搜尋中」提示，讓使用者知道正在處理 */
     sb.style.display='block';
-    sb.textContent='正在標示「'+k+'」…';
-
-    /* 先非同步清除上一次高亮，清除完後再高亮新字串 */
-    clearHighlight(function(){
-      if(myToken !== _searchToken) return; /* 已被新搜尋取代，放棄 */
-      highlightAll(new RegExp(esc(k),'gi'), function(){
-        if(myToken !== _searchToken) return;
-        /* 高亮完成，顯示結果 */
-        if(results.length>0){
-          renderBatch(results,new RegExp(esc(k),'gi'),0,false);
-          sb.textContent='共找到 '+results.length+' 個段落，全文已標示';
-        } else {
-          sb.style.display='none';
-          var no=document.createElement('div'); no.className='sr-no-result';
-          no.textContent='找不到「'+k+'」';
-          sr.innerHTML=''; sr.appendChild(no); sr.classList.add('visible');
-        }
+    sb.textContent='正在搜尋「'+k+'」…';
+    function execute(){
+      if(myToken!==_searchToken) return;
+      var rx=new RegExp(esc(k),'gi');
+      _lastRx=rx;
+      var needle=k.toLowerCase();
+      var results=[];
+      searchIndex.forEach(function(en){
+        if(en.lower.includes(needle)) results.push(en);
       });
-    });
+      _lastResults=results;
+      sb.textContent='正在標示「'+k+'」…';
+      clearHighlight(function(){
+        if(myToken!==_searchToken) return;
+        highlightAll(new RegExp(esc(k),'gi'),results,function(){
+          if(myToken!==_searchToken) return;
+          if(results.length){
+            renderBatch(results,new RegExp(esc(k),'gi'),0,false);
+            sb.textContent='共找到 '+results.length+' 個段落，全文已標示';
+          } else {
+            sb.style.display='none';
+            var no=document.createElement('div'); no.className='sr-no-result';
+            no.textContent='找不到「'+k+'」';
+            sr.innerHTML=''; sr.appendChild(no); sr.classList.add('visible');
+          }
+        });
+      });
+    }
+    if(searchIndex) execute();
+    else {
+      sb.textContent='正在建立全文索引，稍後搜尋「'+k+'」…';
+      buildIndex(execute,true);
+    }
   }
 
+  si.addEventListener('focus',function(){if(!searchIndex) buildIndex(null,true);});
   si.addEventListener('input',function(){
     sc.style.display=si.value?'block':'none';
     clearTimeout(st); st=setTimeout(function(){ doSearch(si.value); },350);
-  });
-  document.addEventListener('acim:sentnums-ready',function(){
-    /* 上標字型正規化會替換部分文字節點，重建可能受影響的原生搜尋標示。 */
-    if(si.value.trim().length>=2){clearTimeout(st);doSearch(si.value);}
   });
   sc.addEventListener('click',function(){
     si.value=''; sc.style.display='none';
     sr.classList.remove('visible'); sb.style.display='none';
     clearHighlight();
     _lastResults=[]; _lastRx=null; _shownCount=0;
+    document.dispatchEvent(new Event('acim:search-cleared'));
     si.focus();
   });
 
@@ -25371,12 +25410,12 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 
     /* ── 取得目前最近的 heading anchor（麵包屑同款邏輯）── */
     function currentAnchor(){
-      var headings = Array.from(document.querySelectorAll('#content-area [id]'));
-      var sy = window.scrollY + 80;
-      var best = null;
-      for(var i=0;i<headings.length;i++){
-        if(headings[i].getBoundingClientRect().top + window.scrollY <= sy) best = headings[i];
-        else break;
+      var headings = Array.from(document.querySelectorAll('#content-area [id]')).filter(function(el){return !el.closest('#acim-footnotes-container');});
+      var sy=80, lo=0, hi=headings.length-1, best=null;
+      while(lo<=hi){
+        var mid=(lo+hi)>>1,el=headings[mid];
+        if(el.getBoundingClientRect().top<=sy){best=el;lo=mid+1;}
+        else hi=mid-1;
       }
       return best ? best.id : '';
     }
@@ -25384,13 +25423,19 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     /* ── 取得當前段落摘要文字（從 viewport 頂部附近掃一個段落）── */
     function currentExcerpt(){
       var mid = window.scrollY + window.innerHeight * 0.25;
-      var paras = document.querySelectorAll('#content-area p, #content-area h1, #content-area h2, #content-area h3');
-      for(var i=0;i<paras.length;i++){
-        var top = paras[i].getBoundingClientRect().top + window.scrollY;
-        if(top >= window.scrollY && top <= mid){
-          var t = paras[i].textContent.replace(/\s+/g,' ').trim();
-          if(t.length>4) return t.slice(0,60) + (t.length>60?'…':'');
-        }
+      var paras = Array.from(document.querySelectorAll('#content-area p, #content-area h1, #content-area h2, #content-area h3')).filter(function(el){return !el.closest('#acim-footnotes-container');});
+      /* 依文件順序二分查找，再掃描附近少量段落即可。 */
+      var lo=0,hi=paras.length-1,first=paras.length;
+      while(lo<=hi){
+        var pivot=(lo+hi)>>1;
+        if(paras[pivot].getBoundingClientRect().top>=0){first=pivot;hi=pivot-1;}
+        else lo=pivot+1;
+      }
+      for(var i=first;i<Math.min(first+12,paras.length);i++){
+        var top=paras[i].getBoundingClientRect().top+window.scrollY;
+        if(top>mid) break;
+        var t=paras[i].textContent.replace(/\s+/g,' ').trim();
+        if(t.length>4) return t.slice(0,60)+(t.length>60?'…':'');
       }
       return '';
     }
@@ -25649,6 +25694,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       l.forEach(function(n){n.nodeValue=n.nodeValue.replace(/\[\d+\]/g,'');});
     })(clone);
     fnText.innerHTML=clone.innerHTML.trim();
+    document.dispatchEvent(new Event('acim:footnote-rendered'));
     fnBar.classList.add('open'); document.body.classList.add('fn-open'); activeRef=ref;
     /* 無障礙：將 focus 移入腳注列，讓鍵盤/螢幕閱讀器使用者可直接閱讀 */
     fnBar.setAttribute('tabindex','-1'); fnBar.focus({preventScroll:true});
@@ -26356,54 +26402,83 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     });
   }
 
-  /* 延後 1.2s 才開始注入，確保 PWA install prompt 和首屏渲染都已完成 */
+  /* v19：不再為整本書一口氣新增數千顆朗讀按鈕。
+     讀者即將讀到的段落才補上按鈕與上標字型，減少首次 DOM 修改。
+     CSS Highlight 搜尋進行時不替換文字節點，避免高亮 Range 失效。 */
+  function injectOne(para){
+    if(!para || !para.isConnected) return;
+    if(!para.querySelector('.tts-btn')){
+      var btn=document.createElement('button');
+      btn.className='tts-btn';
+      btn.title='朗讀此段';
+      btn.setAttribute('aria-label','朗讀此段');
+      btn.setAttribute('aria-hidden','false');
+      btn.addEventListener('click',function(e){e.stopPropagation();speakPara(para,btn);});
+      para.appendChild(btn);
+      if(window.__acimV19Stats) window.__acimV19Stats.ttsButtons++;
+    }
+    var searchInput=document.getElementById('toc-search-input');
+    if(!searchInput || searchInput.value.trim().length<2){
+      wrapSentNums(para);
+    } else {
+      para.dataset.acimPendingSentnums='1';
+    }
+  }
+  document.addEventListener('acim:footnote-rendered',function(){
+    var note=document.getElementById('fn-text');
+    if(note) note.querySelectorAll('p').forEach(wrapSentNums);
+  });
   function doInject(){
-    var allParas = Array.from(document.querySelectorAll(SELECTOR));
-
-    /* 第一輪：所有段落（不論長短）統一包裹句子編號字型
-       短如「⁴我沒有能力。」(7字) 也要處理，避免字型不一致 */
-    var i = 0;
-    function batchWrap(){
-      var end = Math.min(i + 100, allParas.length);
-      for(; i < end; i++) wrapSentNums(allParas[i]);
-      if(i < allParas.length){ setTimeout(batchWrap, 0); }
-      else {
-        document.dispatchEvent(new Event('acim:sentnums-ready'));
-        setTimeout(batchBtn, 0);
-      }
-    }
-
-    /* 第二輪：所有非腳注段落都注入朗讀按鈕（含短句如「⁴我沒有能力。」）*/
-    var btnParas = allParas.filter(function(para){
-      if(para.querySelector('.tts-btn')) return false;
-      if(para.closest('#acim-footnotes-container')) return false;
-      return (para.textContent || '').trim().length >= 2;
+    var allParas=Array.from(document.querySelectorAll(SELECTOR)).filter(function(para){
+      return !para.closest('#acim-footnotes-container') &&
+             (para.textContent||'').trim().length>=2;
     });
-    var j = 0;
-    function batchBtn(){
-      var end = Math.min(j + 60, btnParas.length);
-      for(; j < end; j++){
-        var para = btnParas[j];
-        var btn = document.createElement('button');
-        btn.className = 'tts-btn';
-        btn.title     = '朗讀此段';
-        btn.setAttribute('aria-label', '朗讀此段');
-        btn.setAttribute('aria-hidden', 'false');
-        (function(p, b){
-          b.addEventListener('click', function(e){ e.stopPropagation(); speakPara(p, b); });
-        })(para, btn);
-        para.appendChild(btn);
+    if(!window.IntersectionObserver){
+      /* 舊版瀏覽器：維持原有分批注入行為。 */
+      var k=0;
+      function fallback(){
+        var end=Math.min(k+60,allParas.length);
+        for(;k<end;k++) injectOne(allParas[k]);
+        if(k<allParas.length) setTimeout(fallback,0);
       }
-      if(j < btnParas.length) setTimeout(batchBtn, 0);
+      fallback();
+      return;
     }
-
-    batchWrap();
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(!e.isIntersecting) return;
+        io.unobserve(e.target);
+        injectOne(e.target);
+      });
+    },{rootMargin:'1200px 0px',threshold:0});
+    var k=0;
+    function observeBatch(){
+      var started=performance.now(), processed=0;
+      while(k<allParas.length && processed<400 && performance.now()-started<5){
+        io.observe(allParas[k++]); processed++;
+      }
+      if(k<allParas.length) setTimeout(observeBatch,0);
+    }
+    observeBatch();
+    /* 搜尋清除後，再完成此前為避免破壞高亮而暫緩的字型處理。 */
+    document.addEventListener('acim:search-cleared',function(){
+      var pending=document.querySelectorAll('[data-acim-pending-sentnums]');
+      var n=0;
+      function flush(){
+        var end=Math.min(n+100,pending.length);
+        for(;n<end;n++){
+          var para=pending[n];
+          para.removeAttribute('data-acim-pending-sentnums');
+          wrapSentNums(para);
+        }
+        if(n<pending.length) setTimeout(flush,0);
+      }
+      if(pending.length) flush();
+    });
   }
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(doInject, 1200); });
-  } else {
-    setTimeout(doInject, 1200);
-  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){setTimeout(doInject,1200);});
+  } else setTimeout(doInject,1200);
 
 })();
 </script>
