@@ -1,4 +1,4 @@
-/* Service Worker v15 - ACIM CE PWA */
+/* Service Worker v17 - ACIM CE PWA */
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-sw.js');
 workbox.setConfig({ debug: false });
 const { registerRoute } = workbox.routing;
@@ -7,7 +7,7 @@ const { ExpirationPlugin } = workbox.expiration;
 const { CacheableResponsePlugin } = workbox.cacheableResponse;
 
 /* This version must match ACIM_VERSION in index.htm. */
-const CACHE_VERSION = 'v16';
+const CACHE_VERSION = 'v17';
 const SHELL_CACHE = 'acim-shell-' + CACHE_VERSION;
 const FONT_CACHE = 'acim-fonts-' + CACHE_VERSION;
 const IMAGE_CACHE = 'acim-images-' + CACHE_VERSION;
