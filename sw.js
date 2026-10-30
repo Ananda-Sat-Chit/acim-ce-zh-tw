@@ -7,7 +7,7 @@ const { ExpirationPlugin } = workbox.expiration;
 const { CacheableResponsePlugin } = workbox.cacheableResponse;
 
 /* This version must match ACIM_VERSION in index.htm. */
-const CACHE_VERSION = 'v15';
+const CACHE_VERSION = 'v16';
 const SHELL_CACHE = 'acim-shell-' + CACHE_VERSION;
 const FONT_CACHE = 'acim-fonts-' + CACHE_VERSION;
 const IMAGE_CACHE = 'acim-images-' + CACHE_VERSION;
