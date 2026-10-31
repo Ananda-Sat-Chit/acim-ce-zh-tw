@@ -45,7 +45,7 @@ window.addEventListener('appinstalled', function(){
 });
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v19';
+var ACIM_VERSION = 'v20';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -25064,42 +25064,50 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
        4. 清除時安全移除所有 <mark.search-hl>，恢復原始文字節點
        5. 點擊結果只做捲動，無需重新高亮（全文已高亮）
      ══════════════════════════════════════════════════════ */
-  var BATCH = 20; /* 每批顯示筆數，使用者可點「顯示更多」繼續 */
+  /* v20: same search corpus/order as v19. Results and highlighting have
+     independent completion states; no book text or verse parser changes. */
+  var BATCH=20, SEARCH_DELAY=180;
+  var si=document.getElementById('toc-search-input'),
+      sc=document.getElementById('toc-search-clear'),
+      sr=document.getElementById('toc-search-results'),
+      sb=document.getElementById('search-count-badge'), st;
+  var _indexJob=null, _searchToken=0, _hlAbort=null, _paintJob=null;
+  var _composing=false, _lastResults=[], _lastRx=null, _shownCount=0;
+  var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight);
+  var _searchRanges=Object.create(null);
+  var stats=window.__acimV20Stats={indexState:'pending',indexCount:0,
+    indexYieldCount:0,ttsButtons:0,searchState:'idle',query:'',resultCount:0};
+  /* Retain the previous diagnostics hook used by the lazy TTS module. */
+  window.__acimV19Stats=stats;
 
-  /* v19: 主畫面不必等待全文索引。首次搜尋時以小批次建立，
-     並在讀者閒置後預先暖機；保留既有 siN 錨點命名及搜尋範圍。 */
-  var _indexJob = null;
-  window.__acimV19Stats = {indexState:'pending', indexCount:0, indexYieldCount:0, ttsButtons:0};
-  function buildIndex(onReady, urgent){
-    if(searchIndex){ if(onReady) onReady(); return; }
+  function esc(s){return s.replace(/[\\^$.|?*+(){}\[\]]/g,'\\$&');}
+  function notifySearch(name,k,count){
+    document.dispatchEvent(new CustomEvent(name,{detail:{query:k,count:count}}));
+  }
+  function buildIndex(onReady,urgent){
+    if(searchIndex){if(onReady) onReady();return;}
     if(!_indexJob){
-      var job = {nodes:content.querySelectorAll('p,h1,h2,h3,h4,h5,h6,td,li'),
-                 cursor:0, entries:[], listeners:[], urgent:false};
-      _indexJob = job;
-      window.__acimV19Stats.indexState='building';
+      var job={nodes:content.querySelectorAll('p,h1,h2,h3,h4,h5,h6,td,li'),
+        cursor:0,entries:[],listeners:[],urgent:false};
+      _indexJob=job;stats.indexState='building';
       function schedule(){
-        if(job.urgent || !window.requestIdleCallback) setTimeout(step, 0);
-        else requestIdleCallback(step, {timeout:220});
+        if(job.urgent || !window.requestIdleCallback) setTimeout(step,0);
+        else requestIdleCallback(step,{timeout:220});
       }
       function step(){
-        var started=performance.now(), used=0;
-        /* 每批至多 180 筆或約 5 ms；無論書稿長度都定期讓出主執行緒。 */
+        var started=performance.now(),used=0;
         while(job.cursor<job.nodes.length && used<180 && performance.now()-started<5){
-          var i=job.cursor++, n=job.nodes[i];
-          var t=(n.textContent||'').replace(/\s+/g,' ').trim();
+          var i=job.cursor++,n=job.nodes[i],t=(n.textContent||'').replace(/\s+/g,' ').trim();
           used++;
           if(!t) continue;
+          /* Keep legacy siN anchors and bookmark compatibility unchanged. */
           if(!n.id) n.id='si'+i;
-          job.entries.push({id:n.id, node:n, text:t, lower:t.toLowerCase()});
+          job.entries.push({id:n.id,node:n,text:t,lower:t.toLowerCase()});
         }
-        window.__acimV19Stats.indexCount=job.entries.length;
-        if(job.cursor<job.nodes.length){
-          window.__acimV19Stats.indexYieldCount++;
-          schedule();
-        } else {
-          searchIndex=job.entries;
-          _indexJob=null;
-          window.__acimV19Stats.indexState='ready';
+        stats.indexCount=job.entries.length;
+        if(job.cursor<job.nodes.length){stats.indexYieldCount++;schedule();}
+        else{
+          searchIndex=job.entries;_indexJob=null;stats.indexState='ready';
           job.listeners.forEach(function(cb){try{cb();}catch(err){console.error(err);}});
         }
       }
@@ -25108,265 +25116,234 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(onReady) _indexJob.listeners.push(onReady);
     if(urgent) _indexJob.urgent=true;
   }
-  /* 預先暖機不擋首屏；第一個搜尋時可立即提高優先程度。 */
-  setTimeout(function(){buildIndex(null,false);}, 6500);
+  setTimeout(function(){buildIndex(null,false);},6500);
 
-  var si=document.getElementById('toc-search-input'),
-      sc=document.getElementById('toc-search-clear'),
-      sr=document.getElementById('toc-search-results'),
-      sb=document.getElementById('search-count-badge'),
-      st;
-
-  /* RegExp 特殊字元逸出 */
-  function esc(s){
-    return s.replace(/[\\^$.|?*+(){}\[\]]/g,'\\$&');
-  }
-
-  /* ── 非同步分批工具：把陣列切成 chunkSize 小批，每批之間讓主執行緒喘息 ── */
-  var _hlAbort = null; /* 用來中止進行中的高亮/清除任務 */
-  var _nativeSearchHighlight = !!(window.CSS && CSS.highlights && window.Highlight);
-  var _searchRanges = Object.create(null); /* 結果項目 -> 第一個命中 Range */
-
-  function runChunks(items, chunkSize, processFn, doneFn) {
-    var aborted = false;
-    var token = { abort: function(){ aborted = true; } };
-    var i = 0;
+  /* Every asynchronous batch is cancellable and bounded by count AND time.
+     A single exceptionally large paragraph can still exceed this budget. */
+  function runChunks(items,limit,process,done){
+    var stopped=false,i=0,timer=null;
     function step(){
-      if(aborted) return;
-      var end = Math.min(i + chunkSize, items.length);
-      for(; i < end; i++) processFn(items[i]);
-      if(i < items.length){
-        setTimeout(step, 0);
-      } else {
-        if(doneFn) doneFn();
+      if(stopped) return;
+      var start=performance.now(),count=0;
+      while(i<items.length && count<limit && (count===0 || performance.now()-start<5)){
+        process(items[i++]);count++;
       }
+      if(i<items.length) timer=setTimeout(step,0);
+      else if(done) done();
     }
-    setTimeout(step, 0);
-    return token;
+    timer=setTimeout(step,0);
+    return {abort:function(){stopped=true;clearTimeout(timer);}};
   }
-
-  /* ── 全文高亮：分兩階段非同步執行（收集節點 → 插入 mark）不阻塞主執行緒 ── */
-  function highlightAll(rx, results, doneCb){
-    if(_hlAbort){ _hlAbort.abort(); _hlAbort=null; }
-
-    /* 搜尋索引已有命中段落；只掃描這些段落的文字，避免每次遍歷全書。
-       <td> 與子 <p> 可能同時命中，以 Set 去重，維持原本一次高亮的結果。 */
-    var hits=[], seen=new Set();
-    results.forEach(function(en){
-      if(!en.node || !en.node.isConnected) return;
-      var walker=document.createTreeWalker(en.node,NodeFilter.SHOW_TEXT);
-      var nd;
-      while((nd=walker.nextNode())){
-        if(seen.has(nd)) continue;
-        seen.add(nd);
-        var p=nd.parentNode;
-        if(!p) continue;
-        var tag=(p.tagName||'').toUpperCase();
-        if(tag==='SCRIPT'||tag==='STYLE'||tag==='MARK') continue;
-        rx.lastIndex=0;
-        if(rx.test(nd.nodeValue)) hits.push(nd);
-      }
-    });
-    rx.lastIndex=0;
-
-    if(_nativeSearchHighlight){
-      /* CSS Custom Highlight API：全書高亮但不修改原文節點；舊瀏覽器走下方 <mark> 備援。 */
-      var set=new Highlight(), first=Object.create(null);
-      _hlAbort=runChunks(hits, 650, function(textNode){
-        if(!textNode.isConnected) return;
-        var value=textNode.nodeValue||'';
-        var expr=new RegExp(rx.source,rx.flags), m;
-        while((m=expr.exec(value))!==null){
-          if(!m[0].length){expr.lastIndex++;continue;}
-          var range=document.createRange();
-          range.setStart(textNode,m.index);
-          range.setEnd(textNode,m.index+m[0].length);
-          set.add(range);
-          var owner=textNode.parentElement && textNode.parentElement.closest('p,h1,h2,h3,h4,h5,h6,td,li');
-          if(owner && owner.id && !first[owner.id]) first[owner.id]=range;
-        }
-      }, function(){
-        CSS.highlights.set('acim-search',set);
-        _searchRanges=first;
-        if(doneCb) doneCb();
-      });
-      return;
+  function afterPresentation(fn){
+    var active=true,timer=null,frame=null;
+    function run(){if(!active)return;active=false;clearTimeout(timer);fn();}
+    if(window.requestAnimationFrame){
+      frame=requestAnimationFrame(function(){if(active)setTimeout(run,0);});
     }
-
-    /* 階段二：分批替換 DOM（每批 200 個節點，讓瀏覽器每批後重新繪製）*/
-    _hlAbort = runChunks(hits, 200, function(nd){
-      var val=nd.nodeValue, parent=nd.parentNode;
-      if(!parent || !parent.isConnected) return;
-      rx.lastIndex=0;
-      var parts=val.split(rx);
-      var matches=val.match(new RegExp(rx.source, rx.flags))||[];
-      if(parts.length<=1){ rx.lastIndex=0; return; }
-      var frag=document.createDocumentFragment();
-      parts.forEach(function(part,pi){
-        if(part) frag.appendChild(document.createTextNode(part));
-        if(pi<matches.length){
-          var mk=document.createElement('mark');
-          mk.className='search-hl';
-          mk.textContent=matches[pi];
-          frag.appendChild(mk);
-        }
-      });
-      parent.replaceChild(frag,nd);
-      rx.lastIndex=0;
-    }, doneCb);
+    /* Background tabs do not necessarily run rAF. */
+    timer=setTimeout(run,100);
+    return {abort:function(){active=false;clearTimeout(timer);if(frame!==null)cancelAnimationFrame(frame);}};
   }
-
-  /* ── 清除全文高亮：分批移除 <mark.search-hl>，用 data 屬性記錄原文取代 normalize() ── */
-  function clearHighlight(doneCb){
-    if(_hlAbort){ _hlAbort.abort(); _hlAbort=null; }
-    if(_nativeSearchHighlight){
-      CSS.highlights.delete('acim-search');
-      _searchRanges=Object.create(null);
-      if(doneCb) doneCb();
-      return;
-    }
+  function cancelPending(){
+    _searchToken++;clearTimeout(st);
+    if(_paintJob){_paintJob.abort();_paintJob=null;}
+    if(_hlAbort){_hlAbort.abort();_hlAbort=null;}
+  }
+  function clearHighlight(done){
+    if(_hlAbort){_hlAbort.abort();_hlAbort=null;}
+    _searchRanges=Object.create(null);
+    if(_nativeSearchHighlight){CSS.highlights.delete('acim-search');if(done)done();return;}
     var marks=Array.from(content.querySelectorAll('mark.search-hl'));
-    if(!marks.length){ if(doneCb) doneCb(); return; }
-
-    /* 分批把每個 <mark> 替換回純文字節點；不呼叫 normalize()
-       （相鄰文字節點對渲染和搜尋均無影響，且 normalize() 是 O(全文) 的高成本操作）*/
-    _hlAbort = runChunks(marks, 300, function(mk){
-      if(!mk.parentNode) return;
-      var txt=document.createTextNode(mk.textContent);
-      mk.parentNode.replaceChild(txt, mk);
-    }, doneCb);
+    if(!marks.length){if(done)done();return;}
+    _hlAbort=runChunks(marks,300,function(mk){
+      if(mk.parentNode) mk.parentNode.replaceChild(document.createTextNode(mk.textContent),mk);
+    },done);
   }
 
-  /* ── 建立單筆結果列表項目 ── */
-  function makeItem(en, rx){
-    var ex=en.text.slice(0,100);
-    var item=document.createElement('div'); item.className='sr-item';
-    /* 結果摘要高亮（僅清單顯示用，DOM API，無 XSS 風險）*/
-    rx.lastIndex=0;
-    var parts=ex.split(rx); rx.lastIndex=0;
-    var matches=ex.match(rx)||[]; rx.lastIndex=0;
-    parts.forEach(function(part,pi){
-      if(part) item.appendChild(document.createTextNode(part));
-      if(pi<matches.length){
-        var mk=document.createElement('mark');
-        mk.style.cssText='background:#ffe066;border-radius:2px;padding:0 2px;font-style:normal;';
-        mk.textContent=matches[pi];
-        item.appendChild(mk);
-      }
+  /* Build ranges across inline bold/underline boundaries without changing
+     the original text. Fallback marks preserve each inline parent. */
+  function highlightAll(rx,results,done){
+    if(_hlAbort){_hlAbort.abort();_hlAbort=null;}
+    var candidates=new Set(results.map(function(en){return en.node;}));
+    var roots=results.filter(function(en){
+      var p=en.node.parentElement;
+      while(p && p!==content){if(candidates.has(p))return false;p=p.parentElement;}
+      return true;
     });
-    var hint=document.createElement('span'); hint.className='sr-hint'; hint.textContent='點擊跳至';
+    var nativeSet=_nativeSearchHighlight?new Highlight():null;
+    var first=Object.create(null);
+    /* Index text collapses whitespace. Make phrase highlighting agree. */
+    var source=rx.source.replace(/ /g,'\\s+');
+    function process(en){
+      var root=en.node;
+      if(!root || !root.isConnected)return;
+      var nodes=[],ends=[],pieces=[],length=0,walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),nd;
+      while((nd=walker.nextNode())){
+        if(nd.parentElement && nd.parentElement.closest('script,style,.tts-btn'))continue;
+        var value=nd.nodeValue||'';if(!value)continue;
+        nodes.push(nd);pieces.push(value);length+=value.length;ends.push(length);
+      }
+      if(!nodes.length)return;
+      var text=pieces.join(''),expr=new RegExp(source,rx.flags),m,startNode=0,endNode=0;
+      var segments=_nativeSearchHighlight?null:new Map();
+      while((m=expr.exec(text))!==null){
+        if(!m[0].length){expr.lastIndex++;continue;}
+        var start=m.index,end=start+m[0].length;
+        while(startNode<ends.length-1 && ends[startNode]<=start)startNode++;
+        if(endNode<startNode)endNode=startNode;
+        while(endNode<ends.length-1 && ends[endNode]<end)endNode++;
+        if(_nativeSearchHighlight){
+          var range=document.createRange();
+          range.setStart(nodes[startNode],start-(startNode?ends[startNode-1]:0));
+          range.setEnd(nodes[endNode],end-(endNode?ends[endNode-1]:0));
+          nativeSet.add(range);
+          if(!first[en.id])first[en.id]=range;
+          var owner=nodes[startNode].parentElement;
+          while(owner && owner!==content){
+            if(owner.id && !first[owner.id])first[owner.id]=range;
+            if(owner===root)break;owner=owner.parentElement;
+          }
+        }else{
+          for(var j=startNode;j<=endNode;j++){
+            var offset=j?ends[j-1]:0,list=segments.get(nodes[j])||[];
+            list.push([Math.max(start,offset)-offset,Math.min(end,ends[j])-offset]);
+            segments.set(nodes[j],list);
+          }
+        }
+      }
+      if(segments)segments.forEach(function(list,node){
+        if(!node.parentNode)return;
+        var value=node.nodeValue,frag=document.createDocumentFragment(),last=0;
+        list.forEach(function(pair){
+          if(pair[0]>last)frag.appendChild(document.createTextNode(value.slice(last,pair[0])));
+          var mark=document.createElement('mark');mark.className='search-hl';
+          mark.textContent=value.slice(pair[0],pair[1]);frag.appendChild(mark);last=pair[1];
+        });
+        if(last<value.length)frag.appendChild(document.createTextNode(value.slice(last)));
+        node.parentNode.replaceChild(frag,node);
+      });
+    }
+    _hlAbort=runChunks(roots,180,process,function(){
+      if(_nativeSearchHighlight){CSS.highlights.set('acim-search',nativeSet);_searchRanges=first;}
+      if(done)done();
+    });
+  }
+
+  function makeItem(en,rx){
+    var ex=en.text.slice(0,100),item=document.createElement('div');item.className='sr-item';
+    item.setAttribute('role','button');item.tabIndex=0;
+    rx.lastIndex=0;var parts=ex.split(rx);rx.lastIndex=0;
+    var matches=ex.match(rx)||[];rx.lastIndex=0;
+    parts.forEach(function(part,i){
+      if(part)item.appendChild(document.createTextNode(part));
+      if(i<matches.length){var mk=document.createElement('mark');
+        mk.style.cssText='background:#ffe066;border-radius:2px;padding:0 2px;font-style:normal;';
+        mk.textContent=matches[i];item.appendChild(mk);}
+    });
+    var inNote=!!en.node.closest('#acim-footnotes-container');
+    var hint=document.createElement('span');hint.className='sr-hint';
+    hint.textContent=inNote?'\u9ede\u64ca\u958b\u555f\u8a3b\u8173':'\u9ede\u64ca\u8df3\u81f3';
     item.appendChild(hint);
     item.addEventListener('click',function(){
-      /* 捲動至目標段落（全文已高亮，無需重做）*/
-      var el=document.getElementById(en.id);
-      if(!el) return;
-      /* 找到段落內第一個 mark.search-hl 精確定位 */
-      var firstMark=(_nativeSearchHighlight && _searchRanges[en.id]) ||
-                    el.querySelector('mark.search-hl') || el;
-      var rect=firstMark.getBoundingClientRect();
-      if(!rect.height) rect=el.getBoundingClientRect();
-      var offset=window.scrollY+rect.top-Math.round(window.innerHeight/3);
-      window.scrollTo({top:Math.max(0,offset),behavior:'smooth'});
-      if(window.innerWidth<=768) closeSidebar();
+      var el=en.node;if(!el || !el.isConnected)return;
+      if(inNote){
+        var def=el.closest('[id^="ftn"]');
+        var ref=def && content.querySelector('sup.fn-badge[data-fn-href="#_'+def.id+'"]');
+        if(ref){
+          if(fnHideTimer)clearTimeout(fnHideTimer);
+          window.__fnSkip=true;window.__fnClickOpen=true;showFn(ref);
+          if(window.innerWidth<=768)closeSidebar();return;
+        }
+      }
+      var firstMark=(_nativeSearchHighlight && _searchRanges[en.id]) || el.querySelector('mark.search-hl') || el;
+      var rect=firstMark.getBoundingClientRect();if(!rect.height)rect=el.getBoundingClientRect();
+      window.scrollTo({top:Math.max(0,window.scrollY+rect.top-Math.round(window.innerHeight/3)),behavior:'smooth'});
+      if(window.innerWidth<=768)closeSidebar();
+    });
+    item.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();item.click();}
     });
     return item;
   }
-
-  /* ── 主搜尋函式 ── */
-  var _lastResults=[], _lastRx=null, _shownCount=0;
-  /* _searchToken 用來取消過期的搜尋（使用者快速連打時）*/
-  var _searchToken = 0;
-
-  function renderBatch(results, rx, from, append){
-    var frag=document.createDocumentFragment();
-    var to=Math.min(from+BATCH, results.length);
-    for(var i=from;i<to;i++){
-      frag.appendChild(makeItem(results[i],rx));
-    }
-    /* 移除舊的「顯示更多」按鈕（如果有）*/
-    var oldMore=sr.querySelector('.sr-more-btn');
-    if(oldMore) oldMore.remove();
-
-    if(append) sr.appendChild(frag);
-    else { sr.innerHTML=''; sr.appendChild(frag); }
-
-    _shownCount=to;
-
-    /* 「顯示更多」按鈕 */
+  function renderBatch(results,rx,from,append){
+    var frag=document.createDocumentFragment(),to=Math.min(from+BATCH,results.length);
+    for(var i=from;i<to;i++)frag.appendChild(makeItem(results[i],rx));
+    var old=sr.querySelector('.sr-more-btn');if(old)old.remove();
+    if(!append)sr.innerHTML='';sr.appendChild(frag);_shownCount=to;
     if(to<results.length){
-      var moreBtn=document.createElement('div');
-      moreBtn.className='sr-item sr-more-btn';
-      moreBtn.style.cssText='text-align:center;color:var(--c-accent);font-weight:600;font-size:12.5px;padding:10px;cursor:pointer;';
-      var remaining=results.length-to;
-      moreBtn.textContent='▼  顯示更多（還有 '+remaining+' 筆）';
-      moreBtn.addEventListener('click',function(){
-        renderBatch(results,rx,_shownCount,true);
-      });
-      sr.appendChild(moreBtn);
+      var more=document.createElement('div');more.className='sr-item sr-more-btn';
+      more.setAttribute('role','button');more.tabIndex=0;
+      more.style.cssText='text-align:center;color:var(--c-accent);font-weight:600;font-size:12.5px;padding:10px;cursor:pointer;';
+      more.textContent='\u25bc  \u986f\u793a\u66f4\u591a\uff08\u9084\u6709 '+(results.length-to)+' \u7b46\uff09';
+      more.addEventListener('click',function(){renderBatch(results,rx,_shownCount,true);});
+      more.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();more.click();}});
+      sr.appendChild(more);
     }
-    sr.classList.add('visible');
+    sr.classList.add('visible');sr.setAttribute('aria-busy','false');
   }
-
   function doSearch(kw){
-    sr.innerHTML=''; sb.style.display='none'; _shownCount=0;
-    var k=kw.trim();
-    var myToken = ++_searchToken;
-
+    cancelPending();var token=_searchToken,k=kw.trim();
+    sr.innerHTML='';sr.classList.remove('visible');sb.style.display='none';_shownCount=0;
+    _lastResults=[];_lastRx=null;stats.query=k;stats.resultCount=0;
     if(k.length<2){
-      sr.classList.remove('visible');
-      clearHighlight();
-      _lastResults=[]; _lastRx=null;
-      document.dispatchEvent(new Event('acim:search-cleared'));
+      stats.searchState='idle';sb.dataset.searchState='idle';sr.setAttribute('aria-busy','false');
+      clearHighlight(function(){if(token===_searchToken)document.dispatchEvent(new Event('acim:search-cleared'));});
       return;
     }
-    sb.style.display='block';
-    sb.textContent='正在搜尋「'+k+'」…';
+    stats.searchState='searching';sr.setAttribute('aria-busy','true');
+    sb.style.display='block';sb.textContent='\u6b63\u5728\u641c\u5c0b\u2026';
     function execute(){
-      if(myToken!==_searchToken) return;
-      var rx=new RegExp(esc(k),'gi');
-      _lastRx=rx;
-      var needle=k.toLowerCase();
-      var results=[];
-      searchIndex.forEach(function(en){
-        if(en.lower.includes(needle)) results.push(en);
-      });
-      _lastResults=results;
-      sb.textContent='正在標示「'+k+'」…';
-      clearHighlight(function(){
-        if(myToken!==_searchToken) return;
-        highlightAll(new RegExp(esc(k),'gi'),results,function(){
-          if(myToken!==_searchToken) return;
-          if(results.length){
-            renderBatch(results,new RegExp(esc(k),'gi'),0,false);
-            sb.textContent='共找到 '+results.length+' 個段落，全文已標示';
-          } else {
-            sb.style.display='none';
-            var no=document.createElement('div'); no.className='sr-no-result';
-            no.textContent='找不到「'+k+'」';
-            sr.innerHTML=''; sr.appendChild(no); sr.classList.add('visible');
+      if(token!==_searchToken)return;
+      var needle=k.toLowerCase(),results=[];
+      searchIndex.forEach(function(en){if(en.lower.includes(needle))results.push(en);});
+      _lastResults=results;_lastRx=new RegExp(esc(k),'gi');stats.resultCount=results.length;
+      if(results.length){
+        renderBatch(results,new RegExp(esc(k),'gi'),0,false);
+        sb.textContent='\u5171\u627e\u5230 '+results.length+' \u500b\u6bb5\u843d\uff0c\u6b63\u5728\u6a19\u793a\u5168\u6587\u2026';
+      }else{
+        var no=document.createElement('div');no.className='sr-no-result';
+        no.textContent='\u627e\u4e0d\u5230\u300c'+k+'\u300d';sr.appendChild(no);
+        sr.classList.add('visible');sr.setAttribute('aria-busy','false');sb.style.display='none';
+      }
+      stats.searchState='results';sb.dataset.searchState='results';
+      notifySearch('acim:search-results',k,results.length);
+      _paintJob=afterPresentation(function(){
+        if(token!==_searchToken)return;
+        clearHighlight(function(){
+          if(token!==_searchToken)return;
+          function complete(){
+            if(token!==_searchToken)return;
+            if(results.length)sb.textContent='\u5171\u627e\u5230 '+results.length+' \u500b\u6bb5\u843d\uff0c\u5168\u6587\u5df2\u6a19\u793a';
+            stats.searchState='complete';sb.dataset.searchState='complete';
+            notifySearch('acim:search-complete',k,results.length);
           }
+          if(results.length)highlightAll(new RegExp(esc(k),'gi'),results,complete);
+          else complete();
         });
       });
     }
-    if(searchIndex) execute();
-    else {
-      sb.textContent='正在建立全文索引，稍後搜尋「'+k+'」…';
-      buildIndex(execute,true);
-    }
+    if(searchIndex)execute();
+    else{sb.textContent='\u6b63\u5728\u5efa\u7acb\u5168\u6587\u7d22\u5f15\u2026';buildIndex(execute,true);}
   }
-
-  si.addEventListener('focus',function(){if(!searchIndex) buildIndex(null,true);});
-  si.addEventListener('input',function(){
+  function scheduleSearch(){
+    cancelPending();
     sc.style.display=si.value?'block':'none';
-    clearTimeout(st); st=setTimeout(function(){ doSearch(si.value); },350);
+    if(_composing)return;
+    if(si.value.trim().length<2){doSearch(si.value);return;}
+    st=setTimeout(function(){doSearch(si.value);},SEARCH_DELAY);
+  }
+  si.addEventListener('focus',function(){if(!searchIndex)buildIndex(null,true);});
+  si.addEventListener('compositionstart',function(){_composing=true;cancelPending();});
+  si.addEventListener('compositionend',function(){_composing=false;scheduleSearch();});
+  si.addEventListener('input',function(e){
+    if(e.isComposing){cancelPending();sc.style.display=si.value?'block':'none';return;}
+    scheduleSearch();
+  });
+  si.addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&!_composing&&!e.isComposing&&e.keyCode!==229){e.preventDefault();doSearch(si.value);}
   });
   sc.addEventListener('click',function(){
-    si.value=''; sc.style.display='none';
-    sr.classList.remove('visible'); sb.style.display='none';
-    clearHighlight();
-    _lastResults=[]; _lastRx=null; _shownCount=0;
-    document.dispatchEvent(new Event('acim:search-cleared'));
-    si.focus();
+    _composing=false;si.value='';sc.style.display='none';doSearch('');si.focus();
   });
 
   /* sidebar-block-placeholder */
@@ -25449,6 +25426,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 
     /* ── 判斷當前位置是否已有書籤（±300px 容差）── */
     function currentBmIndex(arr){
+      /* No bookmarks means no geometry is needed during startup. */
+      if(!arr.length) return -1;
       var sy = window.scrollY;
       for(var i=0;i<arr.length;i++){
         if(Math.abs(arr[i].scrollY - sy) < 300) return i;
@@ -26936,12 +26915,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   }
 
   var hlEls = [];
+  var hashScrollTimer=null, hashClearTimer=null;
   function clearHL() {
     hlEls.forEach(function(e){ e.classList.remove('acim-hl'); });
     hlEls = [];
   }
 
   function scrollToHash(hash) {
+    clearTimeout(hashScrollTimer); clearTimeout(hashClearTimer);
     clearHL();
     var p = parseHash(hash);
     if (!p) return;
@@ -26970,8 +26951,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         hlEls.push(extEls[ei]);
       }
     }
-    setTimeout(function(){ target.scrollIntoView({behavior:'smooth',block:'center'}); }, 150);
-    setTimeout(clearHL, 4500);
+    hashScrollTimer=setTimeout(function(){ target.scrollIntoView({behavior:'smooth',block:'center'}); }, 150);
+    hashClearTimer=setTimeout(clearHL, 4500);
   }
 
   /* ══════════════════════════════════════════════════
