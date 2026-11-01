@@ -1,4 +1,5 @@
-/* ACIM CE PWA v25 — 自包含 Service Worker。
+/* ACIM CE PWA v25.1 — 自包含 Service Worker。
+   V25.1：配套附錄三目錄修正；同步全書雜湊並支援點版本快取清理。
    V25 變更（依外部審查 A03/A04/A05/A06/A16 與 P1 優先序）：
    1. A04 版本契約：導航 200 覆寫正式書籍快取前，先核對回應內
       <meta name="acim-version"> 與本 SW 配套版本（EXPECT_VERSION）。
@@ -20,21 +21,21 @@
    · SW03 安裝「先驗後留」（驗證失敗刪除本版 shell）；
      SW17 cache.put 全部納入等待；SW06 僅清理本專案快取。
    · 全書快取金鑰 './'；index.htm stub precache；離線 fallback 鏈。
-   · 全書 SHA-256 完整性驗證（V25 基準雜湊已重算）。
+   · 全書 SHA-256 完整性驗證（本發布套件雜湊已重算）。
    · 不使用 skipWaiting：更新由讀者以 toast 自主決定（SKIP_WAITING）。 */
-const CACHE_VERSION = 'v25';
+const CACHE_VERSION = 'v25.1';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE  = PROJ + '-shell-' + CACHE_VERSION;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION;
 const FONT_CACHE   = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION; /* A04：與 index.html meta[name=acim-version] 對應 */
-const BOOK_SHA256 = '1d1edf4c54b958c4679e944d54c07d57e8a5465e97e86412f42d2ec9143f02e5';
+const BOOK_SHA256 = '9a15d6b951fe147d6c80bd12b74f02cec404b62fba1b3b4271c0b55e61ef3803';
 const BASE = new URL(self.registration.scope).pathname;
 
 /* A03：清理範圍＝本專案 V22–V24 歷史精確命名＋本專案新命名族（排除 keep）。
    其他專案的同形快取（acim-shell-其他-v1 等）不受影響。 */
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
-const OWN_RE = new RegExp('^' + PROJ + '-(?:(?:shell|runtime)-v\\d+|fonts)$');
+const OWN_RE = new RegExp('^' + PROJ + '-(?:(?:shell|runtime)-v\\d+(?:\\.\\d+)*|fonts)$');
 /* A06：遷移來源（V22–V24 字型快取） */
 const OLD_FONT_CACHES = ['acim-fonts-v22', 'acim-fonts-v23', 'acim-fonts'];
 

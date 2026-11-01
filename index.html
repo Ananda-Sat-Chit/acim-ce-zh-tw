@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v25">
+<meta name="acim-version" content="v25.1">
 <meta name="acim-build" content="2026-11-02">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
@@ -54,7 +54,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v25';
+var ACIM_VERSION = 'v25.1';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -22270,7 +22270,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 
     /* ── V25 新功能：附錄三「課程術語詞彙表」術語子目錄 ──
        詞條為 p.mn.st15（非 heading），原側欄無法逐詞跳轉。
-       為附錄三節點掛入 56 個詞條子清單：可摺疊、點擊跳轉＋閃爍定位。 */
+       為附錄三節點掛入 57 個詞條子清單：可摺疊、點擊跳轉＋閃爍定位。 */
     (function buildGlossaryToc(){
       try{
         var gHead = headings.filter(function(h){ return /課程術語詞彙表/.test(h.textContent||''); })[0];
@@ -22283,12 +22283,25 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         var group = link.closest('.toc-group'); if(!group) return;
         if(!document.getElementById('glossary-toc-style')){
           var st=document.createElement('style'); st.id='glossary-toc-style';
+          /* V25.1：詞條與原生捲軸明確跟隨 App 主題，不繼承系統預設文字色。 */
           st.textContent='#toc-wrapper .toc-glossary{max-height:46vh;overflow-y:auto;'
-            +'border-left:2px solid rgba(201,162,39,.35);margin:2px 0 4px 14px;padding-left:6px;}'
+            +'color-scheme:light;color:var(--c-muted);background:var(--c-sidebar);'
+            +'border-left:2px solid var(--c-border);margin:2px 0 4px 14px;padding-left:6px;}'
             +'#toc-wrapper .toc-glossary a{display:block;font-size:12px;padding:3px 8px;'
-            +'border-radius:6px;color:inherit;text-decoration:none;line-height:1.5;cursor:pointer;}'
-            +'#toc-wrapper .toc-glossary a:hover{background:rgba(201,162,39,.15);}'
-            +'#toc-wrapper .toc-glossary a.toc-g-active{background:rgba(201,162,39,.28);font-weight:600;}'
+            +'border-radius:6px;color:var(--c-muted);text-decoration:none;line-height:1.5;cursor:pointer;}'
+            +'#toc-wrapper .toc-glossary a:hover,#toc-wrapper .toc-glossary a:focus-visible{'
+            +'color:var(--c-accent);background:rgba(107,47,160,.08);}'
+            +'#toc-wrapper .toc-glossary a:focus-visible{outline:2px solid var(--c-accent);outline-offset:-2px;}'
+            +'#toc-wrapper .toc-glossary a.toc-g-active{color:var(--c-accent);'
+            +'background:rgba(107,47,160,.1);font-weight:600;box-shadow:inset 3px 0 0 var(--c-accent);}'
+            +'html.dark-mode #toc-wrapper .toc-glossary{color-scheme:dark;}'
+            +'html.dark-mode #toc-wrapper .toc-glossary a{color:var(--c-muted)!important;}'
+            +'html.dark-mode #toc-wrapper .toc-glossary a:hover,html.dark-mode #toc-wrapper .toc-glossary a:focus-visible{'
+            +'color:var(--c-gold)!important;background:rgba(255,255,255,.06)!important;}'
+            +'html.dark-mode #toc-wrapper .toc-glossary a:focus-visible{outline-color:var(--c-gold);}'
+            +'html.dark-mode #toc-wrapper .toc-glossary a.toc-g-active{color:var(--c-gold)!important;'
+            +'background:rgba(255,255,255,.08)!important;box-shadow:inset 3px 0 0 var(--c-gold);}'
+            +'html.dark-mode #toc-wrapper .toc-glossary-heading.toc-active{color:var(--c-gold)!important;}'
             +'@keyframes acimGlossaryFlash{0%{background:rgba(201,162,39,.55);}100%{background:transparent;}}'
             +'.glossary-flash{animation:acimGlossaryFlash 2.2s ease-out;}';
           document.head.appendChild(st);
@@ -22333,7 +22346,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         arr.className='toc-arrow'; arr.textContent='▶';
         arr.setAttribute('role','button'); arr.setAttribute('tabindex','0');
         arr.setAttribute('aria-label','展開術語詞彙'); arr.setAttribute('aria-expanded','false');
-        row.insertBefore(arr, link);
+        /* V25.1：取代原有箭頭佔位，避免附錄三多縮排 18px。 */
+        var placeholder=row.querySelector('.toc-arrow-placeholder');
+        if(placeholder) row.replaceChild(arr, placeholder);
+        else row.insertBefore(arr, link);
+        link.classList.add('toc-glossary-heading');
         group.appendChild(childWrap);
         var toggle=function(){
           var open=childWrap.classList.contains('open');
