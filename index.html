@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v26">
+<meta name="acim-version" content="v27">
+<meta name="acim-release-id" content="7dd16da96fd808bfc2c36a6043ab1de00ce2d5b7e12d494897076bd60fd7e40f">
 <meta name="acim-build" content="2026-11-02">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
@@ -134,7 +135,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v26';
+var ACIM_VERSION = 'v27';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -241,7 +242,7 @@ html{scroll-behavior:smooth;}
 #sidebar-toc {
   width:var(--sidebar-w); min-width:var(--sidebar-w);
   background:var(--c-sidebar); border-right:1px solid var(--c-border);
-  height:100vh; position:sticky; top:0;
+  height:100vh; height:100dvh; position:sticky; top:0;
   display:flex; flex-direction:column; overflow:hidden;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
   z-index:100;
@@ -249,11 +250,10 @@ html{scroll-behavior:smooth;}
 
 /* 贊助區塊 */
 .sidebar-info-box {
-  flex-shrink:0; padding:8px 14px 8px 11px;
-  border-left:3px solid var(--c-gold);
-  border-bottom:1px dashed rgba(201,162,39,0.4);
+  padding:8px 0 0; margin-top:8px;
+  border-top:1px solid var(--c-border);
   font-size:11px; color:var(--c-muted);
-  background:rgba(212,175,55,0.05); line-height:1.4;
+  line-height:1.4; overflow-wrap:anywhere;
 }
 .info-appeal{font-style:italic;color:#5C3D8F;line-height:1.3;margin:0 0 5px;font-size:10.5px;}
 html.dark-mode .info-appeal{color:#C8B0E8!important;}
@@ -269,30 +269,51 @@ html.dark-mode .info-section h4{color:var(--c-accent)!important;}
 
 /* 側邊欄標題 */
 #sidebar-header {
-  flex-shrink:0; padding:14px 16px 10px;
+  flex-shrink:0; padding:8px 12px;
   background:var(--c-sidebar); border-bottom:1px solid var(--c-border);
+  line-height:1.3;
 }
+.sidebar-topline{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;min-width:0;}
 #sidebar-header h3 {
-  margin:0 0 10px; color:#3D1560; font-size:15.5px; font-weight:700;
-  padding-bottom:10px; border-bottom:2px solid var(--c-gold);
-  line-height:1.45; letter-spacing:0.02em;
+  margin:0; color:var(--c-accent); font-size:16px; font-weight:700;
+  padding:0; border:0; line-height:1.25; letter-spacing:0.02em;
 }
 html.dark-mode #sidebar-header h3{color:var(--c-accent)!important;}
+#app-version-tag{font-size:11px;color:var(--c-muted);line-height:1.25;letter-spacing:0.02em;}
+#sidebar-settings-toggle{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  margin-left:auto;min-height:32px;padding:4px 8px;flex-shrink:0;
+  background:transparent;color:var(--c-accent);border:1px solid var(--c-border);
+  border-radius:6px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;
+}
+#sidebar-settings-toggle::after{content:'';width:5px;height:5px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);margin:0 1px 3px;}
+#sidebar-settings-toggle[aria-expanded="true"]::after{transform:rotate(225deg);margin:3px 1px 0;}
+#sidebar-settings-toggle:hover{background:var(--c-bg);}
+#sidebar-settings-toggle:focus-visible{outline:2px solid var(--c-accent);outline-offset:2px;}
+#sidebar-settings-panel{
+  margin-top:6px;padding:8px;max-height:38vh;max-height:38dvh;
+  overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:8px;
+  border:1px solid var(--c-border);border-radius:6px;background:var(--c-sidebar);
+  color:var(--c-muted);font-size:12px;line-height:1.35;
+}
+#sidebar-settings-panel[hidden]{display:none!important;}
+.sidebar-book-title{margin:0 0 4px;font-size:12px;font-weight:600;color:var(--c-accent);line-height:1.35;}
+#app-version-info{margin:0 0 8px;color:var(--c-muted);font-size:11px;line-height:1.3;}
 
-.theme-setting{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;color:var(--c-muted);font-size:12px;}
-#theme-mode{min-width:108px;background:var(--c-bg);color:var(--c-text);border:1px solid var(--c-border);border-radius:6px;padding:4px 6px;font:inherit;color-scheme:light;}
+.theme-setting{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;margin:0 0 6px;color:var(--c-muted);font-size:12px;line-height:1.3;}
+#theme-mode{width:108px;min-width:0;max-width:100%;min-height:32px;background:var(--c-bg);color:var(--c-text);border:1px solid var(--c-border);border-radius:6px;padding:4px 6px;font:inherit;color-scheme:light;}
 html.dark-mode #theme-mode{color-scheme:dark;}
 #theme-mode:focus-visible{outline:2px solid var(--c-accent);outline-offset:2px;}
 
 /* 搜尋欄 */
-#toc-search-box{margin-top:8px;}
+#toc-search-box{margin-top:6px;}
 #toc-search-frame{
   display:flex;align-items:center;background:rgba(255,255,255,0.95);
   border:1.5px solid var(--c-border);border-radius:8px;padding:6px 10px;gap:6px;
-  transition:border-color var(--spd),box-shadow var(--spd);
+  min-width:0;transition:border-color var(--spd),box-shadow var(--spd);
 }
 #toc-search-frame:focus-within{border-color:var(--c-accent);box-shadow:0 0 0 2.5px rgba(107,47,160,0.15);}
-#toc-search-input{border:none;background:transparent;outline:none;font-size:13px;width:100%;color:#3D1560;font-family:inherit;}
+#toc-search-input{border:none;background:transparent;outline:none;font-size:13px;width:100%;min-width:0;color:#3D1560;font-family:inherit;}
 #toc-search-clear{border:none;background:transparent;cursor:pointer;font-size:12px;color:#767676;padding:0;display:none;}
 #toc-search-clear:hover{color:var(--c-accent);}
 #toc-search-results{
@@ -302,6 +323,7 @@ html.dark-mode #theme-mode{color-scheme:dark;}
 }
 #toc-search-results.visible{display:block;}
 #search-count-badge{font-size:11.5px;color:var(--c-accent);margin-top:5px;text-align:center;display:none;}
+#toc-search-results[hidden],#search-count-badge[hidden]{display:none!important;}
 .sr-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0e8ff;font-size:13px;line-height:1.5;color:#333;}
 .sr-item:hover{background:#f5f0ff;}
 .sr-more-btn:hover{background:rgba(107,47,160,0.07)!important;}
@@ -347,7 +369,7 @@ html.dark-mode #content-area h3{color:#B090D8;}
 /* TOC 滾動區 */
 #toc-wrapper {
   flex:1 1 auto; overflow-y:auto; min-height:0;
-  padding:10px 14px 24px; overscroll-behavior:contain;
+  padding:6px 12px 24px; overscroll-behavior:contain;
 }
 #toc-wrapper::-webkit-scrollbar{width:4px;}
 #toc-wrapper::-webkit-scrollbar-thumb{background:rgba(107,47,160,0.22);border-radius:2px;}
@@ -770,8 +792,9 @@ html.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-b
     margin-right:0 !important;
   }
   #sidebar-toc{
-    position:fixed;top:0;left:-310px;width:290px;height:100vh;
-    z-index:10001;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    position:fixed;top:0;left:-310px;width:290px;width:min(290px,calc(100vw - 24px));min-width:0;
+    height:100vh;height:100dvh;
+    z-index:10001;overflow:hidden;-webkit-overflow-scrolling:touch;
     overscroll-behavior:contain;transition:left var(--spd);
     box-shadow:none;
   }
@@ -785,6 +808,11 @@ html.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-b
   /* 手機：tts-bar 右邊界與 pwa-tools 一致（right:10px + 按鈕36px + gap5px = 54px）*/
   #tts-bar{right:54px;}
   body.fn-open #tts-bar{bottom:calc(42vh + 58px);}
+}
+
+@media(pointer:coarse){
+  #sidebar-settings-toggle,#theme-mode,#acim-offline-save{min-height:40px;}
+  #toc-search-frame{min-height:38px;box-sizing:border-box;}
 }
 
 /* ── 大螢幕寬度補充 ── */
@@ -1592,23 +1620,27 @@ ul{margin-bottom:0;}
 
   <!-- 側邊欄 -->
   <div id="sidebar-toc" role="navigation" aria-label="書籍目錄">
-    <div class="sidebar-info-box">
-      <p class="info-appeal">為讓加註版持續開放共享，懇請您的護持支持！</p>
-      <div class="info-section"><h4>贊助帳戶</h4>
-        <p>郵局 (700)：0001300 0817307<br>戶名：張文智</p></div>
-      <div class="info-section"><h4>聯絡 慧軍 老師</h4>
-        <p>Line：huijun0928 <span class="info-note">（購書/課程）</span><br>
-        信箱：<a href="mailto:chang.wenchih@gmail.com">chang.wenchih@gmail.com</a></p></div>
-    </div>
     <div id="sidebar-header">
-      <div id="app-version-info" style="font-size:10px;color:var(--c-muted);margin-bottom:7px;line-height:1.5;opacity:0.82;">
-        <span style="font-weight:600;letter-spacing:0.02em;">最後修正：</span><span id="app-version-date">2026-11-02</span>
-        <span style="margin-left:6px;opacity:0.6;">·</span>
-        <span id="app-version-tag" style="margin-left:4px;"></span>
+      <div class="sidebar-topline">
+        <h3 title="完整加註版奇蹟課程">目錄</h3>
+        <span id="app-version-tag"></span>
+        <button id="sidebar-settings-toggle" type="button" aria-expanded="false" aria-controls="sidebar-settings-panel">設定與資訊</button>
       </div>
-      <h3>《完整加註版奇蹟課程》目錄</h3>
-      <div class="theme-setting"><label for="theme-mode">顯示模式</label>
-        <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
+      <div id="sidebar-settings-panel" hidden>
+        <p class="sidebar-book-title">完整加註版奇蹟課程</p>
+        <div id="app-version-info">最後修正：<span id="app-version-date">2026-11-02</span></div>
+        <div class="theme-setting"><label for="theme-mode">顯示模式</label>
+          <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
+        </div>
+        <div id="sidebar-offline-slot"></div>
+        <div class="sidebar-info-box">
+          <p class="info-appeal">為讓加註版持續開放共享，懇請您的護持支持！</p>
+          <div class="info-section"><h4>贊助帳戶</h4>
+            <p>郵局 (700)：0001300 0817307<br>戶名：張文智</p></div>
+          <div class="info-section"><h4>聯絡 慧軍 老師</h4>
+            <p>Line：huijun0928 <span class="info-note">（購書/課程）</span><br>
+            信箱：<a href="mailto:chang.wenchih@gmail.com">chang.wenchih@gmail.com</a></p></div>
+        </div>
       </div>
       <div id="toc-search-box" role="search" aria-label="搜尋書籍內文">
         <div id="toc-search-frame">
@@ -21937,7 +21969,6 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var vt = document.getElementById('app-version-tag');
     if (vt && typeof ACIM_VERSION !== 'undefined') {
       vt.textContent = ACIM_VERSION;
-      vt.style.cssText = 'opacity:0.55;letter-spacing:0.02em;';
     }
   })();
 (function(){
@@ -21956,7 +21987,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     }
   })();
 
-/* V26: local display numbers; original data-fn and ftnNNNN IDs stay stable.
+/* ACIM: local display numbers; original data-fn and ftnNNNN IDs stay stable.
    Generated from reviewed chapter boundaries by checks/build_footnote_groups.py. */
 (function configureFootnoteNumbers(){
   var groups = [[1,13,"F-Authorship","引言 作者說明"],[14,14,"F-CE-Intro","完整加註版導言"],[15,16,"T-In","正文導言"],[17,192,"T-1","正文第 1 章"],[193,362,"T-2","正文第 2 章"],[363,509,"T-3","正文第 3 章"],[510,619,"T-4","正文第 4 章"],[620,746,"T-5","正文第 5 章"],[747,815,"T-6","正文第 6 章"],[816,874,"T-7","正文第 7 章"],[875,928,"T-8","正文第 8 章"],[929,967,"T-9","正文第 9 章"],[968,991,"T-10","正文第 10 章"],[992,1038,"T-11","正文第 11 章"],[1039,1091,"T-12","正文第 12 章"],[1092,1156,"T-13","正文第 13 章"],[1157,1198,"T-14","正文第 14 章"],[1199,1241,"T-15","正文第 15 章"],[1242,1282,"T-16","正文第 16 章"],[1283,1319,"T-17","正文第 17 章"],[1320,1350,"T-18","正文第 18 章"],[1351,1410,"T-19","正文第 19 章"],[1411,1442,"T-20","正文第 20 章"],[1443,1483,"T-21","正文第 21 章"],[1484,1510,"T-22","正文第 22 章"],[1511,1531,"T-23","正文第 23 章"],[1532,1567,"T-24","正文第 24 章"],[1568,1614,"T-25","正文第 25 章"],[1615,1655,"T-26","正文第 26 章"],[1656,1695,"T-27","正文第 27 章"],[1696,1730,"T-28","正文第 28 章"],[1731,1762,"T-29","正文第 29 章"],[1763,1795,"T-30","正文第 30 章"],[1796,1838,"T-31","正文第 31 章"],[1839,2294,"W-I","學員練習手冊上篇"],[2295,2497,"W-II","學員練習手冊下篇"],[2498,2733,"M","教師指南"],[2734,2782,"C","術語解說"],[2783,2838,"A1-1-14","附錄一 小品 1 至 14"],[2839,2892,"A1-15-33","附錄一 小品 15 至 33"],[2893,2927,"A2","附錄二"]];
@@ -22020,6 +22051,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   };
   window.__acimRenumberFootnotes();
 })();
+
 
 
   /* ══ /* ══ V24 修復：註腳徽章鍵盤支援（原僅可聚焦，Enter／空白無反應）══
@@ -22117,6 +22149,32 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   /* ── 側邊欄（最先宣告，buildTOC 用到 closeSidebar）── */
   var sidebar = document.getElementById('sidebar-toc');
   var overlay = document.getElementById('sidebar-overlay');
+  var settingsToggle=document.getElementById('sidebar-settings-toggle');
+  var settingsPanel=document.getElementById('sidebar-settings-panel');
+  function setSidebarSettings(open,restoreFocus){
+    if(!settingsToggle||!settingsPanel)return;
+    settingsPanel.hidden=!open;
+    settingsToggle.setAttribute('aria-expanded',open?'true':'false');
+    document.getElementById('toc-search-results').hidden=open;
+    document.getElementById('search-count-badge').hidden=open;
+    if(!open&&restoreFocus)settingsToggle.focus();
+  }
+  if(settingsToggle&&settingsPanel){
+    settingsToggle.addEventListener('click',function(){
+      var opening=settingsPanel.hidden;
+      setSidebarSettings(opening,!opening);
+    });
+    function closeSettingsOnEscape(event){
+      if(event.key==='Escape'&&!settingsPanel.hidden&&!event.defaultPrevented){
+        event.preventDefault();event.stopPropagation();setSidebarSettings(false,true);
+      }
+    }
+    settingsToggle.addEventListener('keydown',closeSettingsOnEscape);
+    settingsPanel.addEventListener('keydown',closeSettingsOnEscape);
+    document.getElementById('toc-search-input').addEventListener('focus',function(){
+      setSidebarSettings(false,false);
+    });
+  }
 
   function openSidebar(){
     sidebar.classList.add('mobile-open');
@@ -22124,6 +22182,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     requestAnimationFrame(function(){ overlay.style.opacity='1'; });
   }
   function closeSidebar(){
+    setSidebarSettings(false,false);
     sidebar.classList.remove('mobile-open');
     overlay.style.opacity='0';
     setTimeout(function(){ overlay.style.display='none'; }, 280);
@@ -22135,7 +22194,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(window.innerWidth<=768){
       sidebar.classList.contains('mobile-open') ? closeSidebar() : openSidebar();
     } else {
-      sidebar.style.display = sidebar.style.display==='none' ? 'flex' : 'none';
+      var hiding=sidebar.style.display!=='none';
+      if(hiding)setSidebarSettings(false,false);
+      sidebar.style.display=hiding?'none':'flex';
     }
   });
   overlay.addEventListener('click', closeSidebar);
@@ -25330,25 +25391,28 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 </script>
 
 <script id="acim-offline-controller">
-/* V26: report verified offline content, separately from network connectivity. */
+/* V27: verified offline state must match both the version and exact release. */
 (function initOfflineStatus(){
   'use strict';
-  var host=document.getElementById('sidebar-header');
+  var host=document.getElementById('sidebar-offline-slot');
   if(!host || document.getElementById('acim-offline-panel')) return;
   var version=typeof ACIM_VERSION==='string'?ACIM_VERSION:'';
+  var releaseMeta=document.querySelector('meta[name="acim-release-id"]');
+  var releaseId=releaseMeta?releaseMeta.getAttribute('content'):'';
   var panel=document.createElement('div'); panel.id='acim-offline-panel';
   var status=document.createElement('p'); status.id='acim-offline-status';
   status.setAttribute('role','status'); status.setAttribute('aria-live','polite');
   var button=document.createElement('button'); button.type='button';
   button.id='acim-offline-save'; button.textContent='檢查保存狀態';
   panel.appendChild(status);panel.appendChild(button);
-  var search=document.getElementById('toc-search-box');host.insertBefore(panel,search);
+  host.appendChild(panel);
   var style=document.createElement('style');style.id='acim-offline-status-style';
-  style.textContent='#acim-offline-panel{margin:0 0 8px;padding:7px 0;border-bottom:1px solid var(--c-border);color:var(--c-muted);font-size:11px;line-height:1.45;}'
-    +'#acim-offline-status{margin:0 0 5px;font-size:inherit;}'
-    +'#acim-offline-save{font:inherit;color:var(--c-accent);background:var(--c-sidebar);border:1px solid var(--c-border);border-radius:5px;padding:4px 8px;cursor:pointer;}'
+  style.textContent='#acim-offline-panel{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin:0;padding:6px 0 0;border-top:1px solid var(--c-border);color:var(--c-muted);font-size:11px;line-height:1.35;}'
+    +'#acim-offline-status{flex:1 1 120px;min-width:0;margin:0;font-size:inherit;overflow-wrap:anywhere;}'
+    +'#acim-offline-save{flex-shrink:0;min-height:32px;font:inherit;color:var(--c-accent);background:var(--c-sidebar);border:1px solid var(--c-border);border-radius:5px;padding:4px 7px;line-height:1.2;cursor:pointer;}'
     +'#acim-offline-save:focus-visible{outline:2px solid var(--c-accent);outline-offset:2px;}'
     +'#acim-offline-save:disabled{opacity:.7;cursor:wait;}'
+    +'@media(pointer:coarse){#acim-offline-save{min-height:40px;}}'
     +'#acim-offline-bar{position:fixed;top:0;left:0;right:0;background:#403053;color:#fff;text-align:center;font:13px/1.4 sans-serif;padding:7px 16px;z-index:999998;}'
     +'@media print{#acim-offline-panel,#acim-offline-bar{display:none!important;}}';
   document.head.appendChild(style);
@@ -25356,40 +25420,42 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   var autoWarmedController=null, retryTimer=null, pending=Object.create(null);
   var checking=null, statusRevision=0;
   function count(value,max){return Number.isInteger(value)&&value>=0&&value<=max;}
+  function sameRelease(d){return !!(d&&d.version===version&&/^[a-f0-9]{64}$/.test(releaseId)&&d.releaseId===releaseId);}
   function validState(d){
     return d&&d.type==='ACIM_OFFLINE_STATUS'&&typeof d.version==='string'
+      &&(typeof d.releaseId==='undefined'||(typeof d.releaseId==='string'&&/^[a-f0-9]{64}$/.test(d.releaseId)))
       &&typeof d.bookReady==='boolean'&&typeof d.shellReady==='boolean'
       &&count(d.fontsCached,8)&&d.fontsTotal===8&&count(d.imagesCached,4)&&d.imagesTotal===4
       &&typeof d.warming==='boolean'&&typeof d.complete==='boolean';
   }
-  function complete(d){return !!(d&&d.version===version&&d.complete&&d.bookReady&&d.shellReady&&d.fontsCached===8&&d.imagesCached===4);}
+  function complete(d){return !!(sameRelease(d)&&d.complete&&d.bookReady&&d.shellReady&&d.fontsCached===8&&d.imagesCached===4);}
   function updateBanner(){
     var bar=document.getElementById('acim-offline-bar');
     if(navigator.onLine!==false){if(bar)bar.remove();return;}
     if(!bar){bar=document.createElement('div');bar.id='acim-offline-bar';bar.setAttribute('role','status');document.body.prepend(bar);}
-    bar.textContent=latest&&latest.version===version&&latest.bookReady
+    bar.textContent=sameRelease(latest)&&latest.bookReady
       ?'目前離線；本機已驗證的 '+version.toUpperCase()+' 全書可閱讀。'
       :'目前離線；尚未確認本機保存的書籍版本。';
   }
   function paint(message){
     if(message)status.textContent=message;
     else if(!latest)status.textContent='正在檢查離線保存狀態。';
-    else if(latest.version!==version)status.textContent='版本更新尚未套用；請套用更新提示，再確認離線保存。';
+    else if(!sameRelease(latest))status.textContent='版本更新尚未套用；請套用更新提示，再確認離線保存。';
     else if(complete(latest))
       status.textContent=version.toUpperCase()+' 全書、字型與書內圖片已驗證保存。';
     else if(latest.warming)status.textContent='正在保存離線資料；目前頁面可繼續閱讀。';
     else if(latest.storageError)status.textContent='離線保存未完成，請確認瀏覽器的儲存空間與權限後重試。';
     else if(!latest.bookReady||!latest.shellReady)status.textContent='離線書籍尚未完整保存，請連線後補齊。';
     else status.textContent='全書已驗證保存；字型 '+latest.fontsCached+'/8，書內圖片 '+latest.imagesCached+'/4。';
-    button.disabled=busy||!!(latest&&latest.warming);
+    button.disabled=busy||!!(sameRelease(latest)&&latest.warming);
     panel.setAttribute('aria-busy',button.disabled?'true':'false');
-    button.textContent=button.disabled?'處理中…':!latest||latest.version!==version?'檢查保存狀態':complete(latest)?'重新檢查':'補齊離線資料';
+    button.textContent=button.disabled?'處理中…':!sameRelease(latest)?'檢查保存狀態':complete(latest)?'重新檢查':'補齊離線資料';
     updateBanner();
   }
   function receive(d,source){
     if(source&&sw&&source!==sw.controller)return;
     if(validState(d)){statusRevision++;latest=d;paint();return;}
-    if(d&&d.type==='ACIM_OFFLINE_PROGRESS'&&d.version===version&&count(d.completed,32)&&count(d.total,32)&&d.total>0&&d.completed<=d.total){
+    if(d&&d.type==='ACIM_OFFLINE_PROGRESS'&&sameRelease(d)&&count(d.completed,32)&&count(d.total,32)&&d.total>0&&d.completed<=d.total){
       status.textContent='離線資料已處理 '+d.completed+'/'+d.total+'，保存結果確認中；目前頁面可繼續閱讀。';
     }
   }
@@ -25397,7 +25463,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     return new Promise(function(resolve,reject){
       var controller=sw&&sw.controller;
       if(!controller){reject(new Error('no-controller'));return;}
-      var id='v26-offline-'+(++serial), requestEpoch=epoch, requestRevision=statusRevision, port=null;
+      var id=version+'-offline-'+(++serial), requestEpoch=epoch, requestRevision=statusRevision, port=null;
       var timer=setTimeout(function(){finish(null,new Error('status-timeout'));},timeoutMs||10000);
       function finish(data,error){
         if(!pending[id])return;
@@ -25423,7 +25489,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(checking)return checking;
     if(!sw||!sw.controller){paint('離線保存尚未就緒；請連線載入，等待安裝完成。');return Promise.resolve(null);}
     checking=request('GET_OFFLINE_STATUS').then(function(d){
-      if(autoWarm&&d.version===version&&!d.warming&&d.fontsCached<8&&navigator.onLine!==false&&autoWarmedController!==sw.controller){
+      if(autoWarm&&sameRelease(d)&&!d.warming&&d.fontsCached<8&&navigator.onLine!==false&&autoWarmedController!==sw.controller){
         autoWarmedController=sw.controller;
         latest=Object.assign({},d,{warming:true});statusRevision++;paint();
         sw.controller.postMessage({type:'WARM_FONTS'});
@@ -25443,7 +25509,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var currentEpoch=epoch;
     check(false).then(function(d){
       if(currentEpoch!==epoch)return;
-      if(!d||d.version!==version||complete(d))return;
+      if(!sameRelease(d)||complete(d))return;
       if(d.warming){paint();return;}
       if(navigator.onLine===false){paint('目前離線，請恢復連線後再補齊資料。');return;}
       paint('正在保存離線資料；目前頁面可繼續閱讀。');
@@ -25451,7 +25517,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     }).catch(function(){
       if(currentEpoch===epoch){latest=null;paint('尚未確認保存結果，請確認連線後重新檢查。');}
     }).finally(function(){
-      if(currentEpoch===epoch){busy=false;button.disabled=!!(latest&&latest.warming);panel.setAttribute('aria-busy',button.disabled?'true':'false');button.textContent=button.disabled?'處理中…':complete(latest)?'重新檢查':latest&&latest.version===version?'補齊離線資料':'檢查保存狀態';}
+      if(currentEpoch===epoch){busy=false;button.disabled=!!(sameRelease(latest)&&latest.warming);panel.setAttribute('aria-busy',button.disabled?'true':'false');button.textContent=button.disabled?'處理中…':complete(latest)?'重新檢查':sameRelease(latest)?'補齊離線資料':'檢查保存狀態';}
     });
   });
   if(!sw){status.textContent='此瀏覽器未提供離線保存功能；可連線閱讀。';button.hidden=true;updateBanner();return;}

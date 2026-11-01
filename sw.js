@@ -1,19 +1,21 @@
-/* ACIM CE PWA v26 — release-bound offline book.
+/* ACIM CE PWA v27 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
-   explicit cache status. BOOK_SHA256 is filled by the release builder. */
-const CACHE_VERSION = 'v26';
+   explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
+   the deterministic release builder; never hand-edit the compiled worker. */
+const CACHE_VERSION = 'v27';
+const RELEASE_ID = '7dd16da96fd808bfc2c36a6043ab1de00ce2d5b7e12d494897076bd60fd7e40f';
 const PROJ = 'acimce-zh-tw';
-const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION;
-const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION;
+const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
+const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = 'dac45e8ca7a912fedc53d9aadcca30d607b32fcbcb7c2a2a0267c35c6c46a408';
+const BOOK_SHA256 = 'ffddd846bc9203393703cb0dc8a1543a68c9383a0db571910071f24cfca26c91';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
-const OWN_RE = new RegExp('^' + PROJ + '-(?:(?:shell|runtime)-v\\d+(?:\\.\\d+)*|fonts)$');
+const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
 const OLD_FONT_CACHES = ['acim-fonts-v22', 'acim-fonts-v23', 'acim-fonts'];
 const CORE_FILES = ['index.htm', 'offline.html', 'manifest.json', 'favicon.ico'];
 const FONT_FILES = Array.from({length: 8}, (_, i) => 'fonts/lxgw-slice' + i + '.woff2');
@@ -62,6 +64,9 @@ async function verifyBook(response) {
   const tag = head.match(/<meta\b[^>]*\bname=["']acim-version["'][^>]*>/i);
   const version = tag && tag[0].match(/\bcontent=["']([^"']+)["']/i);
   if (!version || version[1] !== EXPECT_VERSION) throw new Error('book-version');
+  const releaseTag = head.match(/<meta\b[^>]*\bname=["']acim-release-id["'][^>]*>/i);
+  const release = releaseTag && releaseTag[0].match(/\bcontent=["']([^"']+)["']/i);
+  if (!release || release[1] !== RELEASE_ID) throw new Error('book-release');
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   const actual = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
   if (actual !== BOOK_SHA256) throw new Error('book-integrity');
@@ -123,9 +128,33 @@ async function storeBook(response) {
   } catch (e) { storageError = 'cache-write'; return false; }
 }
 
+async function completeShell(cache) {
+  // A marker could survive partial browser eviction. Verify the actual five
+  // required responses instead, both for interrupted installs and reinstallation.
+  const book = await cache.match(BASE);
+  try {
+    await verifyBook(book);
+  } catch (e) {
+    if (/^book-(?:http|version|release|integrity)$/.test(e && e.message)) return false;
+    throw e; // An unreadable cache or failed digest is unknown, not disposable.
+  }
+  for (const file of CORE_FILES) {
+    if (!await verifyAsset(await cache.match(BASE + file), file)) return false;
+  }
+  return true;
+}
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
+    let ownsCandidate = false;
     try {
+      // Do not use readCache here: caches.open() creates a cache, which would
+      // erase the distinction between an existing shell and this install's work.
+      if ((await caches.keys()).includes(SHELL_CACHE) &&
+          await completeShell(await caches.open(SHELL_CACHE))) {
+        bookVerificationGeneration++;
+        bookVerifiedInWorker = true;
+        return; // A verified identical release also reinstalls while offline.
+      }
       const book = await fetchBounded(BASE, NETWORK_TIMEOUT_MS, {cache: 'reload'});
       await verifyBook(book);
       const assets = await Promise.all(CORE_FILES.map(async file => {
@@ -134,7 +163,12 @@ self.addEventListener('install', event => {
         if (!await verifyAsset(response, file)) throw new Error('shell-integrity:' + file);
         return [BASE + file, response];
       }));
+      // Finish all network work and integrity checks before opening a candidate.
+      // Recheck after downloading: a same-release reader may have repaired its
+      // shell meanwhile. Pre-existing data is never owned by this installation.
+      const existedBeforeWrites = (await caches.keys()).includes(SHELL_CACHE);
       const cache = await caches.open(SHELL_CACHE);
+      ownsCandidate = !existedBeforeWrites;
       await cache.put(BASE, book);
       for (const [url, response] of assets) await cache.put(url, response);
       bookVerificationGeneration++;
@@ -142,7 +176,14 @@ self.addEventListener('install', event => {
     } catch (e) {
       bookVerifiedInWorker = false;
       bookVerificationGeneration++;
-      await caches.delete(SHELL_CACHE).catch(() => {});
+      // Only a new, incomplete candidate belongs to this failed installation.
+      // Keep pre-existing shells, including their usable entries after a failed
+      // repair, and keep a candidate another same-release reader has completed.
+      if (ownsCandidate) {
+        try {
+          if (!await completeShell(await caches.open(SHELL_CACHE))) await caches.delete(SHELL_CACHE);
+        } catch (cleanupError) { /* A failed cleanup must not hide the install error. */ }
+      }
       throw e;
     }
     // Deliberately no skipWaiting: retain the reader's explicit update choice.
@@ -188,8 +229,7 @@ async function trimRuntime(cache) {
   for (let i = 0; i < overflow; i++) await cache.delete(keys[i]);
 }
 function olderProjectCache(name) {
-  if (!OWN_RE.test(name)) return false;
-  const match = name.match(/-(?:shell|runtime)-v(\d+(?:\.\d+)*)$/);
+  const match = name.match(OWN_RE);
   if (!match) return false;
   const candidate = match[1].split('.').map(Number);
   const current = CACHE_VERSION.slice(1).split('.').map(Number);
@@ -205,8 +245,9 @@ self.addEventListener('activate', event => {
     const keep = new Set([SHELL_CACHE, RUNTIME_CACHE, FONT_CACHE, ...retainedFonts]);
     try {
       for (const name of await caches.keys()) {
-        // A newer waiting worker may already have staged its release. Do not
-        // delete that future cache while an earlier version finishes activation.
+        // Cache names cannot tell which same-version build is active or waiting.
+        // Keep all sibling builds and all newer versions, without timestamp
+        // guesses. A later numeric release may collect these older versions.
         if (!keep.has(name) && (LEGACY_RE.test(name) || olderProjectCache(name))) await caches.delete(name);
       }
       await trimRuntime(await caches.open(RUNTIME_CACHE));
@@ -269,10 +310,13 @@ async function assetResponse(file, event) {
   return response;
 }
 async function offlineFallback() {
-  return await readCache(SHELL_CACHE, BASE + 'offline.html') ||
-    new Response('目前無法取得已驗證的離線書籍，請連線後重新載入。', {
-      status: 503, statusText: 'Offline', headers: {'Content-Type': 'text/plain; charset=utf-8'}
-    });
+  try {
+    const response = await readCache(SHELL_CACHE, BASE + 'offline.html');
+    if (await verifyAsset(response, 'offline.html')) return response;
+  } catch (e) { /* An unverifiable fallback must not be served as trusted HTML. */ }
+  return new Response('目前無法取得已驗證的離線書籍，請連線後重新載入。', {
+    status: 503, statusText: 'Offline', headers: {'Content-Type': 'text/plain; charset=utf-8'}
+  });
 }
 async function bookNavigation(event) {
   const hit = await cachedBook();
@@ -336,7 +380,7 @@ async function offlineStatus() {
   const imagesCached = await countVerifiedAssets(IMAGE_FILES);
   const complete = shellCount === CORE_FILES.length + 1 && fontsCached === FONT_FILES.length && imagesCached === IMAGE_FILES.length;
   if (complete) storageError = ''; // A fresh complete check supersedes old save errors.
-  return {type: 'ACIM_OFFLINE_STATUS', version: CACHE_VERSION,
+  return {type: 'ACIM_OFFLINE_STATUS', version: CACHE_VERSION, releaseId: RELEASE_ID,
     bookReady, shellReady: shellCount === CORE_FILES.length + 1,
     shellCached: shellCount, shellTotal: CORE_FILES.length + 1,
     fontsCached, fontsTotal: FONT_FILES.length, imagesCached, imagesTotal: IMAGE_FILES.length,
@@ -418,7 +462,7 @@ async function warmResources(includeImages) {
           if (/timeout|Failed to fetch|NetworkError|network|offline/i.test(error) || (e && e.name === 'TypeError')) stop = true;
         }
         completed++;
-        await broadcast({type: 'ACIM_OFFLINE_PROGRESS', version: CACHE_VERSION, completed, total: files.length, resource: file, error, warming: true});
+        await broadcast({type: 'ACIM_OFFLINE_PROGRESS', version: CACHE_VERSION, releaseId: RELEASE_ID, completed, total: files.length, resource: file, error, warming: true});
       }
     }
     await Promise.all(Array.from({length: Math.min(3, files.length)}, worker));
@@ -436,7 +480,7 @@ self.addEventListener('message', event => {
       if (type !== 'GET_OFFLINE_STATUS') await warmResources(type === 'PREPARE_OFFLINE');
       reply(event, await offlineStatus());
     } catch (e) {
-      reply(event, {type: 'ACIM_OFFLINE_STATUS', version: CACHE_VERSION, bookReady: false,
+      reply(event, {type: 'ACIM_OFFLINE_STATUS', version: CACHE_VERSION, releaseId: RELEASE_ID, bookReady: false,
         shellReady: false, fontsCached: 0, fontsTotal: 8, imagesCached: 0, imagesTotal: 4,
         complete: false, warming: !!warmingTask, lastWarmError: 'status-unavailable', storageError: 'cache-unavailable'});
     }
