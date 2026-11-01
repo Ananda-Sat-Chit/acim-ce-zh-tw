@@ -41,8 +41,18 @@ window.addEventListener('appinstalled', function(){
   if(bar) bar.style.display = 'none';
 });
 
+/* ── 深色模式初始套用（V23：提前至 <head> 防首繪閃白；讀者未手動設定時跟隨作業系統）── */
+try {
+  var _acimDark = null;
+  try { _acimDark = localStorage.getItem('acim-dark'); } catch (e) {}
+  if (_acimDark === '1' ||
+      (_acimDark === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark-mode');
+  }
+} catch (e) {}
+
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v22';
+var ACIM_VERSION = 'v23';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -21838,8 +21848,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 (function(){
   var body = document.body;
 
-  /* 套用儲存的深色模式 */
-  if (localStorage.getItem('acim-dark') === '1') document.documentElement.classList.add('dark-mode');
+  /* 深色模式初始套用已上移至 <head>（V23：防首繪閃白＋跟隨作業系統） */
 
   /* ══ 註腳徽章無障礙屬性（V22 起執行期合成，HTML 不內嵌，省傳輸）══ */
   (function badgeA11y(){
@@ -21989,6 +21998,18 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     btnDark.parentElement.setAttribute('data-tip', btnDark.title);
   }
   syncDark();
+  /* V23：讀者未手動設定時，即時跟隨作業系統深色模式切換 */
+  try {
+    var _acimMq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    if (_acimMq && _acimMq.addEventListener) _acimMq.addEventListener('change', function(e){
+      var saved = null;
+      try { saved = localStorage.getItem('acim-dark'); } catch (err) {}
+      if (saved === null) {
+        document.documentElement.classList.toggle('dark-mode', e.matches);
+        syncDark();
+      }
+    });
+  } catch (err) {}
   btnDark.addEventListener('click', function(){
     var dark = document.documentElement.classList.toggle('dark-mode');
     localStorage.setItem('acim-dark', dark ? '1' : '0');
@@ -22328,7 +22349,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(onReady) _indexJob.listeners.push(onReady);
     if(urgent) _indexJob.urgent=true;
   }
-  setTimeout(function(){buildIndex(null,false);},1200);
+  /* V23：索引預建改由 requestIdleCallback 排程——讓首繪、載入、互動先取用主執行緒，
+     空閒後才開始建索引；4 秒 timeout 兜底保證不會無限擱置。 */
+  if (window.requestIdleCallback) requestIdleCallback(function(){ buildIndex(null,false); }, {timeout:4000});
+  else setTimeout(function(){buildIndex(null,false);},1200);
 
   /* Every asynchronous batch is cancellable and bounded by count AND time.
      A single exceptionally large paragraph can still exceed this budget. */
