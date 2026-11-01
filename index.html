@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v25.1">
+<meta name="acim-version" content="v26">
 <meta name="acim-build" content="2026-11-02">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
@@ -28,6 +28,86 @@
 <noscript></noscript>
 
 <script>
+/* V26：統一儲存容錯。未能持久保存時，這次分頁仍可讀回最新操作。 */
+(function initAcimStorage(){
+  var memory=Object.create(null), dirty=Object.create(null), durable=Object.create(null);
+  var own=function(o,k){ return Object.prototype.hasOwnProperty.call(o,k); };
+  window.__acimStorage={
+    get:function(key){
+      if(own(dirty,key)) return memory[key];
+      try{
+        var value=localStorage.getItem(key);
+        memory[key]=value; durable[key]=true;
+        return value;
+      }catch(e){
+        durable[key]=false;
+        return own(memory,key)?memory[key]:null;
+      }
+    },
+    set:function(key,value){
+      value=String(value); memory[key]=value;
+      try{ localStorage.setItem(key,value); delete dirty[key]; durable[key]=true; return true; }
+      catch(e){ dirty[key]=true; durable[key]=false; return false; }
+    },
+    remove:function(key){
+      memory[key]=null;
+      try{ localStorage.removeItem(key); delete dirty[key]; durable[key]=true; return true; }
+      catch(e){ dirty[key]=true; durable[key]=false; return false; }
+    },
+    persistent:function(key){ return durable[key]!==false; }
+  };
+})();
+
+/* V26：從頁首開始追蹤導航工作與使用者操作，晚到的字型或舊排程不回拉。 */
+(function initAcimNavigation(){
+  var generation=0, job=null, expectedY=null, restorePending=false, previousScrollStyle='';
+  function cancel(){ generation++; job=null; expectedY=null; }
+  function valid(token){ return !!job && job.token===token && generation===token; }
+  function begin(kind){
+    generation++;
+    job={token:generation,kind:kind||'navigation',target:null,margin:0};
+    expectedY=null;
+    return generation;
+  }
+  function jump(y,token){
+    if(!valid(token)) return false;
+    var de=document.documentElement;
+    var max=Math.max(0,(document.scrollingElement||de).scrollHeight-window.innerHeight);
+    y=Math.max(0,Number(y)||0);
+    if(isFinite(max)) y=Math.min(y,max);
+    if(!restorePending) previousScrollStyle=de.style.scrollBehavior;
+    de.style.scrollBehavior='auto'; expectedY=y;
+    window.scrollTo(0,y);
+    if(!restorePending){
+      restorePending=true;
+      requestAnimationFrame(function(){ de.style.scrollBehavior=previousScrollStyle; restorePending=false; });
+    }
+    return true;
+  }
+  function remember(token,el,margin){
+    if(!valid(token)) return;
+    job.target=el; job.margin=margin;
+  }
+  function correctCurrent(){
+    if(!job || !valid(job.token) || !job.target || !job.target.isConnected) return false;
+    return jump(window.scrollY+job.target.getBoundingClientRect().top-job.margin,job.token);
+  }
+  window.__acimNav={begin:begin,cancel:cancel,valid:valid,jump:jump,remember:remember,
+    current:function(){return job?job.token:null;},canRestore:function(){return generation===0;},
+    correctCurrent:correctCurrent};
+  window.addEventListener('wheel',cancel,{passive:true,capture:true});
+  window.addEventListener('touchmove',cancel,{passive:true,capture:true});
+  window.addEventListener('pointerdown',cancel,{passive:true,capture:true});
+  window.addEventListener('keydown',function(e){
+    if(/^(ArrowUp|ArrowDown|ArrowLeft|ArrowRight|PageUp|PageDown|Home|End| |Tab|Escape|Enter)$/.test(e.key)) cancel();
+  },true);
+  /* 捲軸拖曳未送出 pointerdown 的平台，也以非程式目標位置取消。 */
+  window.addEventListener('scroll',function(){
+    if(expectedY!==null && Math.abs(window.scrollY-expectedY)<2){ expectedY=null; return; }
+    if(job) cancel();
+  },{passive:true});
+})();
+
 /* ── PWA 安裝提示捕捉（必須在所有 JS 最前面）── */
 window._pwaInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', function(e){
@@ -46,7 +126,7 @@ window.addEventListener('appinstalled', function(){
 /* ── 深色模式初始套用（V23：提前至 <head> 防首繪閃白；讀者未手動設定時跟隨作業系統）── */
 try {
   var _acimDark = null;
-  try { _acimDark = localStorage.getItem('acim-dark'); } catch (e) {}
+  try { _acimDark = window.__acimStorage.get('acim-dark'); } catch (e) {}
   if (_acimDark === '1' ||
       (_acimDark === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
     document.documentElement.classList.add('dark-mode');
@@ -54,7 +134,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v25.1';
+var ACIM_VERSION = 'v26';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -115,7 +195,7 @@ if ('serviceWorker' in navigator) {
 }
 /* 早期套用深色模式，防止白閃 */
 (function(){
-  var stored = localStorage.getItem('acim-dark');
+  var stored = window.__acimStorage.get('acim-dark');
   if (stored === '1') {
     document.documentElement.classList.add('dark-mode');
   } else if (stored === null &&
@@ -198,6 +278,11 @@ html.dark-mode .info-section h4{color:var(--c-accent)!important;}
   line-height:1.45; letter-spacing:0.02em;
 }
 html.dark-mode #sidebar-header h3{color:var(--c-accent)!important;}
+
+.theme-setting{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;color:var(--c-muted);font-size:12px;}
+#theme-mode{min-width:108px;background:var(--c-bg);color:var(--c-text);border:1px solid var(--c-border);border-radius:6px;padding:4px 6px;font:inherit;color-scheme:light;}
+html.dark-mode #theme-mode{color-scheme:dark;}
+#theme-mode:focus-visible{outline:2px solid var(--c-accent);outline-offset:2px;}
 
 /* 搜尋欄 */
 #toc-search-box{margin-top:8px;}
@@ -540,14 +625,16 @@ body.fn-open #pwa-tools{
 .bm-item-del:hover{color:#e06060;}
 #bm-panel-footer{
   padding:7px 14px 10px;border-top:1px solid rgba(201,162,39,0.15);
-  flex-shrink:0;display:flex;justify-content:flex-end;
+  flex-shrink:0;display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap;
 }
-#bm-clear-all{
+#bm-panel-footer button{
   background:none;border:1px solid rgba(212,184,255,0.18);
-  color:rgba(212,184,255,0.45);font-size:10.5px;border-radius:6px;
+  color:#EDE6F8;font-size:11px;border-radius:6px;
   padding:4px 10px;cursor:pointer;transition:all 0.15s;
 }
 #bm-clear-all:hover{border-color:rgba(224,96,96,0.5);color:#e09090;}
+#bm-storage-status{margin:0;padding:4px 14px;color:#D4B8F0;font-size:11px;line-height:1.5;}
+#bm-panel-footer button:focus-visible,.bm-item:focus-visible,.bm-item-del:focus-visible{outline:2px solid #E8C840;outline-offset:-2px;}
 /* btn-bm 已加入書籤時的高亮狀態 */
 #btn-bm.bm-marked{background:#7B3FA8 !important;box-shadow:0 0 0 2px rgba(201,162,39,0.55),0 3px 10px rgba(60,0,100,0.35);}
 /* 手機版書籤面板靠底部 */
@@ -626,6 +713,7 @@ html.dark-mode sup.fn-badge:hover {
   color: #FFFFFF !important;
 }
 html.dark-mode #footnote-bar{background:#3D1B6E;border-top:2px solid #C9A8E8;}
+#fn-context{font-size:12px;line-height:1.4;font-weight:600;color:#F0E0FF;margin:0 0 6px;}
 #fn-inner{display:flex;align-items:flex-start;gap:10px;}
 #fn-num{flex-shrink:0;font-size:13px;font-weight:bold;color:#fff;min-width:28px;padding-top:2px;}
 #fn-text{flex-grow:1;line-height:1.75;font-size:14px;}
@@ -1519,6 +1607,9 @@ ul{margin-bottom:0;}
         <span id="app-version-tag" style="margin-left:4px;"></span>
       </div>
       <h3>《完整加註版奇蹟課程》目錄</h3>
+      <div class="theme-setting"><label for="theme-mode">顯示模式</label>
+        <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
+      </div>
       <div id="toc-search-box" role="search" aria-label="搜尋書籍內文">
         <div id="toc-search-frame">
           <span style="font-size:14px;color:#8B5BAE;flex-shrink:0;">🔍</span>
@@ -21807,7 +21898,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 </div>
 
 <!-- 書籤面板 -->
-<div id="bm-panel" role="dialog" aria-modal="false" aria-label="我的書籤">
+<div id="bm-panel" role="dialog" aria-modal="false" aria-label="我的書籤" aria-hidden="true" inert>
   <div id="bm-panel-header">
     <span id="bm-panel-title">🔖 我的書籤</span>
     <button id="bm-panel-close" aria-label="關閉書籤面板">✕</button>
@@ -21815,13 +21906,18 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   <div id="bm-list" role="list" aria-label="書籤列表">
     <div class="bm-empty">尚無書籤<br>閱讀時點擊 🔖 可標記當前位置</div>
   </div>
+  <p id="bm-storage-status" role="status" aria-live="polite"></p>
   <div id="bm-panel-footer">
-    <button id="bm-clear-all" title="清除所有書籤">清除全部</button>
+    <button id="bm-export" type="button">匯出備份</button>
+    <button id="bm-import" type="button">匯入合併</button>
+    <input id="bm-import-file" type="file" accept=".json,application/json" hidden>
+    <button id="bm-clear-all" type="button" title="清除所有書籤">清除全部</button>
   </div>
 </div>
 
 <!-- 註腳彈出列 -->
-<div id="footnote-bar">
+<div id="footnote-bar" role="region" aria-label="註文">
+  <div id="fn-context"></div>
   <div id="fn-inner">
     <span id="fn-num"></span>
     <div id="fn-text"></div>
@@ -21859,6 +21955,72 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       b.tabIndex = 0;
     }
   })();
+
+/* V26: local display numbers; original data-fn and ftnNNNN IDs stay stable.
+   Generated from reviewed chapter boundaries by checks/build_footnote_groups.py. */
+(function configureFootnoteNumbers(){
+  var groups = [[1,13,"F-Authorship","引言 作者說明"],[14,14,"F-CE-Intro","完整加註版導言"],[15,16,"T-In","正文導言"],[17,192,"T-1","正文第 1 章"],[193,362,"T-2","正文第 2 章"],[363,509,"T-3","正文第 3 章"],[510,619,"T-4","正文第 4 章"],[620,746,"T-5","正文第 5 章"],[747,815,"T-6","正文第 6 章"],[816,874,"T-7","正文第 7 章"],[875,928,"T-8","正文第 8 章"],[929,967,"T-9","正文第 9 章"],[968,991,"T-10","正文第 10 章"],[992,1038,"T-11","正文第 11 章"],[1039,1091,"T-12","正文第 12 章"],[1092,1156,"T-13","正文第 13 章"],[1157,1198,"T-14","正文第 14 章"],[1199,1241,"T-15","正文第 15 章"],[1242,1282,"T-16","正文第 16 章"],[1283,1319,"T-17","正文第 17 章"],[1320,1350,"T-18","正文第 18 章"],[1351,1410,"T-19","正文第 19 章"],[1411,1442,"T-20","正文第 20 章"],[1443,1483,"T-21","正文第 21 章"],[1484,1510,"T-22","正文第 22 章"],[1511,1531,"T-23","正文第 23 章"],[1532,1567,"T-24","正文第 24 章"],[1568,1614,"T-25","正文第 25 章"],[1615,1655,"T-26","正文第 26 章"],[1656,1695,"T-27","正文第 27 章"],[1696,1730,"T-28","正文第 28 章"],[1731,1762,"T-29","正文第 29 章"],[1763,1795,"T-30","正文第 30 章"],[1796,1838,"T-31","正文第 31 章"],[1839,2294,"W-I","學員練習手冊上篇"],[2295,2497,"W-II","學員練習手冊下篇"],[2498,2733,"M","教師指南"],[2734,2782,"C","術語解說"],[2783,2838,"A1-1-14","附錄一 小品 1 至 14"],[2839,2892,"A1-15-33","附錄一 小品 15 至 33"],[2893,2927,"A2","附錄二"]];
+  var expectedCount = 2927;
+  var mappingReady=false;
+  function metadata(id){
+    var raw=String(id == null ? '' : id);
+    if(!/^[1-9]\d*$/.test(raw)) return null;
+    var n=Number(raw), lo=0, hi=groups.length-1;
+    while(lo<=hi){
+      var mid=(lo+hi)>>1, g=groups[mid];
+      if(n<g[0]) hi=mid-1;
+      else if(n>g[1]) lo=mid+1;
+      else {var number=n-g[0]+1;return {globalId:raw,groupKey:g[2],groupLabel:g[3],number:number,label:g[3]+' · 註 '+number};}
+    }
+    return null;
+  }
+  window.__acimFootnoteNumberingReady=false;
+  window.__acimFootnoteInfo=function(id){return mappingReady?metadata(id):null;};
+  window.__acimFootnoteLabel=function(id){var m=window.__acimFootnoteInfo(id);return m?m.label:'';};
+  window.__acimRenumberFootnotes=function(){
+    mappingReady=false;window.__acimFootnoteNumberingReady=false;
+    var root=document.getElementById('content-area');
+    if(!root) return false;
+    var badges=Array.from(root.querySelectorAll('sup.fn-badge[data-fn]'));
+    var seen=Object.create(null), valid=badges.length===expectedCount;
+    badges.forEach(function(b){
+      var id=b.getAttribute('data-fn');
+      if(seen[id] || !metadata(id) || !document.getElementById('ftn'+id)) valid=false;
+      seen[id]=true;
+    });
+    if(!valid){
+      /* A repeated call may follow a previously valid map. Restore the original
+         unique labels as a unit so badges and the guarded popup helper agree. */
+      badges.forEach(function(b){
+        var id=b.getAttribute('data-fn');
+        if(!/^[1-9]\d*$/.test(id||'')) return;
+        b.textContent=id;
+        b.removeAttribute('data-fn-display');b.removeAttribute('data-fn-group');
+        b.setAttribute('aria-label','腳注 '+id);b.setAttribute('title','腳注 '+id);
+      });
+      groups.forEach(function(g){for(var i=g[0];i<=g[1];i++){
+        var def=document.getElementById('ftn'+i);
+        if(def){def.removeAttribute('data-fn-display');def.removeAttribute('data-fn-group');}
+      }});
+      console.warn('[ACIM] Footnote display map does not match this book; use original labels.');return false;
+    }
+    badges.forEach(function(b){
+      var m=metadata(b.getAttribute('data-fn'));
+      b.textContent=String(m.number);
+      b.setAttribute('data-fn-display',String(m.number));
+      b.setAttribute('data-fn-group',m.groupKey);
+      b.setAttribute('aria-label',m.groupLabel+'，註 '+m.number);
+      b.setAttribute('title',m.label);
+      var def=document.getElementById('ftn'+m.globalId);
+      def.setAttribute('data-fn-display',String(m.number));
+      def.setAttribute('data-fn-group',m.groupKey);
+    });
+    mappingReady=true;window.__acimFootnoteNumberingReady=true;
+    return true;
+  };
+  window.__acimRenumberFootnotes();
+})();
+
 
   /* ══ /* ══ V24 修復：註腳徽章鍵盤支援（原僅可聚焦，Enter／空白無反應）══
      事件委派於 document——2,927 顆徽章不宜各自掛監聽器。 */
@@ -21904,30 +22066,16 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         var s = document.createElement('style');
         s.textContent = tpl.textContent;
         document.head.appendChild(s);
-        /* V24 修復：字型置換改變全頁高度，深連結目標需補一次校正
-           （全新分頁開 #T-4.I.3:3 實測曾漂移約 2,700px，約三屏）。 */
-        var _refixDone = false;
-        var _refixBaseY = window.scrollY; /* V25（I16）：排程時的基準位置 */
-        var _userMoved = false;          /* V25（I16）：使用者明確捲動互動 */
-        var _onUserScroll = function(){ _userMoved = true; };
-        window.addEventListener('wheel', _onUserScroll, {passive:true, once:true});
-        window.addEventListener('touchmove', _onUserScroll, {passive:true, once:true});
-        var _refix = function(){
-          if(_refixDone) return;
-          _refixDone = true;
-          if(!(location.hash && location.hash.length > 1)) return;
-          /* V25 修復（I16）：使用者已自行捲動（滾輪／觸控，或位置大幅偏離
-             基準——如跳目錄）時取消補校正，尊重最後一次使用者意圖。 */
-          if(_userMoved) return;
-          if(Math.abs(window.scrollY - _refixBaseY) > 500) return;
-          var t = document.querySelector('[data-acim-hash-target]');
-          if(t) t.scrollIntoView({block:'center'});
+        /* V26：只校正仍有效的最新導航工作；使用者已移動則不回拉。 */
+        var _refixDone=false;
+        var _refix=function(){
+          if(_refixDone) return; _refixDone=true;
+          window.__acimNav.correctCurrent();
         };
-        if(document.fonts && document.fonts.ready){
-          document.fonts.ready.then(function(){ setTimeout(_refix, 150); });
+        if(document.fonts&&document.fonts.ready){
+          document.fonts.ready.then(function(){setTimeout(_refix,150);});
         }
-        setTimeout(_refix, 6000); /* 保險：fonts.ready 長時間未決時的最遲校正 */
-        
+        setTimeout(_refix,6000);
       }, 2500);
     };
     if (document.readyState === 'complete') inject();
@@ -21936,20 +22084,23 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 
   /* ── V22: content-visibility 逐節渲染的精準跳轉 ──
      先瞬跳到烘焙高度推算的位置，待目標節渲染完成後校正殘餘誤差。  */
-  window.__acimJump = function(y){
-    var de = document.documentElement;
-    var prev = de.style.scrollBehavior;
-    de.style.scrollBehavior = 'auto';
-    window.scrollTo(0, Math.max(0, y));
-    requestAnimationFrame(function(){ de.style.scrollBehavior = prev; });
+  window.__acimJump = function(y,token){
+    var nav=window.__acimNav;
+    if(token===undefined||token===null) token=nav.begin('jump');
+    nav.jump(y,token);
+    return token;
   };
-  window.__acimCorrectScroll = function(el, margin){
-    [90, 260, 700].forEach(function(ms){
+  window.__acimCorrectScroll = function(el,margin,token){
+    var nav=window.__acimNav;
+    if(token===undefined||token===null) token=nav.current();
+    if(!nav.valid(token)) return;
+    nav.remember(token,el,margin);
+    [90,260,700].forEach(function(ms){
       setTimeout(function(){
-        if(!el || !el.isConnected) return;
-        var t = window.scrollY + el.getBoundingClientRect().top - margin;
-        if (Math.abs(t - window.scrollY) > 40) window.__acimJump(t);
-      }, ms);
+        if(!nav.valid(token)||!el||!el.isConnected) return;
+        var t=window.scrollY+el.getBoundingClientRect().top-margin;
+        if(Math.abs(t-window.scrollY)>40) nav.jump(t,token);
+      },ms);
     });
   };
 
@@ -21960,7 +22111,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     topWrap.style.display = window.scrollY > 700 ? '' : 'none';
   }, {passive:true});
   document.getElementById('btn-top').addEventListener('click', function(){
-    window.scrollTo({top:0, behavior:'smooth'});
+    window.__acimJump(0);
   });
 
   /* ── 側邊欄（最先宣告，buildTOC 用到 closeSidebar）── */
@@ -21994,7 +22145,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   var zSteps = [0.78, 0.89, 1.0, 1.12, 1.24, 1.38, 1.54];
   var fi = 2;
   try{
-    var _fs = parseInt(localStorage.getItem('acim-fs')||'2', 10);
+    var _fs = parseInt(window.__acimStorage.get('acim-fs')||'2', 10);
     if(_fs >= 0 && _fs <= 6) fi = _fs; /* V25（I19）：NaN／越界回預設，不中斷初始化 */
   }catch(e){}
   var hasZoom = typeof CSS !== 'undefined' && CSS.supports && CSS.supports('zoom','1');
@@ -22010,7 +22161,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       content.style.transformOrigin = 'top left';
       content.style.width = (100/z)+'%';
     }
-    try{ localStorage.setItem('acim-fs', fi); }catch(e){} /* V25（I19）*/
+    try{ window.__acimStorage.set('acim-fs', fi); }catch(e){} /* V25（I19）*/
     var u = document.getElementById('btn-fup'), d = document.getElementById('btn-fdn');
     if (u) u.style.opacity = fi >= 6 ? '0.38' : '1';
     if (d) d.style.opacity = fi <= 0 ? '0.38' : '1';
@@ -22030,47 +22181,48 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 
   /* ── 深色模式 ── */
   var btnDark = document.getElementById('btn-dark');
-
+  var themeMode = document.getElementById('theme-mode');
   function syncDark() {
-    var dark = document.documentElement.classList.contains('dark-mode');
-    btnDark.innerHTML = dark ? '☀️' : '🌓';
-    btnDark.title = dark ? '切換亮色' : '切換深色';
-    btnDark.parentElement.setAttribute('data-tip', btnDark.title);
+    var dark=document.documentElement.classList.contains('dark-mode');
+    var saved=window.__acimStorage.get('acim-dark');
+    btnDark.innerHTML=dark?'☀️':'🌓';
+    btnDark.title=(dark?'切換亮色':'切換深色')+'；長按 0.6 秒跟隨系統';
+    btnDark.setAttribute('aria-label',btnDark.title);
+    btnDark.parentElement.setAttribute('data-tip',btnDark.title);
+    if(themeMode) themeMode.value=saved===null?'auto':saved==='1'?'dark':'light';
+  }
+  function setThemeMode(mode){
+    if(mode==='auto') window.__acimStorage.remove('acim-dark');
+    else window.__acimStorage.set('acim-dark',mode==='dark'?'1':'0');
+    var mq=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');
+    document.documentElement.classList.toggle('dark-mode',mode==='auto'?!!(mq&&mq.matches):mode==='dark');
+    syncDark();
   }
   syncDark();
-  /* V23：讀者未手動設定時，即時跟隨作業系統深色模式切換 */
-  try {
-    var _acimMq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
-    if (_acimMq && _acimMq.addEventListener) _acimMq.addEventListener('change', function(e){
-      var saved = null;
-      try { saved = localStorage.getItem('acim-dark'); } catch (err) {}
-      if (saved === null) {
-        document.documentElement.classList.toggle('dark-mode', e.matches);
-        syncDark();
+  if(themeMode) themeMode.addEventListener('change',function(){ setThemeMode(themeMode.value); });
+  try{
+    var _acimMq=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');
+    if(_acimMq&&_acimMq.addEventListener) _acimMq.addEventListener('change',function(e){
+      if(window.__acimStorage.get('acim-dark')===null){
+        document.documentElement.classList.toggle('dark-mode',e.matches); syncDark();
       }
     });
-  } catch (err) {}
-  /* V25 修復（I18）：長按 600ms 清除手動偏好，回復「跟隨系統」自動模式 */
+  }catch(err){}
   var _darkPressTimer=null, _darkLongPressed=false;
-  btnDark.addEventListener('pointerdown', function(){
-    _darkLongPressed=false;
+  btnDark.addEventListener('pointerdown',function(){
+    clearTimeout(_darkPressTimer); _darkLongPressed=false;
     _darkPressTimer=setTimeout(function(){
-      _darkPressTimer=null; _darkLongPressed=true;
-      try{ localStorage.removeItem('acim-dark'); }catch(err){}
-      var mq=window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
-      document.documentElement.classList.toggle('dark-mode', !!(mq&&mq.matches));
-      syncDark();
-      btnDark.title='已回復跟隨系統（長按深色鈕可切換回手動）';
-      if(btnDark.parentElement) btnDark.parentElement.setAttribute('data-tip','已回復跟隨系統');
+      _darkPressTimer=null; _darkLongPressed=true; setThemeMode('auto');
     },600);
   });
-  btnDark.addEventListener('pointerup', function(){ clearTimeout(_darkPressTimer); });
-  btnDark.addEventListener('pointercancel', function(){ clearTimeout(_darkPressTimer); });
-  btnDark.addEventListener('click', function(){
-    if(_darkLongPressed) return; /* V25：長按後的 click 忽略 */
-    var dark = document.documentElement.classList.toggle('dark-mode');
-    try{ localStorage.setItem('acim-dark', dark ? '1' : '0'); }catch(err){} /* V25（I19）*/
-    syncDark();
+  btnDark.addEventListener('pointerup',function(){ clearTimeout(_darkPressTimer); });
+  btnDark.addEventListener('pointercancel',function(){ clearTimeout(_darkPressTimer); _darkLongPressed=false; });
+  btnDark.addEventListener('keydown',function(e){
+    if(e.key==='Enter'||e.key===' ') _darkLongPressed=false;
+  });
+  btnDark.addEventListener('click',function(){
+    if(_darkLongPressed){ _darkLongPressed=false; return; }
+    setThemeMode(document.documentElement.classList.contains('dark-mode')?'light':'dark');
   });
 
   /* ── PWA 安裝提示條按鈕 ── */
@@ -22110,12 +22262,12 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   /* 注意：恢復動作移到 buildTOC() 末尾執行，
      確保 heading id 賦值完畢後才 getElementById，
      跨裝置與調整字型後位置才能精準對齊。     */
-  var savedY = parseInt(localStorage.getItem('acim-scroll')||'0');
-  var savedAnchor = localStorage.getItem('acim-anchor');
+  var savedY = Math.max(0,parseInt(window.__acimStorage.get('acim-scroll')||'0',10)||0);
+  var savedAnchor = window.__acimStorage.get('acim-anchor');
   var progressRestored = false; /* 旗標：防止 buildTOC 多次呼叫重複跳位 */
   var progressHeadings = null;
   function saveProgress(){
-    try{ localStorage.setItem('acim-scroll', Math.round(window.scrollY)); }catch(e){} /* V25（I19）*/
+    try{ window.__acimStorage.set('acim-scroll', Math.round(window.scrollY)); }catch(e){} /* V25（I19）*/
     if(!progressHeadings) progressHeadings=Array.from(content.querySelectorAll('h1,h2,h3,h4'));
     /* 章節標題按文件順序排列，二分搜尋減少大量重複的版面計算。 */
     var lo=0, hi=progressHeadings.length-1, best=null;
@@ -22124,7 +22276,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       if(h.getBoundingClientRect().top<=80){ best=h.id;lo=mid+1; }
       else hi=mid-1;
     }
-    if(best){ try{ localStorage.setItem('acim-anchor',best); }catch(e){} } /* V25（I19）*/
+    if(best){ try{ window.__acimStorage.set('acim-anchor',best); }catch(e){} } /* V25（I19）*/
   }
   var saveT;
   window.addEventListener('scroll', function(){
@@ -22211,12 +22363,12 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     function tocStateKey(id){ return 'toc-open:' + id; }
     function saveTocState(id, open){
       try {
-        if(open) localStorage.setItem(tocStateKey(id),'1');
-        else localStorage.removeItem(tocStateKey(id));
+        if(open) window.__acimStorage.set(tocStateKey(id),'1');
+        else window.__acimStorage.remove(tocStateKey(id));
       } catch(e){}
     }
     function loadTocState(id){
-      try { return localStorage.getItem(tocStateKey(id))==='1'; } catch(e){ return false; }
+      try { return window.__acimStorage.get(tocStateKey(id))==='1'; } catch(e){ return false; }
     }
 
     /* 遞迴渲染一個 group */
@@ -22314,19 +22466,19 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           var p=entries[gi];
           var bs=p.querySelectorAll('b');
           /* V25：過濾空殘段（無任何非空 <b> 的 st15 段落） */
-          var en='', zh='';
+          var en='', aliases=[];
           for(var bi=0; bi<bs.length; bi++){
             var bt=(bs[bi].textContent||'').replace(/\s+/g,' ').trim();
             if(!bt) continue;
-            if(!en) en=bt; else zh=bt;
+            if(!en) en=bt; else aliases.push(bt);
           }
           if(!en) continue;
           if(!p.id) p.id='glossary-'+gSeq; /* 有效詞條順序固定 → 跨會話穩定 */
           gSeq++;
-          var label=(zh? zh+'·' : '')+en;
+          var label=(aliases.length?aliases.join('／')+'·':'')+en;
           var a=document.createElement('a');
           a.href='#'+p.id; a.setAttribute('role','listitem');
-          a.textContent = label.length>30 ? label.slice(0,30)+'…' : label;
+          a.textContent=label; a.title=label; a.setAttribute('aria-label',label);
           a.dataset.gid=p.id;
           a.addEventListener('click', function(e){
             e.preventDefault();
@@ -22412,6 +22564,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if (!progressRestored) {
       progressRestored = true;
       var doRestore = function() {
+        if(!window.__acimNav.canRestore()) return;
         /* V24 修復：深連結優先——帶 hash 開啟時不做閱讀位置還原。
            原還原排程（fonts.ready+80ms）必然晚於金句模組的 hash 跳轉
            （setTimeout 0），有閱讀紀錄時會蓋掉分享連結的定位。 */
@@ -22428,7 +22581,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         }
         /* 降級：錨點不存在時用 scrollY（同裝置、未改字型時仍準確）*/
         if (savedY > 100) {
-          window.scrollTo(0, savedY);
+          window.__acimJump(savedY);
         }
       };
       /* 稍等 DOM repaint 穩定後再跳位，避免字型載入造成高度漂移 */
@@ -22637,7 +22790,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     });
     var inNote=!!en.node.closest('#acim-footnotes-container');
     var hint=document.createElement('span');hint.className='sr-hint';
-    hint.textContent=inNote?'\u9ede\u64ca\u958b\u555f\u8a3b\u8173':'\u9ede\u64ca\u8df3\u81f3';
+    var noteDef=inNote?en.node.closest('[id^="ftn"]'):null;
+    var noteId=noteDef?(noteDef.id||'').replace(/^ftn/,''):'';
+    var noteLabel=noteId&&window.__acimFootnoteLabel?window.__acimFootnoteLabel(noteId):'';
+    hint.textContent=inNote?(noteLabel||'註 '+noteId)+' · 點擊開啟註文':'點擊跳至';
     item.appendChild(hint);
     item.addEventListener('click',function(){
       var el=en.node;if(!el || !el.isConnected)return;
@@ -22765,7 +22921,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   });
 
   /* ══════════════════════════════════════════════════
-     書籤系統 V3（V25 重構：同一快照＋穩定錨定）
+     書籤系統 V4（V26：穩定身分、暫存備援與版本化備份）
      修復（外部審查 I05/I07/I09/I10/I20）：
      1. 同一快照：一次選定 anchor 元素，title／excerpt／anchor／scrollY
         全部由同一元素派生（V24 三函式各自幾何掃描，可指向不同元素，
@@ -22775,10 +22931,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         避開 content-visibility 未渲染區域量測失真。
      3. excerpt 自 anchor 本身起（V24 一律 nextElementSibling 起跳，
         anchor 為正文段時摘要錯取下一段）。
-     4. 穩定路徑 path=[csecIndex, elmIndex]：不依賴動態 id，
-        跨會話與跨版本（id 重編）皆可重建元素回跳。
-     5. 同位置判定：anchor 相等優先（I10），scrollY ±300px 僅後備。
-     6. 儲存容錯（I20）：bmLoad 驗證 schema、bmSave 失敗不報成功。
+     4. CE 身分、章節路徑與文字摘要優先；DOM 序位僅在同版或文字吻合時後備。
+     5. 不同可辨識位置絕不因像素靠近合併；僅舊版無法辨識紀錄使用像素後備。
+     6. 儲存被拒絕時採本次分頁記憶體，明示未持久保存並提供匯出。
      7. 刪除可復原（I09）：undo toast 5 秒。
      8. 鍵盤入口（I07）：書籤鈕 Shift+Enter 開啟清單
         （長按 500ms 仍保留，主要供觸控）。
@@ -22798,32 +22953,54 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     btnBm.title = '短按：新增／移除書籤；長按半秒或 Shift+Enter：開啟書籤清單';
     btnBm.setAttribute('aria-label', btnBm.title);
 
-    /* ── 讀寫 localStorage（I20：schema 驗證＋失敗如實回報）── */
+    var bmPersistent=true;
+    var BM_IMPORT_LIMIT=256*1024;
+    function cleanString(value,max){ return typeof value==='string'?value.slice(0,max):''; }
+    function validPath(value){
+      return Array.isArray(value)&&value.length===2&&value.every(function(n){
+        return typeof n==='number'&&isFinite(n)&&Math.floor(n)===n&&n>=0&&n<100000;
+      })?value.slice():null;
+    }
+    function normalizeBookmark(b){
+      if(!b||typeof b!=='object'||Array.isArray(b)||typeof b.id!=='string'||!b.id||b.id.length>120) return null;
+      /* JSON 可含孤立 surrogate；避免清單轉碼時拋錯而中斷整批操作。 */
+      try{encodeURIComponent(b.id);}catch(e){return null;}
+      var anchor=cleanString(b.anchor,160), ceId=cleanString(b.ceId,160);
+      if(anchor&&!/^[A-Za-z0-9_.:-]+$/.test(anchor)) anchor='';
+      if(ceId&&!/^(?:In\.|[TWMCP]-)[A-Za-z0-9.:-]+$/.test(ceId)) ceId='';
+      return {
+        id:b.id, schema:2, release:cleanString(b.release,24), anchor:anchor, ceId:ceId,
+        sectionKey:cleanString(b.sectionKey,600), anchorText:cleanString(b.anchorText,160),
+        path:validPath(b.path),
+        scrollY:typeof b.scrollY==='number'&&isFinite(b.scrollY)?Math.max(0,Math.min(1e9,b.scrollY)):0,
+        title:cleanString(b.title,80), excerpt:cleanString(b.excerpt,120),
+        ts:typeof b.ts==='number'&&isFinite(b.ts)&&b.ts>=0&&b.ts<=8640000000000000?b.ts:0
+      };
+    }
     function bmLoad(){
       try{
-        var v = JSON.parse(localStorage.getItem(BM_KEY)||'[]');
-        if(!Array.isArray(v)) return [];
-        var out=[];
-        for(var i=0;i<v.length;i++){
-          var b=v[i];
-          if(!b||typeof b!=='object'||Array.isArray(b)) continue;
-          if(!b.id||typeof b.id!=='string') continue;
-          out.push({
-            id:b.id,
-            anchor:(typeof b.anchor==='string')?b.anchor:'',
-            path:Array.isArray(b.path)?b.path:null,
-            scrollY:(typeof b.scrollY==='number'&&isFinite(b.scrollY))?b.scrollY:0,
-            title:(typeof b.title==='string')?b.title.slice(0,80):'',
-            excerpt:(typeof b.excerpt==='string')?b.excerpt.slice(0,120):'',
-            ts:(typeof b.ts==='number'&&isFinite(b.ts))?b.ts:0
-          });
+        var raw=window.__acimStorage.get(BM_KEY);
+        bmPersistent=window.__acimStorage.persistent(BM_KEY);
+        var value=JSON.parse(raw||'[]');
+        if(!Array.isArray(value)) return [];
+        var seen=Object.create(null), out=[];
+        for(var i=0;i<value.length&&out.length<BM_MAX;i++){
+          var b=normalizeBookmark(value[i]);
+          if(!b||Object.prototype.hasOwnProperty.call(seen,b.id)) continue;
+          seen[b.id]=true; out.push(b);
         }
-        return out.slice(0,BM_MAX);
-      } catch(e){ return []; }
+        return out;
+      }catch(e){return [];}
     }
     function bmSave(arr){
-      try{ localStorage.setItem(BM_KEY, JSON.stringify(arr)); return true; }
-      catch(e){ return false; }
+      /* 接受的資料同時寫入本次記憶體；持久化結果由 bmPersistent 明確回報。 */
+      var clean=arr.map(normalizeBookmark).filter(Boolean).slice(0,BM_MAX);
+      bmPersistent=window.__acimStorage.set(BM_KEY,JSON.stringify(clean));
+      return true;
+    }
+    function updateBmStorageStatus(){
+      var status=document.getElementById('bm-storage-status');
+      if(status) status.textContent=bmPersistent?'書籤儲存在此瀏覽器，可匯出備份。':'瀏覽器無法保存；書籤僅在本次分頁有效，請匯出備份。';
     }
 
     /* ── 定位核心（I05：單一快照來源）── */
@@ -22860,7 +23037,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       while(!el && ci>0){ ci--; el=idedEls(list[ci]).pop()||null; }
       return el;
     }
-    /* 穩定路徑：[csecIndex, 帶id元素序]——跨會話／跨版本可重建 */
+    /* 同版 DOM 序位後備；跨版須另有文字吻合，不能單靠序位保證位置。 */
     function pathOf(el){
       var sec=el.closest('section.csec'); if(!sec) return null;
       var ci=csecList().indexOf(sec); if(ci<0) return null;
@@ -22872,6 +23049,73 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       var list=csecList(); if(!list[p[0]]) return null;
       return idedEls(list[p[0]])[p[1]]||null;
     }
+    var _sectionKeys=null;
+    function sectionKeyOf(el){
+      var sec=el&&el.closest('section.csec');
+      if(!sec) return '';
+      if(!_sectionKeys){
+        _sectionKeys=new Map(); var parts=[];
+        csecList().forEach(function(s){
+          var h=s.querySelector('h1,h2,h3,h4,h5,h6');
+          if(h){
+            var level=parseInt(h.tagName.slice(1),10);
+            parts=parts.slice(0,level); parts[level-1]=(h.textContent||'').replace(/\s+/g,' ').trim();
+          }
+          _sectionKeys.set(s,parts.filter(Boolean).join(' / ').slice(0,600));
+        });
+      }
+      return _sectionKeys.get(sec)||'';
+    }
+    function anchorTextOf(el){
+      if(!el) return '';
+      var clone=el.cloneNode(true);
+      clone.querySelectorAll('.fn-badge,.tts-btn').forEach(function(n){if(n.parentNode)n.parentNode.removeChild(n);});
+      return (clone.textContent||'').replace(/\s+/g,' ').trim().slice(0,160);
+    }
+    function ceIdOf(el){
+      return el&&(el.getAttribute('data-acim-id')||el.getAttribute('data-acim-parent'))||'';
+    }
+    function isReadingTarget(el){ return !!el&&content.contains(el)&&!el.closest('#acim-footnotes-container'); }
+    function resolveBookmark(b){
+      var target=null;
+      if(b.ceId&&/^(?:In\.|[TWMCP]-)[A-Za-z0-9.:-]+$/.test(b.ceId)){
+        target=content.querySelector('[data-acim-id="'+b.ceId+'"]');
+        if(isReadingTarget(target)) return target;
+      }
+      if(b.sectionKey&&b.anchorText){
+        var sections=csecList();
+        for(var i=0;i<sections.length;i++){
+          if(sectionKeyOf(sections[i].querySelector('[id]'))!==b.sectionKey) continue;
+          var elements=idedEls(sections[i]);
+          for(var j=0;j<elements.length;j++) if(anchorTextOf(elements[j])===b.anchorText) return elements[j];
+        }
+      }
+      if(b.anchor){
+        target=document.getElementById(b.anchor);
+        if(isReadingTarget(target)&&(!b.ceId||ceIdOf(target)===b.ceId)&&
+          (!b.anchorText||anchorTextOf(target)===b.anchorText)) return target;
+      }
+      if(b.path){
+        target=elByPath(b.path);
+        if(isReadingTarget(target)&&(!b.ceId||ceIdOf(target)===b.ceId)){
+          if(b.release&&b.release===String(ACIM_VERSION)) return target;
+          var text=anchorTextOf(target), old=(b.excerpt||b.title||'').replace(/…$/,'').replace(/\s+/g,' ').trim();
+          if(b.anchorText?text===b.anchorText:old.length>3&&text.indexOf(old)===0) return target;
+        }
+      }
+      return null;
+    }
+    function bookmarkKey(b){
+      /* 新舊 schema 若解析到同一有效元素，以同一身分合併；
+         無法解析時仍保留各自的 CE／章節文字／歷史定位判準。 */
+      var target=resolveBookmark(b);
+      if(target&&target.id) return 'target:'+target.id;
+      if(b.ceId) return 'ce:'+b.ceId;
+      if(b.sectionKey&&b.anchorText) return 'text:'+b.sectionKey+'|'+b.anchorText;
+      if(b.anchor) return 'anchor:'+b.anchor;
+      return 'legacy:'+b.scrollY+'|'+b.title+'|'+b.excerpt;
+    }
+
     /* 就近標題：anchor 自身（heading）或其前方最近的 heading */
     function nearestHeading(el){
       var n=el;
@@ -22918,6 +23162,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       return {
         el:el,
         anchor:el.id||'',
+        ceId:ceIdOf(el),sectionKey:sectionKeyOf(el),anchorText:anchorTextOf(el),
         path:pathOf(el),
         scrollY:Math.round(window.scrollY),
         title:title,
@@ -22925,18 +23170,17 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       };
     }
 
-    /* ── 同位置判定（I10：anchor 相等優先，scrollY 後備）── */
+    /* V26：有效穩定位置不相同時，絕不以附近像素合併。 */
     function currentBmIndex(arr){
       if(!arr.length) return -1;
       var snap=bmSnapshot();
-      if(snap&&snap.anchor){
-        for(var i=0;i<arr.length;i++){
-          if(arr[i].anchor&&arr[i].anchor===snap.anchor) return i;
-        }
-      }
-      var sy=window.scrollY;
-      for(var j=0;j<arr.length;j++){
-        if(Math.abs((arr[j].scrollY||0)-sy)<300) return j;
+      for(var i=0;i<arr.length;i++){
+        var old=arr[i], target=resolveBookmark(old);
+        if(target&&snap&&snap.el){if(target===snap.el)return i;continue;}
+        if(snap&&snap.ceId&&old.ceId){if(snap.ceId===old.ceId)return i;continue;}
+        if(snap&&snap.anchor&&old.anchor===snap.anchor) return i;
+        /* 僅無法辨識位置的歷史紀錄使用像素後備。 */
+        if(!target&&!old.ceId&&!old.sectionKey&&!old.release&&Math.abs((old.scrollY||0)-window.scrollY)<300) return i;
       }
       return -1;
     }
@@ -22944,6 +23188,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     function syncBtnState(){
       var arr=bmLoad();
       var idx=currentBmIndex(arr);
+      updateBmStorageStatus();
       if(idx>=0) btnBm.classList.add('bm-marked');
       else       btnBm.classList.remove('bm-marked');
     }
@@ -22952,12 +23197,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var toastEl=null, toastTimer=null;
     function hideToast(){ if(toastEl) toastEl.style.opacity='0'; }
     function showBmToast(msg, undoCb){
+      if(!bmPersistent) msg+='；僅本次分頁有效，請匯出備份';
+      updateBmStorageStatus();
       if(!toastEl){
         toastEl=document.createElement('div');
         toastEl.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);'
           +'background:rgba(30,10,55,0.93);color:#EDE6F8;font-size:13px;'
           +'padding:8px 18px;border-radius:20px;z-index:999999;'
-          +'border:1px solid rgba(201,162,39,0.4);white-space:nowrap;'
+          +'border:1px solid rgba(201,162,39,0.4);white-space:normal;max-width:calc(100vw - 24px);text-align:center;'
           +'box-shadow:0 4px 16px rgba(40,0,80,0.5);'
           +'transition:opacity 0.25s;opacity:0;pointer-events:none;'
           +'font-family:-apple-system,sans-serif;';
@@ -22995,6 +23242,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     /* ── 渲染書籤列表 ── */
     function renderBmList(){
       var arr=bmLoad();
+      updateBmStorageStatus();
       if(arr.length===0){
         bmList.innerHTML='<div class="bm-empty">尚無書籤<br>閱讀時點擊 🔖 可標記當前位置</div>';
         return;
@@ -23008,7 +23256,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         var dateStr=(dt.getMonth()+1)+'/'+(dt.getDate())+'（'+weekDay+'）'
                     +String(dt.getHours()).padStart(2,'0')+':'
                     +String(dt.getMinutes()).padStart(2,'0');
-        html+='<div class="bm-item" role="listitem" data-bm-id="'+encodeURIComponent(bm.id)+'" tabindex="0" aria-label="書籤：'+bm.title+'">'
+        html+='<div class="bm-item" role="listitem" data-bm-id="'+encodeURIComponent(bm.id)+'" tabindex="0" aria-label="書籤：'+escHtml(bm.title)+'">'
           +'<div class="bm-item-body">'
           +'<div class="bm-item-title">'+escHtml(bm.title)+'</div>'
           +'<span class="bm-item-time">'+dateStr+'</span>'
@@ -23027,24 +23275,17 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           var bm=bmLoad().find(function(b){return b.id===id;});
           if(!bm) return;
           closeBmPanel();
-          var target=null;
-          if(bm.anchor){
-            var t=document.getElementById(bm.anchor);
-            if(t) target=t;
-          }
-          if(!target && bm.path){
-            var t2=elByPath(bm.path);
-            if(t2) target=t2;
-          }
+          var target=resolveBookmark(bm);
           if(target){
             window.__acimJump(window.scrollY + target.getBoundingClientRect().top);
             window.__acimCorrectScroll(target, 0);
             return;
           }
-          window.scrollTo({top:bm.scrollY,behavior:'smooth'});
+          window.__acimJump(bm.scrollY);
         });
         el.addEventListener('keydown',function(e){
-          if(e.key==='Enter'||e.key===' ') el.click();
+          if(e.target!==el||!(e.key==='Enter'||e.key===' ')) return;
+          e.preventDefault(); el.click();
         });
       });
 
@@ -23077,13 +23318,17 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     /* ── 面板開關 ── */
     function openBmPanel(){
       renderBmList();
+      bmPanel.inert=false; bmPanel.removeAttribute('inert'); bmPanel.setAttribute('aria-hidden','false');
       bmPanel.classList.add('bm-open');
       bmOpen=true;
       document.getElementById('bm-panel-close').focus();
     }
     function closeBmPanel(){
+      var returnFocus=bmPanel.contains(document.activeElement);
       bmPanel.classList.remove('bm-open');
+      bmPanel.inert=true; bmPanel.setAttribute('inert',''); bmPanel.setAttribute('aria-hidden','true');
       bmOpen=false;
+      if(returnFocus) btnBm.focus({preventScroll:true});
     }
 
     /* ── btn-bm 點擊：加入 / 移除書籤（同一快照；I20 失敗如實回報）── */
@@ -23106,7 +23351,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         var snap=bmSnapshot();
         if(!snap){ showBmToast('無法定位目前位置'); return; }
         var bm={
-          id:'bm-'+Date.now(),
+          id:'bm-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+          schema:2,release:String(ACIM_VERSION),
+          ceId:snap.ceId,sectionKey:snap.sectionKey,anchorText:snap.anchorText,
           anchor:snap.anchor,
           path:snap.path,
           scrollY:snap.scrollY,
@@ -23123,6 +23370,60 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           showBmToast('儲存失敗：瀏覽器儲存被拒絕，僅本次生效');
         }
       }
+    });
+
+    function parseBookmarkImport(text){
+      if(typeof text!=='string'||text.length>BM_IMPORT_LIMIT) throw new Error('書籤檔案過大');
+      var data;
+      try{data=JSON.parse(text);}catch(e){throw new Error('檔案不是有效的 JSON');}
+      var rows;
+      if(Array.isArray(data)) rows=data; /* 相容舊版陣列備份 */
+      else if(data&&data.format==='acim-ce-zh-tw-bookmarks'&&data.schemaVersion===1&&Array.isArray(data.bookmarks)) rows=data.bookmarks;
+      else throw new Error('不支援的書籤備份格式或版本');
+      if(rows.length>BM_MAX) throw new Error('備份超過 '+BM_MAX+' 筆書籤上限');
+      var normalized=rows.map(normalizeBookmark);
+      if(normalized.some(function(b){return !b;})) throw new Error('備份含無效書籤，未匯入任何項目');
+      return normalized;
+    }
+    function mergeBookmarkImport(existing,incoming){
+      var merged=existing.slice(), keys=Object.create(null), ids=Object.create(null);
+      merged.forEach(function(b){keys[bookmarkKey(b)]=true;ids[b.id]=true;});
+      var added=0, duplicate=0, overflow=0;
+      incoming.forEach(function(b,index){
+        var key=bookmarkKey(b);
+        if(keys[key]){duplicate++;return;}
+        if(merged.length>=BM_MAX){overflow++;return;}
+        if(ids[b.id]) b=Object.assign({},b,{id:'bm-import-'+Date.now()+'-'+index});
+        while(ids[b.id]) b.id+='x';
+        keys[key]=true;ids[b.id]=true;merged.push(b);added++;
+      });
+      return {bookmarks:merged,added:added,duplicate:duplicate,overflow:overflow};
+    }
+    function exportBookmarks(){
+      var payload={format:'acim-ce-zh-tw-bookmarks',schemaVersion:1,bookVersion:String(ACIM_VERSION),
+        exportedAt:new Date().toISOString(),bookmarks:bmLoad()};
+      var url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}));
+      var a=document.createElement('a');a.href=url;a.download='ACIM_CE_bookmarks_'+new Date().toISOString().slice(0,10)+'.json';
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(function(){URL.revokeObjectURL(url);},1000);
+      showBmToast('書籤備份已準備下載');
+    }
+    var bmImportInput=document.getElementById('bm-import-file');
+    document.getElementById('bm-export').addEventListener('click',exportBookmarks);
+    document.getElementById('bm-import').addEventListener('click',function(){bmImportInput.value='';bmImportInput.click();});
+    bmImportInput.addEventListener('change',function(){
+      var file=bmImportInput.files&&bmImportInput.files[0]; if(!file) return;
+      if(file.size>BM_IMPORT_LIMIT){showBmToast('匯入失敗：檔案上限為 256 KiB');return;}
+      var read=file.text?file.text():new Promise(function(resolve,reject){
+        var reader=new FileReader();reader.onload=function(){resolve(String(reader.result));};reader.onerror=reject;reader.readAsText(file,'UTF-8');
+      });
+      read.then(function(text){
+        var incoming=parseBookmarkImport(text);
+        /* 讀取完成才取得現有資料，避免覆蓋讀取期間新增的書籤。 */
+        var result=mergeBookmarkImport(bmLoad(),incoming);
+        bmSave(result.bookmarks);renderBmList();syncBtnState();
+        showBmToast('匯入 '+result.added+' 筆；略過 '+result.duplicate+' 筆重複'+(result.overflow?'，另有 '+result.overflow+' 筆超過上限':''));
+      }).catch(function(error){showBmToast('匯入失敗：'+(error&&error.message||'無法讀取檔案'));});
     });
 
     /* ── I07：鍵盤開啟書籤清單（Shift+Enter）── */
@@ -23215,7 +23516,12 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var m=h.match(/#_(?:ftn|edn)(\d+)$/);
     if(!m) return;
     var el=document.getElementById('ftn'+m[1]); if(!el) return;
-    fnNum.textContent=m[1]+'.';
+    var noteInfo=window.__acimFootnoteInfo?window.__acimFootnoteInfo(m[1]):null;
+    fnNum.textContent=(noteInfo?noteInfo.number:m[1])+'.';
+    var noteContext=document.getElementById('fn-context');
+    if(noteContext)noteContext.textContent=noteInfo?noteInfo.groupLabel:'';
+    fnBar.setAttribute('data-fn-id',m[1]);
+    fnBar.setAttribute('aria-label',noteInfo?noteInfo.label:'註 '+m[1]);
     var clone=el.cloneNode(true);
     clone.querySelectorAll('a[href]').forEach(function(a){
       var ah=a.getAttribute('href')||'', t=(a.textContent||'').trim();
@@ -23241,6 +23547,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     fnBar.classList.remove('open'); document.body.classList.remove('fn-open');
     var src=lastFnTrigger;
     activeRef=null; hoverOpened=null; lastFnTrigger=null;
+    window.__fnClickOpen=false; window.__fnSkip=false;
+    if(typeof cancelFnHide==='function') cancelFnHide();
     /* V25 修復（I04）：鍵盤關閉後焦點回到來源徽章（流程閉環） */
     if(restoreFocus && src && src.isConnected){
       var badge=src.classList&&src.classList.contains('fn-badge')?src
@@ -23307,35 +23615,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   });
 
   /* ── 離線 / 上線狀態橫幅 ── */
-  (function(){
-    var BAR_ID = 'acim-offline-bar';
-    function showOffline() {
-      if (document.getElementById(BAR_ID)) return;
-      var bar = document.createElement('div');
-      bar.id = BAR_ID;
-      /* V25（A10）：文案如實——不宣稱「所有內容」已快取 */
-      bar.textContent = '📵  目前離線 — 正在閱讀離線快取（已下載的章節與功能可用）';
-      bar.style.cssText = [
-        'position:fixed;top:0;left:0;right:0',
-        'background:#403053;color:#e8d9ff',
-        'text-align:center;font-size:13px;padding:7px 16px',
-        'z-index:999998;letter-spacing:.01em',
-        'animation:acimFadeIn .3s ease'
-      ].join(';');
-      document.body.prepend(bar);
-    }
-    function hideOffline() {
-      var bar = document.getElementById(BAR_ID);
-      if (!bar) return;
-      bar.style.transition = 'opacity .4s';
-      bar.style.opacity = '0';
-      setTimeout(function() { bar.remove(); }, 400);
-    }
-    window.addEventListener('offline', showOffline);
-    window.addEventListener('online',  hideOffline);
-    /* 頁面載入時若已離線，立即顯示 */
-    if (!navigator.onLine) showOffline();
-  })();
+  /* V26：由獨立 acim-offline-controller 管理經驗證的保存狀態與連線提示。 */
 
   /* ── 版本日期：讀取 HTTP Last-Modified 標頭（document.lastModified），
      格式化為 YYYY-MM-DD HH:MM 後覆蓋 HTML 中預設的 build date。
@@ -23420,13 +23700,13 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   };
 
   /* 從 localStorage 讀取上次設定（預設 3 = 中）*/
-  var savedRate = localStorage.getItem('acim-tts-rate') || '3';
+  var savedRate = window.__acimStorage.get('acim-tts-rate') || '3';
   if (!RATE_MAP[savedRate]) savedRate = '3';
   rateSlider.value = savedRate;
   rateVal.textContent = RATE_MAP[savedRate].label;
 
   /* ── 音色偏好（'f'=女聲, 'm'=男聲，預設女聲）── */
-  var ttsGenderPref = localStorage.getItem('acim-tts-gender') || 'f';
+  var ttsGenderPref = window.__acimStorage.get('acim-tts-gender') === 'm' ? 'm' : 'f';
   function applyGenderUI(pref){
     if(pref === 'm'){
       genderBtnM.classList.add('tts-gender-active');
@@ -23442,7 +23722,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
      （Android Chrome 的 synth.speaking 有已知 bug，避免依賴它來判斷播放中）*/
   function switchGender(pref){
     ttsGenderPref = pref;
-    localStorage.setItem('acim-tts-gender', pref);
+    window.__acimStorage.set('acim-tts-gender', pref);
     applyGenderUI(pref);
     /* 語音切換完成 */
   }
@@ -23464,7 +23744,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   rateSlider.addEventListener('input', function(){
     var v = rateSlider.value;
     rateVal.textContent = RATE_MAP[v] ? RATE_MAP[v].label : '中';
-    localStorage.setItem('acim-tts-rate', v);
+    window.__acimStorage.set('acim-tts-rate', v);
     /* 若正在朗讀，下一段會自動套用新語速；當前句無法動態調整（Web Speech API 限制）*/
   });
 
@@ -23671,12 +23951,12 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   }
 
   /* ── 停止朗讀 ── */
-  /* V25（I14）：朗讀停止旗標＋排程控制——
-     stopTTS 立即取消未復播的 60ms 排程；已排定的舊 utterance 回呼
-     因旗標失效，不再清洗新工作的 UI 狀態。 */
+  /* V26：工作代碼區分新舊朗讀，停止後的延遲回呼不能清除或續播新工作。 */
   var _ttsStopped = true;
+  var _ttsGeneration = 0;
   var _speakTimer = null;
   function stopTTS(){
+    _ttsGeneration++;
     _ttsStopped = true;
     if(_speakTimer){ clearTimeout(_speakTimer); _speakTimer=null; }
     synth.cancel();
@@ -23696,17 +23976,19 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   /* ── 朗讀純文字（供腳注使用）── */
   function speakText(text, onEndCb, opts){
     stopTTS();
-    _ttsStopped = false;
     if(!text || text.length < 2) return;
+    _ttsStopped=false;
+    var job=_ttsGeneration, finished=false;
     var utter = new SpeechSynthesisUtterance(text);
     utter.lang  = 'zh-TW';
     utter.rate  = getCurrentRate();
     utter.pitch = getCurrentPitch();
-    function applyVoice(){ var v=pickZhVoice(); if(v) utter.voice=v; }
+    function applyVoice(){ if(job!==_ttsGeneration||_ttsStopped||finished)return; var v=pickZhVoice(); if(v) utter.voice=v; }
     applyVoice();
     if(!synth.getVoices().length) speechSynthesis.addEventListener('voiceschanged', applyVoice, {once:true});
     utter.onend = utter.onerror = function(){
-      if(_ttsStopped) return; /* V25（I14）：舊工作回呼不清洗新狀態 */
+      if(_ttsStopped||job!==_ttsGeneration||finished) return;
+      finished=true; _ttsStopped=true;
       var fb = document.getElementById('fn-tts-btn');
       if(fb) fb.classList.remove('fn-tts-active');
       window.__fnTtsSpeaking = false; /* V24 */
@@ -23714,8 +23996,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     };
     synth.cancel();
     _speakTimer = setTimeout(function(){
+      if(_ttsStopped||job!==_ttsGeneration) return;
       _speakTimer = null;
-      if(_ttsStopped) return; /* V25（I14）：停止後取消未復播排程 */
       synth.speak(utter);
     }, 60);
     if(opts && opts.fnTts) window.__fnTtsSpeaking = true; /* V24 修復：註腳朗讀來源登記 */
@@ -23876,7 +24158,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     });
   }
 
-  function runQueue(onDone){
+  function runQueue(onDone,job){
+    if(_ttsStopped||job!==_ttsGeneration) return;
     if(!_queue.length){ _queueRunning=false; clearTtsHighlight(); if(onDone) onDone(); return; }
     _queueRunning = true;
     var item = _queue.shift();
@@ -23892,9 +24175,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       var range = _hlQueue.length ? _hlQueue.shift() : null;
       setTtsHighlightRange(range);
     }
-    u.onend = u.onerror = function(){
-      if(_ttsStopped) return; /* V25（I14）：停止後舊分句回呼不再續播 */
-      runQueue(onDone);
+    var finished=false;
+    u.onend=u.onerror=function(){
+      if(_ttsStopped||job!==_ttsGeneration||finished) return;
+      finished=true; runQueue(onDone,job);
     };
     synth.speak(u);
   }
@@ -23916,19 +24200,22 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     para.classList.add('tts-reading');
     barLabel.textContent = '▶ ' + text.slice(0, 16) + '…';
     ttsBar.classList.add('tts-bar-on');
-    para.scrollIntoView({behavior:'smooth', block:'center'});
+    var rect=para.getBoundingClientRect(), margin=Math.max(56,(window.innerHeight-Math.min(rect.height||0,window.innerHeight-112))/2);
+    window.__acimJump(window.scrollY+rect.top-margin);
+    window.__acimCorrectScroll(para,margin);
 
     /* 建立分句佇列 */
     _queue = splitSentences(text);
     /* 計算「真正朗讀」（非靜音）分句數量，並嘗試建立對應的 highlight Range */
     var speakCount = _queue.filter(function(p){ return !p.pause; }).length;
     _hlQueue = buildHighlightRanges(para, speakCount);
-    _ttsStopped = false; /* V25（I14）：本次為新朗讀工作 */
+    _ttsStopped=false;
+    var job=_ttsGeneration; /* V26：此次段落朗讀的工作代碼 */
     synth.cancel();
     _speakTimer = setTimeout(function(){
+      if(_ttsStopped||job!==_ttsGeneration) return;
       _speakTimer = null;
-      if(_ttsStopped) return; /* V25（I14）：取消未復播排程 */
-      runQueue(function(){ stopTTS(); });
+      runQueue(function(){ if(job===_ttsGeneration) stopTTS(); },job);
     }, 60);
   }
 
@@ -23960,7 +24247,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       var numTxt = (fnNumEl ? fnNumEl.textContent : '').replace(/\.$/,'');
       var raw = fnTextEl.innerText || fnTextEl.textContent || '';
       var text = cleanText(raw);
-      if(numTxt) text = '腳注' + numTxt + '。' + text;
+      var noteBar=document.getElementById('footnote-bar');
+      var noteGlobalId=noteBar?noteBar.getAttribute('data-fn-id'):'';
+      var noteLabel=window.__acimFootnoteLabel?window.__acimFootnoteLabel(noteGlobalId):'';
+      if(noteLabel) text=noteLabel+'。'+text;
+      else if(numTxt) text='註 '+numTxt+'。'+text;
       speakText(text, null, {fnTts:true});
       /* V24 修復：先啟動朗讀再加 class——原順序會被 speakText 內部的
          stopTTS 立即移除 class，按鈕狀態與實際播放脫節 */
@@ -24591,7 +24882,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var _prevHT = document.querySelectorAll('[data-acim-hash-target]');
     for (var _hi = 0; _hi < _prevHT.length; _hi++) _prevHT[_hi].removeAttribute('data-acim-hash-target');
     target.setAttribute('data-acim-hash-target','1');
-    hashScrollTimer=setTimeout(function(){ target.scrollIntoView({behavior:'smooth',block:'center'}); }, 150);
+    var navToken=window.__acimNav.begin('hash');
+    hashScrollTimer=setTimeout(function(){
+      if(!window.__acimNav.valid(navToken)||!target.isConnected) return;
+      var rect=target.getBoundingClientRect();
+      var margin=Math.max(56,(window.innerHeight-Math.min(rect.height||0,window.innerHeight-112))/2);
+      window.__acimJump(window.scrollY+rect.top-margin,navToken);
+      window.__acimCorrectScroll(target,margin,navToken);
+    },150);
     hashClearTimer=setTimeout(clearHL, 4500);
   }
 
@@ -24983,7 +25281,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 
     function run() {
       assignIds();
-      if (location.hash) scrollToHash(location.hash);
+      if(location.hash&&window.__acimNav.canRestore()) scrollToHash(location.hash);
     }
     /* setTimeout(0)：讓頁面先渲染一幀，立即執行 assignIds
        確保 data-acim-id 在用戶選取文字前已賦予完成 */
@@ -25031,5 +25329,151 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 
 </script>
 
+<script id="acim-offline-controller">
+/* V26: report verified offline content, separately from network connectivity. */
+(function initOfflineStatus(){
+  'use strict';
+  var host=document.getElementById('sidebar-header');
+  if(!host || document.getElementById('acim-offline-panel')) return;
+  var version=typeof ACIM_VERSION==='string'?ACIM_VERSION:'';
+  var panel=document.createElement('div'); panel.id='acim-offline-panel';
+  var status=document.createElement('p'); status.id='acim-offline-status';
+  status.setAttribute('role','status'); status.setAttribute('aria-live','polite');
+  var button=document.createElement('button'); button.type='button';
+  button.id='acim-offline-save'; button.textContent='檢查保存狀態';
+  panel.appendChild(status);panel.appendChild(button);
+  var search=document.getElementById('toc-search-box');host.insertBefore(panel,search);
+  var style=document.createElement('style');style.id='acim-offline-status-style';
+  style.textContent='#acim-offline-panel{margin:0 0 8px;padding:7px 0;border-bottom:1px solid var(--c-border);color:var(--c-muted);font-size:11px;line-height:1.45;}'
+    +'#acim-offline-status{margin:0 0 5px;font-size:inherit;}'
+    +'#acim-offline-save{font:inherit;color:var(--c-accent);background:var(--c-sidebar);border:1px solid var(--c-border);border-radius:5px;padding:4px 8px;cursor:pointer;}'
+    +'#acim-offline-save:focus-visible{outline:2px solid var(--c-accent);outline-offset:2px;}'
+    +'#acim-offline-save:disabled{opacity:.7;cursor:wait;}'
+    +'#acim-offline-bar{position:fixed;top:0;left:0;right:0;background:#403053;color:#fff;text-align:center;font:13px/1.4 sans-serif;padding:7px 16px;z-index:999998;}'
+    +'@media print{#acim-offline-panel,#acim-offline-bar{display:none!important;}}';
+  document.head.appendChild(style);
+  var sw=navigator.serviceWorker, latest=null, busy=false, serial=0, epoch=0;
+  var autoWarmedController=null, retryTimer=null, pending=Object.create(null);
+  var checking=null, statusRevision=0;
+  function count(value,max){return Number.isInteger(value)&&value>=0&&value<=max;}
+  function validState(d){
+    return d&&d.type==='ACIM_OFFLINE_STATUS'&&typeof d.version==='string'
+      &&typeof d.bookReady==='boolean'&&typeof d.shellReady==='boolean'
+      &&count(d.fontsCached,8)&&d.fontsTotal===8&&count(d.imagesCached,4)&&d.imagesTotal===4
+      &&typeof d.warming==='boolean'&&typeof d.complete==='boolean';
+  }
+  function complete(d){return !!(d&&d.version===version&&d.complete&&d.bookReady&&d.shellReady&&d.fontsCached===8&&d.imagesCached===4);}
+  function updateBanner(){
+    var bar=document.getElementById('acim-offline-bar');
+    if(navigator.onLine!==false){if(bar)bar.remove();return;}
+    if(!bar){bar=document.createElement('div');bar.id='acim-offline-bar';bar.setAttribute('role','status');document.body.prepend(bar);}
+    bar.textContent=latest&&latest.version===version&&latest.bookReady
+      ?'目前離線；本機已驗證的 '+version.toUpperCase()+' 全書可閱讀。'
+      :'目前離線；尚未確認本機保存的書籍版本。';
+  }
+  function paint(message){
+    if(message)status.textContent=message;
+    else if(!latest)status.textContent='正在檢查離線保存狀態。';
+    else if(latest.version!==version)status.textContent='版本更新尚未套用；請套用更新提示，再確認離線保存。';
+    else if(complete(latest))
+      status.textContent=version.toUpperCase()+' 全書、字型與書內圖片已驗證保存。';
+    else if(latest.warming)status.textContent='正在保存離線資料；目前頁面可繼續閱讀。';
+    else if(latest.storageError)status.textContent='離線保存未完成，請確認瀏覽器的儲存空間與權限後重試。';
+    else if(!latest.bookReady||!latest.shellReady)status.textContent='離線書籍尚未完整保存，請連線後補齊。';
+    else status.textContent='全書已驗證保存；字型 '+latest.fontsCached+'/8，書內圖片 '+latest.imagesCached+'/4。';
+    button.disabled=busy||!!(latest&&latest.warming);
+    panel.setAttribute('aria-busy',button.disabled?'true':'false');
+    button.textContent=button.disabled?'處理中…':!latest||latest.version!==version?'檢查保存狀態':complete(latest)?'重新檢查':'補齊離線資料';
+    updateBanner();
+  }
+  function receive(d,source){
+    if(source&&sw&&source!==sw.controller)return;
+    if(validState(d)){statusRevision++;latest=d;paint();return;}
+    if(d&&d.type==='ACIM_OFFLINE_PROGRESS'&&d.version===version&&count(d.completed,32)&&count(d.total,32)&&d.total>0&&d.completed<=d.total){
+      status.textContent='離線資料已處理 '+d.completed+'/'+d.total+'，保存結果確認中；目前頁面可繼續閱讀。';
+    }
+  }
+  function request(type,timeoutMs){
+    return new Promise(function(resolve,reject){
+      var controller=sw&&sw.controller;
+      if(!controller){reject(new Error('no-controller'));return;}
+      var id='v26-offline-'+(++serial), requestEpoch=epoch, requestRevision=statusRevision, port=null;
+      var timer=setTimeout(function(){finish(null,new Error('status-timeout'));},timeoutMs||10000);
+      function finish(data,error){
+        if(!pending[id])return;
+        delete pending[id];clearTimeout(timer);if(port)port.close();
+        if(requestEpoch!==epoch||controller!==sw.controller){reject(new Error('controller-changed'));return;}
+        if(error){reject(error);return;}
+        if(!validState(data)){reject(new Error('invalid-status'));return;}
+        if(type==='GET_OFFLINE_STATUS'&&requestRevision!==statusRevision&&latest){resolve(latest);return;}
+        receive(data,controller);resolve(data);
+      }
+      pending[id]=finish;
+      try{
+        if(typeof MessageChannel==='function'){
+          var channel=new MessageChannel();port=channel.port1;
+          port.onmessage=function(e){finish(e.data);};
+          controller.postMessage({type:type,requestId:id},[channel.port2]);
+        }else controller.postMessage({type:type,requestId:id});
+      }catch(e){finish(null,e);}
+    });
+  }
+  function check(autoWarm){
+    var currentEpoch=epoch;
+    if(checking)return checking;
+    if(!sw||!sw.controller){paint('離線保存尚未就緒；請連線載入，等待安裝完成。');return Promise.resolve(null);}
+    checking=request('GET_OFFLINE_STATUS').then(function(d){
+      if(autoWarm&&d.version===version&&!d.warming&&d.fontsCached<8&&navigator.onLine!==false&&autoWarmedController!==sw.controller){
+        autoWarmedController=sw.controller;
+        latest=Object.assign({},d,{warming:true});statusRevision++;paint();
+        sw.controller.postMessage({type:'WARM_FONTS'});
+        if(retryTimer)clearTimeout(retryTimer);
+        retryTimer=setTimeout(function(){retryTimer=null;check(false);},28000);
+      }
+      return latest||d;
+    }).catch(function(){
+      if(currentEpoch===epoch){latest=null;paint('尚未確認離線版本；請連線並套用更新後再試。');}
+      return null;
+    }).finally(function(){if(currentEpoch===epoch)checking=null;});
+    return checking;
+  }
+  button.addEventListener('click',function(){
+    if(busy)return;
+    busy=true;paint();
+    var currentEpoch=epoch;
+    check(false).then(function(d){
+      if(currentEpoch!==epoch)return;
+      if(!d||d.version!==version||complete(d))return;
+      if(d.warming){paint();return;}
+      if(navigator.onLine===false){paint('目前離線，請恢復連線後再補齊資料。');return;}
+      paint('正在保存離線資料；目前頁面可繼續閱讀。');
+      return request('PREPARE_OFFLINE',35000);
+    }).catch(function(){
+      if(currentEpoch===epoch){latest=null;paint('尚未確認保存結果，請確認連線後重新檢查。');}
+    }).finally(function(){
+      if(currentEpoch===epoch){busy=false;button.disabled=!!(latest&&latest.warming);panel.setAttribute('aria-busy',button.disabled?'true':'false');button.textContent=button.disabled?'處理中…':complete(latest)?'重新檢查':latest&&latest.version===version?'補齊離線資料':'檢查保存狀態';}
+    });
+  });
+  if(!sw){status.textContent='此瀏覽器未提供離線保存功能；可連線閱讀。';button.hidden=true;updateBanner();return;}
+  sw.addEventListener('message',function(e){
+    if(e.source&&e.source!==sw.controller)return;
+    var d=e.data;
+    if(d&&pending[d.requestId])pending[d.requestId](d);
+    else receive(d,e.source);
+  });
+  sw.addEventListener('controllerchange',function(){
+    epoch++;statusRevision++;checking=null;busy=false;latest=null;autoWarmedController=null;
+    if(retryTimer){clearTimeout(retryTimer);retryTimer=null;}
+    Object.keys(pending).forEach(function(id){pending[id](null,new Error('controller-changed'));});
+    paint();
+    check(true);
+  });
+  window.addEventListener('online',function(){updateBanner();check(true);});
+  window.addEventListener('offline',function(){updateBanner();check(false);});
+  paint();
+  if(sw.controller)check(true);
+  sw.ready.then(function(){if(!latest)check(true);}).catch(function(){paint('離線保存尚未就緒，請稍後重新檢查。');});
+})();
+</script>
 </body>
 </html>
