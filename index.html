@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="acim-version" content="v27">
-<meta name="acim-release-id" content="7dd16da96fd808bfc2c36a6043ab1de00ce2d5b7e12d494897076bd60fd7e40f">
+<meta name="acim-release-id" content="a12301848f24093316c8ac5a2f8a80510646d9f33c63310af349abc6459d83b3">
 <meta name="acim-build" content="2026-11-02">
+<meta name="acim-build-time" content="02:46">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -1628,7 +1629,7 @@ ul{margin-bottom:0;}
       </div>
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info">最後修正：<span id="app-version-date">2026-11-02</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 02:46</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -23678,34 +23679,17 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   /* ── 離線 / 上線狀態橫幅 ── */
   /* V26：由獨立 acim-offline-controller 管理經驗證的保存狀態與連線提示。 */
 
-  /* ── 版本日期：讀取 HTTP Last-Modified 標頭（document.lastModified），
-     格式化為 YYYY-MM-DD HH:MM 後覆蓋 HTML 中預設的 build date。
-     若伺服器未回傳 Last-Modified（返回當下時間），則只顯示日期部分，
-     避免每次重整都顯示不同時間造成誤解。                               ── */
+  /* ── 固定修訂時間：YYYY-MM-DD HH:mm，台灣時間 (UTC+8)。
+     由發布設定產生，重新整理或讀者所在時區不會改變此值。 ── */
   (function(){
     var el = document.getElementById('app-version-date');
     if (!el) return;
-    /* V25（A11）：優先採用建置時固定的 <meta name="acim-build">，
-       不再以 Last-Modified 秒數推定發布時間真實性。 */
-    var meta = document.querySelector('meta[name="acim-build"]');
-    if (meta && meta.content && /\d{4}-/.test(meta.content)) { el.textContent = meta.content; return; }
-    var lm = document.lastModified;          /* 後備：瀏覽器從 HTTP header 取得 */
-    if (!lm) return;
-    var d = new Date(lm);
-    if (isNaN(d.getTime())) return;
-    /* 判斷是否為「伺服器真實 Last-Modified」：
-       GitHub Pages 會回傳實際檔案時間，其秒數通常非 :00。
-       若秒數為 00 且毫秒為 0，高機率是瀏覽器用當下時間填充（無 header）。
-       此情況下只顯示日期，不顯示時分，避免誤導。                       */
-    var isRealDate = (d.getSeconds() !== 0 || d.getMilliseconds() !== 0);
-    var yyyy = d.getFullYear();
-    var mo   = String(d.getMonth() + 1).padStart(2, '0');
-    var dd   = String(d.getDate()).padStart(2, '0');
-    var hh   = String(d.getHours()).padStart(2, '0');
-    var mm   = String(d.getMinutes()).padStart(2, '0');
-    el.textContent = isRealDate
-      ? (yyyy + '-' + mo + '-' + dd + ' ' + hh + ':' + mm)
-      : (yyyy + '-' + mo + '-' + dd);
+    var dateMeta = document.querySelector('meta[name="acim-build"]');
+    var timeMeta = document.querySelector('meta[name="acim-build-time"]');
+    if (dateMeta && timeMeta && /^\d{4}-\d{2}-\d{2}$/.test(dateMeta.content)
+        && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(timeMeta.content)) {
+      el.textContent = dateMeta.content + ' ' + timeMeta.content;
+    }
   })();
 
 })();
