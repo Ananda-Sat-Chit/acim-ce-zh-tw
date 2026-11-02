@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="acim-version" content="v27">
-<meta name="acim-release-id" content="a12301848f24093316c8ac5a2f8a80510646d9f33c63310af349abc6459d83b3">
+<meta name="acim-candidate" content="V27-S1">
+<meta name="acim-release-id" content="7f17f932e7d7efff103826efb8d591169dbe3463c0bb3d01cbf622187046cff9">
 <meta name="acim-build" content="2026-11-02">
-<meta name="acim-build-time" content="02:46">
+<meta name="acim-build-time" content="16:28">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -1601,6 +1602,21 @@ ul{margin-bottom:0;}
   "image": "https://ananda-sat-chit.github.io/acim-ce-zh-tw/pwa-192x192.png"
 }
 </script>
+<style id="acim-settings-s1">
+/* S1 controlled layout candidate: original V27 interaction scripts stay intact.
+   The two pages keep their layout boxes in a definite sidebar remainder.
+   hidden remains the settings state; visibility hides the retained box.
+   No document/body state, focus policy, observer or layout read is added. */
+.sidebar-candidate-label{font-size:10px;line-height:1.2;color:var(--c-muted);padding:1px 3px;border:1px solid var(--c-border);border-radius:3px;}
+#sidebar-header{border-bottom:0;}
+#sidebar-stage{position:relative;flex:1 1 auto;min-width:0;min-height:0;overflow:hidden;}
+#sidebar-navigation{position:absolute;inset:0;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;visibility:visible;}
+#sidebar-navigation > #toc-search-box{flex:0 0 auto;margin:0;padding:6px 12px 8px;border-bottom:1px solid var(--c-border);}
+#sidebar-navigation > #toc-wrapper{flex:1 1 auto;min-height:0;}
+#sidebar-settings-panel{position:absolute;inset:0;z-index:1;display:block;visibility:visible;margin:0;padding:8px 12px 16px;border:0;border-radius:0;height:auto;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain;}
+#sidebar-settings-panel[hidden]{display:block!important;visibility:hidden;pointer-events:none;}
+#sidebar-settings-panel:not([hidden]) + #sidebar-navigation{visibility:hidden;pointer-events:none;}
+</style>
 </head>
 
 <body>
@@ -1625,11 +1641,14 @@ ul{margin-bottom:0;}
       <div class="sidebar-topline">
         <h3 title="完整加註版奇蹟課程">目錄</h3>
         <span id="app-version-tag"></span>
+        <span class="sidebar-candidate-label" title="設定區對照驗證版">S1</span>
         <button id="sidebar-settings-toggle" type="button" aria-expanded="false" aria-controls="sidebar-settings-panel">設定與資訊</button>
       </div>
+    </div>
+    <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 02:46</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 16:28</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -1643,7 +1662,8 @@ ul{margin-bottom:0;}
             信箱：<a href="mailto:chang.wenchih@gmail.com">chang.wenchih@gmail.com</a></p></div>
         </div>
       </div>
-      <div id="toc-search-box" role="search" aria-label="搜尋書籍內文">
+      <div id="sidebar-navigation">
+        <div id="toc-search-box" role="search" aria-label="搜尋書籍內文">
         <div id="toc-search-frame">
           <span style="font-size:14px;color:#8B5BAE;flex-shrink:0;">🔍</span>
           <input id="toc-search-input" type="search" placeholder="搜尋內文關鍵字…" autocomplete="off" spellcheck="false">
@@ -1652,8 +1672,9 @@ ul{margin-bottom:0;}
         <div id="search-count-badge" role="status" aria-live="polite" aria-atomic="true"></div>
         <div id="toc-search-results" role="region" aria-label="搜尋結果" aria-live="polite"></div>
       </div>
+        <div id="toc-wrapper"></div>
+      </div>
     </div>
-    <div id="toc-wrapper"></div>
   </div>
 
   <!-- 閱讀內容區 -->
