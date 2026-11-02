@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="acim-version" content="v27.3">
-<meta name="acim-release-id" content="6b9f3c50bfbd4772c8721f720a5c0e63fa5cd20eb5c16378fbeab3eebc15af13">
+<meta name="acim-version" content="v27.4">
+<meta name="acim-release-id" content="d327505b93c67fb0bbb18db240e8ff7bfdf795e180c30ec7214064e7d8240a62">
 <meta name="acim-build" content="2026-11-02">
-<meta name="acim-build-time" content="10:48">
+<meta name="acim-build-time" content="11:30">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -136,7 +136,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v27.3';
+var ACIM_VERSION = 'v27.4';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -1653,15 +1653,19 @@ html body #toc-search-input:focus-visible{outline:none;}
 html{scrollbar-gutter:stable;scroll-padding-top:calc(var(--reader-top-clearance) + 16px);scroll-padding-bottom:calc(var(--reader-dock-clearance) + 24px);}
 #content-area{padding-right:calc(96px + 3%);padding-bottom:calc(var(--reader-dock-clearance) + 64px);}
 
-/* Navigation and settings are two pages in one sidebar, not stacked cards. */
+/* V27.4: fixed-size local layout boundary; navigation keeps its layout while
+   the small settings page occupies the same grid cell. */
 html body #sidebar-toc{
   --c-sidebar:var(--ui-surface);--c-gold:var(--ui-gold);
   width:var(--sidebar-w);min-width:var(--sidebar-w);height:var(--reader-vh);
   top:var(--reader-vtop);background:var(--ui-surface)!important;
   border-right:1px solid var(--ui-border)!important;color:var(--ui-text);
-  z-index:1300;min-height:0;isolation:isolate;
+  z-index:1300;min-height:0;isolation:isolate;contain:layout style;
 }
-html body #sidebar-header{padding:10px 12px 12px;border-bottom:1px solid var(--ui-border);background:var(--ui-surface)!important;}
+html body #sidebar-header{padding:10px 12px 0;border-bottom:0;background:var(--ui-surface)!important;}
+#sidebar-pages{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);flex:1 1 0%;min-width:0;min-height:0;}
+#sidebar-navigation{grid-area:1/1;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;}
+#sidebar-navigation[aria-hidden="true"]{visibility:hidden;pointer-events:none;}
 .sidebar-topline{flex-wrap:nowrap;gap:8px;min-height:44px;}
 html body #sidebar-header h3{font-size:18px;color:var(--ui-text)!important;white-space:nowrap;}
 #app-version-tag{font-size:13px;color:var(--ui-muted);white-space:nowrap;}
@@ -1670,8 +1674,8 @@ html body #sidebar-settings-toggle{gap:6px;min-height:44px;margin-left:auto;padd
 html body #sidebar-settings-toggle::after{display:none;}
 html body #sidebar-settings-toggle[aria-expanded="true"]{background:var(--ui-selected);border-color:var(--ui-accent);}
 #btn-sidebar-close{display:inline-flex;}
-html body #sidebar-settings-panel{flex:1 1 auto;min-height:0;max-height:none;margin:0;padding:16px;overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:16px;border:0;border-radius:0;background:var(--ui-surface-alt);color:var(--ui-text);font-size:16px;line-height:1.6;}
-html body #sidebar-settings-panel[hidden],html body #sidebar-toc #toc-wrapper[hidden],html body #toc-search-box[hidden]{display:none!important;}
+html body #sidebar-settings-panel{grid-area:1/1;z-index:1;min-width:0;min-height:0;max-height:none;margin:12px 0 0;padding:16px;overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:16px;border:0;border-top:1px solid var(--ui-border);border-radius:0;background:var(--ui-surface-alt);color:var(--ui-text);font-size:16px;line-height:1.6;}
+html body #sidebar-settings-panel[hidden]{display:none!important;}
 .settings-page-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:18px;}
 .settings-page-header h4{margin:0;font:700 18px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ui-text);}
 #sidebar-settings-back{display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:7px 10px;color:var(--ui-accent);background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:10px;font:inherit;font-size:14px;cursor:pointer;}
@@ -1707,7 +1711,7 @@ html body #sidebar-toc .sidebar-info-box{border-color:var(--ui-border)!important
 html body #tts-bar .tts-gender-btn{min-width:44px;min-height:44px;padding:6px;font-size:14px;}
 
 /* Search remains at a readable size when the keyboard is visible. */
-#toc-search-box{margin-top:10px;}
+html body #toc-search-box{flex:none;margin:0;padding:10px 12px 12px;border-bottom:1px solid var(--ui-border);line-height:1.3;}
 html body #toc-search-frame{min-height:48px;padding:2px 4px 2px 12px;gap:8px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface)!important;}
 #toc-search-frame>.reader-svg{width:20px;height:20px;color:var(--ui-muted);}
 html body #toc-search-input{min-height:42px;font-size:16px;color:var(--ui-text)!important;}
@@ -1808,15 +1812,12 @@ body.reader-offline-visible #content-area{padding-top:calc(32px + var(--reader-t
 html body #acim-update-toast{top:calc(var(--reader-top-clearance) + 12px)!important;bottom:auto!important;left:calc(var(--reader-sidebar-space) + 16px)!important;right:96px!important;transform:none!important;width:auto;max-width:680px;min-height:44px;padding:12px 16px!important;border:1px solid var(--ui-border)!important;border-radius:12px!important;background:var(--ui-accent)!important;color:var(--ui-surface)!important;font-size:14px!important;line-height:1.5;white-space:normal!important;z-index:1955!important;}
 html body #acim-bookmark-toast{bottom:calc(var(--reader-dock-clearance) + 16px)!important;max-width:calc(100vw - 24px)!important;font-size:14px!important;line-height:1.5;z-index:1956!important;}
 html body #acim-bookmark-toast button{min-width:44px;min-height:44px;font-size:14px!important;}
-body.reader-install-open #tts-bar{visibility:hidden!important;pointer-events:none!important;}
-body.reader-bm-open #pwa-install-bar,body.fn-open #pwa-install-bar,body.reader-share-open #pwa-install-bar{visibility:hidden!important;pointer-events:none!important;}
-body.reader-bm-open #tts-bar,body.fn-open #tts-bar,body.reader-share-open #tts-bar,
-body.reader-share-open #bm-panel,body.reader-share-open #footnote-bar,
-body.reader-bm-open #acim-sbar,body.fn-open #acim-sbar{visibility:hidden!important;pointer-events:none!important;}
-body.reader-nav-open :is(#pwa-tools,#tts-bar,#bm-panel,#footnote-bar,#acim-sbar,#acim-spanel,#pwa-install-bar,#acim-offline-bar,#acim-update-toast,#acim-bookmark-toast,#chapter-crumb){visibility:hidden!important;pointer-events:none!important;}
+/* Cover only the affected UI root. Opening a panel never changes a body
+   class whose descendant selector has to search through the book. */
+.reader-ui-covered{visibility:hidden!important;pointer-events:none!important;}
 /* Background input is guarded without changing the whole book's scroll root. */
 html body #sidebar-overlay{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;background:rgba(20,12,30,.48)!important;z-index:2000!important;touch-action:none;transition:opacity .18s ease!important;}
-body.reader-nav-open #sidebar-toc{z-index:2100;}
+html body #sidebar-toc.mobile-open{z-index:2100;}
 @media(min-width:1400px){
   :root{--sidebar-w:320px;}
   :is(#pwa-tools,#bm-panel,#footnote-bar,#tts-bar,#acim-spanel,#pwa-install-bar,#acim-offline-bar,#acim-update-toast){--reader-sidebar-space:320px;}
@@ -1900,6 +1901,9 @@ body.reader-nav-open #sidebar-toc{z-index:2100;}
         <button id="sidebar-settings-toggle" type="button" aria-label="設定與資訊" aria-expanded="false" aria-controls="sidebar-settings-panel"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5"/><circle cx="15" cy="17" r="2.5"/></svg><span>設定與資訊</span></button>
         <button id="btn-sidebar-close" type="button" class="reader-icon-button" aria-label="關閉目錄" title="關閉目錄"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
+    </div>
+    <div id="sidebar-pages">
+      <div id="sidebar-navigation" aria-hidden="false">
       <div id="toc-search-box" role="search" aria-label="搜尋書籍內文">
         <div id="toc-search-frame">
           <svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
@@ -1909,14 +1913,15 @@ body.reader-nav-open #sidebar-toc{z-index:2100;}
         <div id="search-count-badge" role="status" aria-live="polite" aria-atomic="true"></div>
         <div id="toc-search-results" role="region" aria-label="搜尋結果" aria-live="polite"></div>
       </div>
-    </div>
+      <div id="toc-wrapper"></div>
+      </div>
     <div id="sidebar-settings-panel" role="region" aria-labelledby="sidebar-settings-title" hidden>
       <div class="settings-page-header">
         <h4 id="sidebar-settings-title">設定與資訊</h4>
         <button id="sidebar-settings-back" type="button"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m10 5-7 7 7 7M3 12h18"/></svg><span>返回目錄</span></button>
       </div>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 10:48</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 11:30</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -1935,7 +1940,7 @@ body.reader-nav-open #sidebar-toc{z-index:2100;}
         <p>明暗：短按切換；長按 0.6 秒跟隨系統。</p>
       </section>
     </div>
-    <div id="toc-wrapper"></div>
+    </div>
   </div>
   <!-- ACIM_V272_SIDEBAR_MARKUP_END -->
 
@@ -22438,6 +22443,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   var overlay = document.getElementById('sidebar-overlay');
   var settingsToggle = document.getElementById('sidebar-settings-toggle');
   var settingsPanel = document.getElementById('sidebar-settings-panel');
+  var navigationPanel = document.getElementById('sidebar-navigation');
   var settingsBack = document.getElementById('sidebar-settings-back');
   var sidebarClose = document.getElementById('btn-sidebar-close');
   var tocWrapper = document.getElementById('toc-wrapper');
@@ -22490,6 +22496,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(node.getAttribute('aria-hidden')!==v)node.setAttribute('aria-hidden',v);
     uiInert(node,value);
   }
+  function uiCovered(node,hidden,covered){
+    if(!node)return;
+    uiHidden(node,hidden);
+    uiClass(node,'reader-ui-covered',!!covered);
+  }
   function sidebarVisible(){return compactUI()?drawerOpen:!desktopSidebarHidden;}
   var lastReaderUIState='';
   function notifyReaderUI(){
@@ -22508,22 +22519,19 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var fnOpen=!!(fn&&(fn.classList.contains('open')||fn.classList.contains('fn-visible')));
     var shareOpen=!!(share&&share.style.display!=='none');
     var installOpen=!!(install&&install.style.display!=='none');
-    uiClass(document.body,'reader-bm-open',bmOpen);
-    uiClass(document.body,'reader-share-open',shareOpen);
-    uiClass(document.body,'reader-install-open',installOpen);
     uiClass(document.body,'reader-offline-visible',!!document.getElementById('acim-offline-bar'));
     uiClass(document.documentElement,'reader-offline-visible',!!document.getElementById('acim-offline-bar'));
     /* The full book never receives modal inert/ARIA/style writes. */
-    uiHidden(document.getElementById('pwa-tools'),modal);
-    uiHidden(crumbButton,modal);
-    uiHidden(bm,modal||!bmOpen||shareOpen);
-    uiHidden(fn,modal||!fnOpen||shareOpen);
-    uiHidden(tts,modal||!tts||!tts.classList.contains('tts-bar-on')||bmOpen||fnOpen||shareOpen||installOpen);
-    uiHidden(share,modal||!shareOpen);
-    uiHidden(document.getElementById('acim-sbar'),modal||bmOpen||fnOpen);
-    uiHidden(install,modal||!installOpen||bmOpen||fnOpen||shareOpen);
+    uiCovered(document.getElementById('pwa-tools'),modal,modal);
+    uiCovered(crumbButton,modal,modal);
+    uiCovered(bm,modal||!bmOpen||shareOpen,modal||shareOpen);
+    uiCovered(fn,modal||!fnOpen||shareOpen,modal||shareOpen);
+    uiCovered(tts,modal||!tts||!tts.classList.contains('tts-bar-on')||bmOpen||fnOpen||shareOpen||installOpen,modal||bmOpen||fnOpen||shareOpen||installOpen);
+    uiCovered(share,modal||!shareOpen,modal);
+    uiCovered(document.getElementById('acim-sbar'),modal||bmOpen||fnOpen,modal||bmOpen||fnOpen);
+    uiCovered(install,modal||!installOpen||bmOpen||fnOpen||shareOpen,modal||bmOpen||fnOpen||shareOpen);
     ['acim-offline-bar','acim-update-toast','acim-bookmark-toast'].forEach(function(id){
-      uiHidden(document.getElementById(id),modal);
+      uiCovered(document.getElementById(id),modal,modal);
     });
     if(share){
       uiAttribute(share,'role','dialog');uiAttribute(share,'aria-modal','false');uiAttribute(share,'aria-label','分享金句');
@@ -22537,7 +22545,6 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     uiAttribute(sidebar,'role',modal?'dialog':'navigation');
     if(modal)uiAttribute(sidebar,'aria-modal','true');else if(sidebar.hasAttribute('aria-modal'))sidebar.removeAttribute('aria-modal');
     uiHidden(sidebar,!visible);
-    uiClass(document.body,'reader-nav-open',modal);
     uiDisplay(overlay,modal?'block':'none');
     var opacity=modal?'1':'0';if(overlay.style.opacity!==opacity)overlay.style.opacity=opacity;
     uiAttribute(tocButton,'aria-expanded',visible?'true':'false');
@@ -22548,16 +22555,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   }
   function setSidebarSettings(open,restoreFocus,quiet){
     var changed=settingsPanel.hidden===open;
+    /* The persistent disclosure button remains the keyboard anchor. Move
+       focus before hiding a page; do not focus a newly laid-out subtree. */
+    if(open||restoreFocus)safeFocus(settingsToggle);
     if(changed){
       settingsPanel.hidden=!open;
       uiAttribute(settingsToggle,'aria-expanded',open?'true':'false');
-      tocWrapper.hidden=open;searchBox.hidden=open;
-      document.getElementById('toc-search-results').hidden=open;
-      document.getElementById('search-count-badge').hidden=open;
-      uiClass(sidebar,'settings-open',open);
+      uiAttribute(navigationPanel,'aria-hidden',open?'true':'false');
     }
-    if(open)safeFocus(settingsBack);
-    else if(restoreFocus)safeFocus(settingsToggle);
     if(changed&&!quiet)notifyReaderUI();
     return changed;
   }
@@ -22660,6 +22665,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   }
   function canReaderScroll(target,delta){
     if(!target||!sidebar.contains(target)||!delta)return false;
+    if(!settingsPanel.hidden&&navigationPanel.contains(target))return false;
     var node=readerScrollRoot(target);
     if(!node||node.hidden)return false;
     var top=node.scrollTop,max=node.scrollHeight-node.clientHeight;
@@ -23166,34 +23172,48 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       });
     });
 
-    /* V27.2: coalesce TOC observations; no geometry reads for hidden panes.
-       Read geometry once before writes, and scroll only the TOC container.
-       A background tab keeps its latest target for the next visible frame. */
+    /* V27.2: coalesce TOC observations; V27.4 separates active state from reveal.
+       UI-only transitions preserve the reader's TOC position. Only a genuinely
+       new heading observed while the TOC is visible may request a local reveal. */
     if('IntersectionObserver' in window){
       var links={};
       tocWrapper.querySelectorAll('.toc-link').forEach(function(l){links[l.dataset.id]=l;});
       var previousActive=null, pendingHeading=null, lastHeading=null, tocFrame=null, tocSuspended=false;
+      var pendingReveal=false;
       function tocPaneVisible(){
         return !document.hidden && !tocSuspended && !sidebar.hidden && !sidebar.inert
           && sidebar.getAttribute('aria-hidden')!=='true' && sidebar.style.display!=='none'
-          && !tocWrapper.hidden && (!settingsPanel || settingsPanel.hidden);
+          && (!settingsPanel || settingsPanel.hidden);
+      }
+      function tocLinkVisible(link){
+        if(!tocPaneVisible())return false;
+        /* Known navigation state is enough to reject a collapsed branch.
+           Do not force layout merely to discover that it has no rendered box. */
+        for(var node=link;node&&node!==tocWrapper;node=node.parentElement){
+          if(node.hidden||node.style.display==='none')return false;
+          if(node.classList.contains('toc-children')&&!node.classList.contains('open'))return false;
+        }
+        return node===tocWrapper;
       }
       function flushTocObservation(){
         tocFrame=null;
         if(document.hidden || tocSuspended || !pendingHeading) return;
-        var target=pendingHeading, al=links[target.id];
-        pendingHeading=null;
-        if(!al || !al.isConnected) return;
-        var delta=0;
-        if(tocPaneVisible() && al.getClientRects().length){
+        var target=pendingHeading, reveal=pendingReveal, al=links[target.id];
+        pendingHeading=null;pendingReveal=false;
+        if(!al || !al.isConnected || al===previousActive) return;
+        var nextScroll=null;
+        if(reveal && tocLinkVisible(al)){
+          /* Finish all geometry reads, including scrollTop, before class/text
+             writes. A final batch target equal to the active link never reads. */
           var wr=tocWrapper.getBoundingClientRect(), lr=al.getBoundingClientRect();
-          delta=lr.top<wr.top ? lr.top-wr.top : lr.bottom>wr.bottom ? lr.bottom-wr.bottom : 0;
+          var oldScroll=tocWrapper.scrollTop;
+          var delta=lr.top<wr.top ? lr.top-wr.top : lr.bottom>wr.bottom ? lr.bottom-wr.bottom : 0;
+          if((lr.width||lr.height) && delta)nextScroll=oldScroll+delta;
         }
-        if(previousActive && previousActive!==al) previousActive.classList.remove('toc-active');
-        if(previousActive!==al) al.classList.add('toc-active');
-        previousActive=al;
-        if(delta) tocWrapper.scrollTop+=delta;
-        /* The reader controls expansion. Observer updates never open branches. */
+        if(previousActive) previousActive.classList.remove('toc-active');
+        al.classList.add('toc-active');previousActive=al;
+        /* Active state and breadcrumb still consume the latest heading while
+           the drawer/settings pane is closed; no reveal is saved for reopening. */
         var anc=headingAncestors[target.id], ct=document.getElementById('crumb-text');
         if(ct && anc){
           var parts=[];
@@ -23203,38 +23223,49 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           var text=parts.join(' › ');
           if(ct.textContent!==text) ct.textContent=text;
         }
+        if(nextScroll!==null)tocWrapper.scrollTop=nextScroll;
       }
       function queueTocObservation(){
-        if(!pendingHeading) pendingHeading=lastHeading;
         if(document.hidden || tocSuspended || !pendingHeading || tocFrame!==null) return;
         tocFrame=requestAnimationFrame(flushTocObservation);
       }
       var io=new IntersectionObserver(function(entries){
         var changed=false;
         entries.forEach(function(e){
-          if(e.isIntersecting && links[e.target.id]){pendingHeading=lastHeading=e.target;changed=true;}
+          if(e.isIntersecting && links[e.target.id] && e.target!==lastHeading){
+            pendingHeading=lastHeading=e.target;
+            pendingReveal=tocPaneVisible();changed=true;
+          }
         });
         if(changed)queueTocObservation();
       },{rootMargin:'-8% 0px -75% 0px',threshold:0});
       headings.forEach(function(h){io.observe(h);});
+      function suspendTocObservation(){
+        pendingReveal=false;
+        if(tocFrame!==null){cancelAnimationFrame(tocFrame);tocFrame=null;}
+      }
       document.addEventListener('visibilitychange',function(){
-        if(document.hidden){
-          if(tocFrame!==null){cancelAnimationFrame(tocFrame);tocFrame=null;}
-        }else queueTocObservation();
+        if(document.hidden)suspendTocObservation();
+        else queueTocObservation();
       });
       window.addEventListener('pagehide',function(){
-        tocSuspended=true;
-        if(tocFrame!==null){cancelAnimationFrame(tocFrame);tocFrame=null;}
+        tocSuspended=true;suspendTocObservation();
       });
-      window.addEventListener('pageshow',function(){tocSuspended=false;queueTocObservation();});
+      window.addEventListener('pageshow',function(){
+        tocSuspended=false;queueTocObservation();
+      });
       document.addEventListener('freeze',function(){
-        tocSuspended=true;
-        if(tocFrame!==null){cancelAnimationFrame(tocFrame);tocFrame=null;}
+        tocSuspended=true;suspendTocObservation();
       });
-      document.addEventListener('resume',function(){tocSuspended=false;queueTocObservation();});
-      document.addEventListener('acim:reader-ui-change',queueTocObservation);
+      document.addEventListener('resume',function(){
+        tocSuspended=false;queueTocObservation();
+      });
+      document.addEventListener('acim:reader-ui-change',function(){
+        /* Closing or covering the TOC cancels a queued reveal. Reopening never
+           requeues lastHeading or revives a reveal from an earlier UI state. */
+        if(!tocPaneVisible())pendingReveal=false;
+      });
     }
-
 
     /* ── 進度恢復（buildTOC 末尾：此時 heading id 已全數賦予）── */
     if (!progressRestored) {
