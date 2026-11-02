@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="acim-version" content="v27.2">
-<meta name="acim-release-id" content="b46da4ba9ca87986e63191a3f48ac56fb5955a28bfd997f73dff79bc099acae0">
+<meta name="acim-version" content="v27.3">
+<meta name="acim-release-id" content="6b9f3c50bfbd4772c8721f720a5c0e63fa5cd20eb5c16378fbeab3eebc15af13">
 <meta name="acim-build" content="2026-11-02">
-<meta name="acim-build-time" content="09:51">
+<meta name="acim-build-time" content="10:48">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -136,7 +136,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v27.2';
+var ACIM_VERSION = 'v27.3';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -1629,10 +1629,14 @@ ul{margin-bottom:0;}
   --ui-muted:#655370;--ui-accent:#62358B;--ui-border:#C7B8D2;
   --ui-hover:#EEE5F6;--ui-selected:#E5D9F0;--ui-gold:#765600;
   --ui-danger:#A62B3B;--ui-shadow:0 8px 28px rgba(34,16,50,.15);
-  --reader-vh:100vh;--reader-vtop:0px;--reader-dock-clearance:16px;
-  --reader-top-clearance:0px;--reader-notice-clearance:0px;--reader-sidebar-space:300px;--sidebar-w:300px;
+  --reader-dock-clearance:16px;
+  --reader-top-clearance:0px;--reader-notice-clearance:0px;--sidebar-w:300px;
 }
-@supports(height:100dvh){:root{--reader-vh:100dvh;}}
+/* V27.3: UI dimensions inherit only inside their small consuming panels. */
+:is(#sidebar-toc,#bm-panel,#footnote-bar,#tts-bar,#acim-spanel){--reader-vh:100vh;}
+#sidebar-toc{--reader-vtop:0px;}
+@supports(height:100dvh){:is(#sidebar-toc,#bm-panel,#footnote-bar,#tts-bar,#acim-spanel){--reader-vh:100dvh;}}
+:is(#pwa-tools,#bm-panel,#footnote-bar,#tts-bar,#acim-spanel,#pwa-install-bar,#acim-offline-bar,#acim-update-toast){--reader-sidebar-space:300px;}
 html.dark-mode{
   --ui-surface:#251932;--ui-surface-alt:#30213E;--ui-text:#F2EBF7;
   --ui-muted:#CEC0DC;--ui-accent:#D6B9F2;--ui-border:#685577;
@@ -1810,14 +1814,16 @@ body.reader-bm-open #tts-bar,body.fn-open #tts-bar,body.reader-share-open #tts-b
 body.reader-share-open #bm-panel,body.reader-share-open #footnote-bar,
 body.reader-bm-open #acim-sbar,body.fn-open #acim-sbar{visibility:hidden!important;pointer-events:none!important;}
 body.reader-nav-open :is(#pwa-tools,#tts-bar,#bm-panel,#footnote-bar,#acim-sbar,#acim-spanel,#pwa-install-bar,#acim-offline-bar,#acim-update-toast,#acim-bookmark-toast,#chapter-crumb){visibility:hidden!important;pointer-events:none!important;}
-html.reader-nav-open,body.reader-nav-open{overflow:hidden;overscroll-behavior:none;}
+/* Background input is guarded without changing the whole book's scroll root. */
 html body #sidebar-overlay{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;background:rgba(20,12,30,.48)!important;z-index:2000!important;touch-action:none;transition:opacity .18s ease!important;}
 body.reader-nav-open #sidebar-toc{z-index:2100;}
-body.reader-sidebar-hidden{--reader-sidebar-space:0px;}
-
-@media(min-width:1400px){:root{--sidebar-w:320px;--reader-sidebar-space:320px;}}
+@media(min-width:1400px){
+  :root{--sidebar-w:320px;}
+  :is(#pwa-tools,#bm-panel,#footnote-bar,#tts-bar,#acim-spanel,#pwa-install-bar,#acim-offline-bar,#acim-update-toast){--reader-sidebar-space:320px;}
+}
 @media(max-width:1023px){
-  :root{--reader-sidebar-space:0px;--reader-top-clearance:calc(48px + env(safe-area-inset-top,0px));--reader-dock-clearance:calc(66px + env(safe-area-inset-bottom,0px));}
+  :root{--reader-top-clearance:calc(48px + env(safe-area-inset-top,0px));--reader-dock-clearance:calc(66px + env(safe-area-inset-bottom,0px));}
+  :is(#pwa-tools,#bm-panel,#footnote-bar,#tts-bar,#acim-spanel,#pwa-install-bar,#acim-offline-bar,#acim-update-toast){--reader-sidebar-space:0px;}
   #book-container{display:block;}
   html body #content-area{width:100%;padding:calc(var(--reader-top-clearance) + 18px) 16px calc(var(--reader-dock-clearance) + 32px);}
   #content-area>*{max-width:100%!important;margin-left:0!important;margin-right:0!important;}
@@ -1910,7 +1916,7 @@ body.reader-sidebar-hidden{--reader-sidebar-space:0px;}
         <button id="sidebar-settings-back" type="button"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m10 5-7 7 7 7M3 12h18"/></svg><span>返回目錄</span></button>
       </div>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 09:51</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 10:48</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -22439,10 +22445,34 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   var tocButton = document.getElementById('btn-toc');
   var crumbButton = document.getElementById('chapter-crumb');
   var drawerOpen = false, desktopSidebarHidden = false, lastSidebarTrigger = null;
-  function compactUI(){
-    return window.matchMedia ? window.matchMedia('(max-width:1023px)').matches : window.innerWidth < 1024;
+  var compactMedia=window.matchMedia?window.matchMedia('(max-width:1023px)'):null;
+  var readerCompact=compactMedia?compactMedia.matches:window.innerWidth<1024;
+  function compactUI(){return readerCompact;}
+  var lastCompact = readerCompact;
+  var viewportRootIds=['sidebar-toc','bm-panel','footnote-bar','tts-bar','acim-spanel'];
+  var sidebarSpaceRootIds=['pwa-tools','bm-panel','footnote-bar','tts-bar','acim-spanel','pwa-install-bar','acim-offline-bar','acim-update-toast'];
+  var readerViewportHeight='',readerViewportTop='';
+  function uiProperty(node,name,value){
+    if(!node)return;
+    if(value){if(node.style.getPropertyValue(name)!==value)node.style.setProperty(name,value);}
+    else if(node.style.getPropertyValue(name))node.style.removeProperty(name);
   }
-  var lastCompact = compactUI();
+  function syncReaderLocalStyles(){
+    viewportRootIds.forEach(function(id){
+      var node=document.getElementById(id);
+      if(readerViewportHeight)uiProperty(node,'--reader-vh',readerViewportHeight);
+      if(id==='sidebar-toc'&&readerViewportTop)uiProperty(node,'--reader-vtop',readerViewportTop);
+    });
+    var space=!compactUI()&&desktopSidebarHidden?'0px':'';
+    sidebarSpaceRootIds.forEach(function(id){uiProperty(document.getElementById(id),'--reader-sidebar-space',space);});
+  }
+  function uiClass(node,name,value){
+    if(node.classList.contains(name)!==value)node.classList.toggle(name,value);
+  }
+  function uiAttribute(node,name,value){
+    if(node&&node.getAttribute(name)!==value)node.setAttribute(name,value);
+  }
+  function uiDisplay(node,value){if(node.style.display!==value)node.style.display=value;}
   function safeFocus(node){
     if(node && node.isConnected && node.focus){
       try{node.focus({preventScroll:true});}catch(e){node.focus();}
@@ -22461,10 +22491,13 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     uiInert(node,value);
   }
   function sidebarVisible(){return compactUI()?drawerOpen:!desktopSidebarHidden;}
+  var lastReaderUIState='';
   function notifyReaderUI(){
-    document.dispatchEvent(new CustomEvent('acim:reader-ui-change',{detail:{
-      sidebarOpen:sidebarVisible(),compact:compactUI(),settingsOpen:!settingsPanel.hidden
-    }}));
+    var detail={sidebarOpen:sidebarVisible(),compact:compactUI(),settingsOpen:!settingsPanel.hidden};
+    var state=[detail.sidebarOpen,detail.compact,detail.settingsOpen].join(':');
+    if(state===lastReaderUIState)return;
+    lastReaderUIState=state;
+    document.dispatchEvent(new CustomEvent('acim:reader-ui-change',{detail:detail}));
   }
   function syncExternalUI(){
     var modal=compactUI()&&drawerOpen;
@@ -22475,12 +22508,12 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var fnOpen=!!(fn&&(fn.classList.contains('open')||fn.classList.contains('fn-visible')));
     var shareOpen=!!(share&&share.style.display!=='none');
     var installOpen=!!(install&&install.style.display!=='none');
-    document.body.classList.toggle('reader-bm-open',bmOpen);
-    document.body.classList.toggle('reader-share-open',shareOpen);
-    document.body.classList.toggle('reader-install-open',installOpen);
-    document.body.classList.toggle('reader-offline-visible',!!document.getElementById('acim-offline-bar'));
-    document.documentElement.classList.toggle('reader-offline-visible',!!document.getElementById('acim-offline-bar'));
-    uiInert(document.getElementById('content-area'),modal);
+    uiClass(document.body,'reader-bm-open',bmOpen);
+    uiClass(document.body,'reader-share-open',shareOpen);
+    uiClass(document.body,'reader-install-open',installOpen);
+    uiClass(document.body,'reader-offline-visible',!!document.getElementById('acim-offline-bar'));
+    uiClass(document.documentElement,'reader-offline-visible',!!document.getElementById('acim-offline-bar'));
+    /* The full book never receives modal inert/ARIA/style writes. */
     uiHidden(document.getElementById('pwa-tools'),modal);
     uiHidden(crumbButton,modal);
     uiHidden(bm,modal||!bmOpen||shareOpen);
@@ -22493,35 +22526,40 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       uiHidden(document.getElementById(id),modal);
     });
     if(share){
-      share.setAttribute('role','dialog');share.setAttribute('aria-modal','false');share.setAttribute('aria-label','分享金句');
-      var close=document.getElementById('acim-sp-close');if(close)close.setAttribute('aria-label','關閉分享金句');
+      uiAttribute(share,'role','dialog');uiAttribute(share,'aria-modal','false');uiAttribute(share,'aria-label','分享金句');
+      uiAttribute(document.getElementById('acim-sp-close'),'aria-label','關閉分享金句');
     }
   }
   function applySidebarState(){
     var compact=compactUI(),visible=sidebarVisible(),modal=compact&&visible;
-    sidebar.style.display=compact||visible?'flex':'none';
-    sidebar.classList.toggle('mobile-open',modal);
-    sidebar.setAttribute('role',modal?'dialog':'navigation');
-    if(modal)sidebar.setAttribute('aria-modal','true');else sidebar.removeAttribute('aria-modal');
+    uiDisplay(sidebar,compact||visible?'flex':'none');
+    uiClass(sidebar,'mobile-open',modal);
+    uiAttribute(sidebar,'role',modal?'dialog':'navigation');
+    if(modal)uiAttribute(sidebar,'aria-modal','true');else if(sidebar.hasAttribute('aria-modal'))sidebar.removeAttribute('aria-modal');
     uiHidden(sidebar,!visible);
-    document.documentElement.classList.toggle('reader-nav-open',modal);
-    document.body.classList.toggle('reader-nav-open',modal);
-    document.body.classList.toggle('reader-sidebar-hidden',!compact&&!visible);
-    overlay.style.display=modal?'block':'none';overlay.style.opacity=modal?'1':'0';
-    tocButton.setAttribute('aria-expanded',visible?'true':'false');
-    crumbButton.setAttribute('aria-expanded',visible?'true':'false');
+    uiClass(document.body,'reader-nav-open',modal);
+    uiDisplay(overlay,modal?'block':'none');
+    var opacity=modal?'1':'0';if(overlay.style.opacity!==opacity)overlay.style.opacity=opacity;
+    uiAttribute(tocButton,'aria-expanded',visible?'true':'false');
+    uiAttribute(crumbButton,'aria-expanded',visible?'true':'false');
+    syncReaderLocalStyles();
+    syncReaderScrollGuards();
     syncExternalUI();notifyReaderUI();
   }
-  function setSidebarSettings(open,restoreFocus){
-    settingsPanel.hidden=!open;
-    settingsToggle.setAttribute('aria-expanded',open?'true':'false');
-    tocWrapper.hidden=open;searchBox.hidden=open;
-    document.getElementById('toc-search-results').hidden=open;
-    document.getElementById('search-count-badge').hidden=open;
-    sidebar.classList.toggle('settings-open',open);
+  function setSidebarSettings(open,restoreFocus,quiet){
+    var changed=settingsPanel.hidden===open;
+    if(changed){
+      settingsPanel.hidden=!open;
+      uiAttribute(settingsToggle,'aria-expanded',open?'true':'false');
+      tocWrapper.hidden=open;searchBox.hidden=open;
+      document.getElementById('toc-search-results').hidden=open;
+      document.getElementById('search-count-badge').hidden=open;
+      uiClass(sidebar,'settings-open',open);
+    }
     if(open)safeFocus(settingsBack);
     else if(restoreFocus)safeFocus(settingsToggle);
-    notifyReaderUI();
+    if(changed&&!quiet)notifyReaderUI();
+    return changed;
   }
   function closeOtherReaderPanels(kind){
     if(kind!=='bookmarks'){
@@ -22548,7 +22586,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   }
   function closeSidebar(restoreFocus){
     var wasOpen=compactUI()&&drawerOpen;
-    setSidebarSettings(false,false);drawerOpen=false;applySidebarState();
+    drawerOpen=false;
+    var settingsChanged=setSidebarSettings(false,false,true);
+    if(wasOpen||settingsChanged)applySidebarState();
     if(wasOpen&&restoreFocus!==false)safeFocus(lastSidebarTrigger&&lastSidebarTrigger.isConnected?lastSidebarTrigger:tocButton);
   }
   function toggleSidebar(trigger){
@@ -22556,14 +22596,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       if(drawerOpen)closeSidebar(true);else openSidebar(trigger);
     }else if(desktopSidebarHidden){openSidebar(trigger);}
     else{
-      setSidebarSettings(false,false);desktopSidebarHidden=true;applySidebarState();safeFocus(tocButton);
+      setSidebarSettings(false,false,true);desktopSidebarHidden=true;applySidebarState();safeFocus(tocButton);
     }
   }
   settingsToggle.addEventListener('click',function(){setSidebarSettings(settingsPanel.hidden,!settingsPanel.hidden);});
   settingsBack.addEventListener('click',function(){setSidebarSettings(false,true);});
   sidebarClose.addEventListener('click',function(){
     if(compactUI())closeSidebar(true);
-    else{setSidebarSettings(false,false);desktopSidebarHidden=true;applySidebarState();safeFocus(tocButton);}
+    else{setSidebarSettings(false,false,true);desktopSidebarHidden=true;applySidebarState();safeFocus(tocButton);}
   });
   crumbButton.addEventListener('click',function(){toggleSidebar(crumbButton);});
   tocButton.addEventListener('click',function(){toggleSidebar(tocButton);});
@@ -22592,15 +22632,112 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(event.shiftKey&&(document.activeElement===first||!sidebar.contains(document.activeElement))){event.preventDefault();safeFocus(last);}
     else if(!event.shiftKey&&(document.activeElement===last||!sidebar.contains(document.activeElement))){event.preventDefault();safeFocus(first);}
   });
+  /* V27.3: modal input guards inspect only the event's ancestor path. They do
+     not walk, restyle or alter the full book, including synthetic events. */
+  function readerModal(){return compactUI()&&drawerOpen;}
+  function readerTarget(event){return event.target&&event.target.nodeType===1?event.target:event.target&&event.target.parentElement;}
+  function blockReaderEvent(event){if(event.cancelable)event.preventDefault();event.stopImmediatePropagation();}
+  function guardReaderPointer(event){
+    if(!readerModal())return;
+    var target=readerTarget(event);
+    if(target&&(sidebar.contains(target)||overlay.contains(target)))return;
+    blockReaderEvent(event);
+  }
+  ['pointerdown','click','auxclick','contextmenu','selectstart'].forEach(function(type){
+    document.addEventListener(type,guardReaderPointer,{capture:true,passive:false});
+  });
+  var redirectingReaderFocus=false;
+  document.addEventListener('focusin',function(event){
+    if(!readerModal()||sidebar.contains(event.target)||redirectingReaderFocus)return;
+    event.stopImmediatePropagation();redirectingReaderFocus=true;
+    try{safeFocus(sidebarClose);}finally{redirectingReaderFocus=false;}
+  },true);
+  function readerScrollRoot(target){
+    for(var node=target;node&&node!==sidebar;node=node.parentElement){
+      if(node===tocWrapper||node===settingsPanel||node.id==='toc-search-results')return node;
+    }
+    return null;
+  }
+  function canReaderScroll(target,delta){
+    if(!target||!sidebar.contains(target)||!delta)return false;
+    var node=readerScrollRoot(target);
+    if(!node||node.hidden)return false;
+    var top=node.scrollTop,max=node.scrollHeight-node.clientHeight;
+    return max>1&&(delta<0?top>0:top<max-1);
+  }
+  document.addEventListener('keydown',function(event){
+    if(!readerModal())return;
+    var target=readerTarget(event);
+    if(!target||!sidebar.contains(target)){
+      blockReaderEvent(event);
+      if(event.key==='Escape'){
+        if(!settingsPanel.hidden)setSidebarSettings(false,true);
+        else closeSidebar(true);
+      }else safeFocus(sidebarClose);
+      return;
+    }
+    /* Editing and activation keys retain their native control behavior.
+       A single-line search field has no PageUp/PageDown scroll of its own. */
+    var editor=target.closest('input,textarea,select,[contenteditable="true"]');
+    if(editor){
+      if(editor.tagName==='INPUT'&&(event.key==='PageUp'||event.key==='PageDown')
+        &&!canReaderScroll(target,event.key==='PageUp'?-1:1))event.preventDefault();
+      return;
+    }
+    if(event.key===' '&&target.closest('button,[role="button"]'))return;
+    var direction={ArrowUp:-1,PageUp:-1,Home:-1,ArrowDown:1,PageDown:1,End:1,' ':event.shiftKey?-1:1}[event.key];
+    if(direction&&!canReaderScroll(target,direction))event.preventDefault();
+  },true);
+  function guardReaderWheel(event){
+    if(!readerModal()||event.ctrlKey)return;
+    if(!canReaderScroll(readerTarget(event),event.deltaY))blockReaderEvent(event);
+  }
+  var readerTouchId=null,readerTouchY=0;
+  function startReaderTouch(event){
+    if(!readerModal()||event.touches.length!==1){readerTouchId=null;return;}
+    readerTouchId=event.touches[0].identifier;readerTouchY=event.touches[0].clientY;
+  }
+  function moveReaderTouch(event){
+    if(!readerModal())return;
+    /* Preserve the browser's multi-touch zoom; guard single-finger scrolling. */
+    if(event.touches.length!==1){readerTouchId=null;return;}
+    var touch=event.touches[0],delta=readerTouchId===touch.identifier?readerTouchY-touch.clientY:0;
+    readerTouchId=touch.identifier;readerTouchY=touch.clientY;
+    if(!canReaderScroll(readerTarget(event),delta))blockReaderEvent(event);
+  }
+  function finishReaderTouch(event){if(!event.touches.length)readerTouchId=null;}
+  var readerScrollGuardsMounted=false;
+  function syncReaderScrollGuards(){
+    var active=readerModal();
+    if(active===readerScrollGuardsMounted)return;
+    readerScrollGuardsMounted=active;
+    if(active){
+      document.addEventListener('wheel',guardReaderWheel,{capture:true,passive:false});
+      document.addEventListener('touchstart',startReaderTouch,{capture:true,passive:true});
+      document.addEventListener('touchmove',moveReaderTouch,{capture:true,passive:false});
+      document.addEventListener('touchend',finishReaderTouch,{capture:true,passive:true});
+      document.addEventListener('touchcancel',finishReaderTouch,{capture:true,passive:true});
+    }else{
+      document.removeEventListener('wheel',guardReaderWheel,true);
+      document.removeEventListener('touchstart',startReaderTouch,true);
+      document.removeEventListener('touchmove',moveReaderTouch,true);
+      document.removeEventListener('touchend',finishReaderTouch,true);
+      document.removeEventListener('touchcancel',finishReaderTouch,true);
+      readerTouchId=null;
+    }
+  }
   var viewportFrame=0;
   function syncReaderViewport(){
     viewportFrame=0;
     var viewport=window.visualViewport;
+    /* Read viewport state before any local writes; UI handlers use this cache. */
+    var compact=compactMedia?compactMedia.matches:window.innerWidth<1024;
+    readerCompact=compact;
     if(viewport){
-      document.documentElement.style.setProperty('--reader-vh',Math.max(1,viewport.height)+'px');
-      document.documentElement.style.setProperty('--reader-vtop',Math.max(0,viewport.offsetTop)+'px');
+      readerViewportHeight=Math.max(1,viewport.height)+'px';
+      readerViewportTop=Math.max(0,viewport.offsetTop)+'px';
     }
-    var compact=compactUI();
+    syncReaderLocalStyles();
     if(compact!==lastCompact){
       var focusInside=sidebar.contains(document.activeElement);
       if(compact){drawerOpen=focusInside&&!desktopSidebarHidden;}
@@ -22615,12 +22752,18 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     window.visualViewport.addEventListener('resize',scheduleReaderViewport,{passive:true});
     window.visualViewport.addEventListener('scroll',scheduleReaderViewport,{passive:true});
   }
+  if(compactMedia){
+    if(compactMedia.addEventListener)compactMedia.addEventListener('change',scheduleReaderViewport);
+    else if(compactMedia.addListener)compactMedia.addListener(scheduleReaderViewport);
+  }
   window.__acimReaderUI={compact:compactUI,beforePanel:closeOtherReaderPanels};
   applySidebarState();syncReaderViewport();
   function watchReaderPanels(){
     var watched=[];
     var observer=new MutationObserver(function(){watchKnown();syncExternalUI();});
     function watchKnown(){
+      /* Late-created share/notice roots receive the current local dimensions. */
+      syncReaderLocalStyles();
       ['tts-bar','bm-panel','footnote-bar','acim-spanel','acim-sbar','pwa-install-bar'].forEach(function(id){
         var node=document.getElementById(id);
         if(node&&watched.indexOf(node)<0){watched.push(node);observer.observe(node,{attributes:true,attributeFilter:['class','style']});}
@@ -22815,6 +22958,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         e.preventDefault();
         var el=document.getElementById(a.dataset.id);
         if(!el) return;
+        if(compactUI())closeSidebar(false);
         /* 捲動內文到目標 heading */
         var rect = el.getBoundingClientRect();
         var offset = window.scrollY + rect.top - 56;
@@ -22833,7 +22977,6 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           }
           p = p.parentElement;
         }
-        if(compactUI()) closeSidebar(false);
       });
       return a;
     }
@@ -22978,6 +23121,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           a.addEventListener('click', function(e){
             e.preventDefault();
             var t=document.getElementById(this.dataset.gid); if(!t) return;
+            if(compactUI())closeSidebar(false);
             window.__acimJump(window.scrollY + t.getBoundingClientRect().top - 72);
             window.__acimCorrectScroll(t, 72);
             t.classList.remove('glossary-flash'); void t.offsetWidth; t.classList.add('glossary-flash');
@@ -22985,7 +23129,6 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
             childWrap.querySelectorAll('a').forEach(function(x){ x.classList.remove('toc-g-active'); x.removeAttribute('aria-current'); });
             self.classList.add('toc-g-active');
             self.setAttribute('aria-current','location');
-            if(compactUI()) closeSidebar(false);
           });
           childWrap.appendChild(a);
         }
@@ -23330,6 +23473,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     item.appendChild(hint);
     item.addEventListener('click',function(){
       var el=en.node;if(!el || !el.isConnected)return;
+      if(compactUI())closeSidebar(false);
       if(inNote){
         var def=el.closest('[id^="ftn"]');
         /* V24 修復：徽章屬性自 V22 起為 data-fn="N"，原 data-fn-href 選擇器永不命中，
@@ -23343,14 +23487,13 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         if(ref){
           if(fnHideTimer)clearTimeout(fnHideTimer);
           window.__fnSkip=true;window.__fnClickOpen=true;showFn(ref);
-          if(compactUI())closeSidebar(false);return;
+          return;
         }
       }
       var firstMark=(_nativeSearchHighlight && _searchRanges[en.id]) || el.querySelector('mark.search-hl') || el;
       var rect=firstMark.getBoundingClientRect();if(!rect.height)rect=el.getBoundingClientRect();
       window.__acimJump(window.scrollY+rect.top-Math.round(window.innerHeight/3));
       window.__acimCorrectScroll(el, Math.round(window.innerHeight/3));
-      if(compactUI())closeSidebar(false);
     });
     item.addEventListener('keydown',function(e){
       if(e.key==='Enter'||e.key===' '){e.preventDefault();item.click();}

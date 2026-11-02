@@ -1,75 +1,67 @@
-# ACIM CE 繁體中文 PWA V27.2 發布說明
+# ACIM CE 繁體中文 PWA V27.3 發布說明
 
-本版以已交付及線上核對的 V27.1 為基準，工作重點是待機恢復後的操作回應、離線狀態工作排程，以及跨尺寸側欄與工具控制。完整變更、實際驗證範圍與未驗項目見完整包的 `V27_2_RELEASE_AND_TEST_REPORT.pdf` 或同名 Markdown 報告。
+V27.3 針對已上線 V27.2 在目錄、設定及功能切換的卡頓回報。保留新版介面，將暫時互動狀態限制在小型 UI 區域，避免每次開關把整本書設為 inert；導航改為先完成側欄狀態再量目標位置。完整分析、修改與證據見完整包的 `V27_3_INTERACTION_FIX_REPORT.pdf` 或同名 Markdown 報告。
 
-正式修訂時間由 `src/release.json` 固定設定，App 顯示台灣日期及 24 小時制時間。本文件也參與 ReleaseID 計算，修改本文件後必須重新建置與驗證。
+本版自動檢核證明來源、行為與工作路徑符合契約；原生手機延遲、觸控慣性、無障礙及實際更新接管仍需驗收。不得以 DOM 模型耗時宣稱手機速度。
 
-## 書稿與原有資料
+正式修訂時間由 `src/release.json` 固定設定，App 顯示台灣日期及 24 小時制。本文件參與 ReleaseID 計算，修改後必須重新建置與驗證。
 
-本版 `src/book.html` 與 V27.1 逐位元相同，固定 SHA 為 `5e311405bf95962d560fe753560a3eb11b20689efeb91e1ff69559abab9adc93`。57 條英中拆段、所有原文、HTML 標記、語言屬性、ID、空白與 2,927 個註文區塊均保留。
+## 書稿與資料保全
 
-A-C05 原句保持：最後一生的身體就此消失。原有 13 項譯者／編務待決內容沒有藉本次介面與效能修改而自動改譯。
+`src/book.html` 與 V27.2、V27.1 逐位元相同，固定 SHA 為 `5e311405bf95962d560fe753560a3eb11b20689efeb91e1ff69559abab9adc93`。57 條英中拆段、HTML 標記、語言屬性、ID、空白及 2,927 個註文區塊均保留。A-C05「最後一生的身體就此消失。」及原有 13 項譯者／編務待決內容沒有變更。
 
-書籤及偏好繼續使用原有儲存資料。一般更新不需要清除網站資料；可先匯出書籤備份。清除網站資料可能同時刪除書籤、偏好與離線資料，不能當成日常升級步驟。
+書籤與偏好使用原有儲存資料。一般更新不需要清除網站資料，可先匯出書籤。清除網站資料可能同時刪除書籤、偏好與離線資料，不能作日常升級程序。
 
 ## 上傳 GitHub Pages
 
-1. 解壓縮 `ACIM_CE_V27_2_GitHub_Upload.zip`，進入 `github-upload/`。
-2. 將此資料夾內全部 23 個檔案及原有子資料夾覆蓋原儲存庫網站根目錄，保留 `fonts/`、`index.files/` 與 `.nojekyll`。不要多加一層 `github-upload` 網址路徑。
-3. 同一次提交包含 `index.html`、`sw.js`、`manifest.json` 與全部配套資源，等待 GitHub Pages 部署完成。
-4. 可使用提交訊息：`V27.2: improve resume scheduling and responsive reader controls`。
-5. 依本文件與正式報告驗收升級、恢復操作與離線行為。
+1. 解壓縮 `ACIM_CE_V27_3_GitHub_Upload.zip`，進入 `github-upload/`。
+2. 將其中全部 23 個檔案及子資料夾覆蓋原儲存庫網站根目錄，保留 `fonts/`、`index.files/` 與 `.nojekyll`。不要多加一層 `github-upload` 網址路徑。
+3. 同一次提交包含 `index.html`、`sw.js`、`manifest.json` 及全部資源，等待 GitHub Pages 部署完成。
+4. 可使用提交訊息：`V27.3: bound reader UI work and settle navigation before measurement`。
+5. 依下列程序確認版本、互動、更新及離線。
 
-完整包外層的 `src/`、`checks/`、`evidence/`、`manual-tests/`、報告和 SHA 清單供維護與交接保存，不必部署到公開網站。若使用另附純部署包，根目錄已是相同 23 個網站檔案。
+完整包外層的原始碼、檢核、證據、手動工具、報告及 SHA 清單供維護保存，不必部署。若使用純部署包，其根目錄就是同一組 23 個檔案。本包未代為推送或部署 GitHub。
 
-本包未代為推送或部署 GitHub。
+## 更新與互動驗收
 
-## 更新與離線驗收
+連線開啟 App，等待更新提示，套用並重新載入。確認版本 `v27.3` 與本次修訂時間。HTML 和控制它的 worker 必須有相同完整 ReleaseID；只有版號相同不足以證明是同一 build。安裝不主動跳過 waiting，仍由提示套用。
 
-連線開啟 App，等待更新提示，套用後重新載入。確認版本為 `v27.2`，修訂時間符合本次發布設定。版本文字相同不代表頁面和當前控制它的 worker 必然屬於同一 build；完整 ReleaseID 仍須一致。
+在原本發生卡頓的手機，以相同主題、字級及閱讀位置，重複操作開啟目錄、設定與資訊、返回目錄、關閉目錄、章節／詞彙／搜尋跳轉。保留首次操作和暖機後結果；每版至少 20 次真人操作，再交換版本順序比較。確認背景不能誤觸、側欄可捲動，關閉後正文立即恢復正常捲動與焦點。鎖螢幕、前背景與橫豎向另行測試。
 
-若顯示更新尚未套用，先完成提示及重新載入。其他版本或 build 的離線資料不能作為本次完整保存的證據。安裝不主動跳過 waiting，仍由更新提示套用。
+`manual-tests/v27_3_interaction_comparison.html` 可供自行比較兩版完整 App，記錄瀏覽器支援的 Event Timing 與長影格資料。iframe 尺寸不是裝置模擬，資料不等同頂層 PWA 的 INP 或真機驗收；沒有回報事件也不是 0 ms。詳細條件及限制見手動工具 README。
 
-恢復頁面後先操作設定與資訊，確認控制項可展開、收合及捲動，再查看離線狀態。上次確認結果與本次重新驗證應清楚區分；若尚未重新確認，不應自行推定全部離線資料仍完整。需要確認時保持連線，使用 App 的重新檢查／補齊功能，等待結果後再驗收。
+離線狀態沿用 V27.2 的新鮮時間、過期標示與手動重新驗證。保持連線，完成全書、字型及圖片當次確認，再斷網、關閉並重開書籍，抽查正文、註腳、字型與圖片。裝置日後仍可能回收資料，不能視為永久保存保證。
 
-看到全書、字型與書內圖片已完成當次驗證後，關閉網路、關閉並重開書籍，抽查正文、註腳、字型與圖片。作業系統或瀏覽器日後仍可能回收資料，完成狀態不是永久保存保證。
-
-外部英文 `acimce.app` 和裝置語音服務不包含在中文 App 的全書離線快取。系統是否有可用中英文聲音，需依該裝置確認。
+外部英文 `acimce.app` 與裝置語音不在中文全書離線快取內。
 
 ## 發布識別與快取
 
 | 項目 | 規則 |
 |---|---|
-| 人類可讀版本 | HTML `acim-version`、`ACIM_VERSION`、SW `CACHE_VERSION` 均為 `v27.2` |
-| 建置識別 | HTML `acim-release-id` 與 SW `RELEASE_ID` 為同一完整 64 位 SHA-256 |
-| Shell cache | `acimce-zh-tw-shell-v27.2-<releaseId>` |
-| Runtime cache | `acimce-zh-tw-runtime-v27.2-<releaseId>` |
-| 字型 cache | 使用獨立共用名稱，仍逐檔核對 SHA |
-| 版本比較 | 數字段逐項比較，例如 `v27.1 < v27.2 < v27.10`；缺少尾段視為 0 |
-| 啟用清理 | 只清理已辨識且嚴格較舊的專案版本及原有明列舊格式 |
-| 必須保留 | 同數字版本其他 build、較新、未知名稱及其他專案 cache |
-| localStorage | 書籤／偏好是另一資料層，不作版本 cache 刪除 |
+| 版本 | HTML `acim-version`、`ACIM_VERSION`、SW `CACHE_VERSION` 均為 `v27.3` |
+| 建置識別 | HTML 與 SW 使用同一完整 64 位 ReleaseID |
+| Shell cache | `acimce-zh-tw-shell-v27.3-<releaseId>` |
+| Runtime cache | `acimce-zh-tw-runtime-v27.3-<releaseId>` |
+| 字型 | 獨立共用快取，仍逐檔核對 SHA |
+| 版本比較 | 數字段逐項比較：`v27.2 < v27.3 < v27.10`；缺少尾段視為 0 |
+| 清理 | 僅清除明確辨識且嚴格較舊的專案版本及明列舊格式 |
+| 保留 | 同數字版本其他 build、較新版本、未知名稱及其他專案 |
+| localStorage | 書籤／偏好與版本快取分離，不作版本清理 |
 
-同版 cache 的 hash 無法判斷哪些 worker 還在 waiting，因此不猜測刪除同版其他 build。安裝失敗仍保護其他可讀版本；完整同 build shell 可經驗證後重用。新 worker 無法回頭改寫裝置上已安裝的舊 worker，真正的 V27.1→V27.2 接管仍須實機驗收。
+同版 hash 無法判斷哪些 worker 仍在 waiting，不猜測刪除同版其他 build。新 worker 不能回頭改寫裝置已安裝的舊 worker；V27.2→V27.3 真正接管須另驗。
 
-## 發布端驗收重點
+## 平台驗收與證據
 
-下表是應驗收項目。哪些本輪已執行、哪些未執行或受政策限制，以 `evidence/browser_v272_validation.json` 為準，不以模型結果代替真機。
-
-| 平台或情境 | 驗收重點 |
+| 平台或情境 | 重點 |
 |---|---|
-| 桌面 Chrome／Edge | 更新接管、多分頁、鍵盤焦點、側欄及工具列、視窗變窄與恢復 |
-| Android Chrome／已安裝 PWA | 鎖螢幕與待機後立即點設定、觸控區域、長按書籤、橫豎向、安裝與更新、離線冷啟動 |
-| iPhone／iPad Safari／主畫面 | 前背景恢復、可見視窗變化、安全邊界、軟鍵盤、VoiceOver、更新及離線 |
-| macOS Safari | 鍵盤、視窗尺寸、worker 接管、離線及系統語音 |
-| 各平台與不同字級 | 右側圖示辨識、按鈕觸控尺寸、文字大小調整、側欄遮擋、工具列與底欄重疊、設定捲動 |
-| 待機與重複操作 | 連續恢復事件不累積重複工作，設定先顯示、狀態適當更新，關閉／再開不跳回不合理位置 |
+| 原回報的 Android 手機與已安裝 PWA | 目錄／設定連續切換、長書跳轉、關閉後正常捲動、待機恢復、安裝／更新／離線冷啟動 |
+| iPhone／iPad Safari 與主畫面 | 觸控慣性、安全區、鍵盤、橫豎向、焦點保護、VoiceOver |
+| 桌面 Chrome／Edge／Safari | 鍵盤、側欄開關、縮放、跨斷點、多分頁更新 |
+| 所有尺寸 | 保留工具圖示與觸控大小、側欄可捲、正文不誤觸、面板互不遮擋 |
 
-Node VM、jsdom、受控事件／時鐘、CacheStorage／Fetch 模型不等同真實手機速度。靜態 CSS 或幾何規格也不是原生瀏覽器截圖。`manual-tests/` 可供使用者自行檢查視窗與操作，但 iframe 不可代替頂層正式 PWA 的安裝／SW／離線驗收。
+本輪已執行、未執行與受限制事項以 `evidence/browser_v273_validation.json` 為準。歷史截圖不會自動當成新版證據。Node VM、jsdom、受控幾何／時鐘／快取模型沒有原生 style/layout、無障礙樹或觸控延遲。
 
-## 維護與重建
-
-來源為 `src/book.html`、`src/app.template.html`、`src/sw.js`、`src/release.json`。固定資源在 `github-upload/`。不要直接修改生成的 `index.html` 或 `sw.js`。
+## 維護、重建與封裝
 
 ```bash
 npm ci --prefix checks
@@ -77,15 +69,10 @@ python3 checks/build_release.py
 python3 checks/build_release.py --check
 python3 checks/run_checks.py
 python3 manual-tests/make_browser_harness.py
+python3 manual-tests/make_interaction_comparison.py
 python3 checks/make_package.py
 ```
 
-詳細契約與單項指令見 `checks/README.md`。完整包保留原 331 個案例 ID，再加入本版效能／恢復與 UI 專項；所有正式結果都必須對應最後成品。前版結果與截圖不能改名充作本輪通過。
+修改 `src/`，不要手改生成的 HTML 或 worker。詳細授權契約及單項指令見 `checks/README.md`。原 402 個案例 ID 保留，再加本版來源契約及互動專項；全部結果都須對應最終成品。
 
-若只修改日期、文件、CSS、JS 或 SW，也須完整重建；ReleaseID 應由來源自動產生，不能手改 SHA。
-
-## 回復與再次發布
-
-後續可用更高數字版本發布修復；相同 v27.2 重發亦須完整重建，使內容改動產生新的 ReleaseID。回復 Git 提交時須成對回復 HTML、worker 及配套資源，再確認部署和控制權切換。
-
-不要只回復 HTML，或清除全部網站資料來代替修復。請保存原完整包、交付檢核、最後測試結果及使用者書籤備份。
+日期、文件、CSS、JS 或 SW 有變更也須完整重建。後續可發布更高版本；同版重發也要產生新的 ReleaseID。回復時成對回復 HTML、worker 與資源並驗證接管，不能只回復 HTML 或用清除資料代替修復。
