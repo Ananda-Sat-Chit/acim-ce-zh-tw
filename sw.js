@@ -1,18 +1,18 @@
-/* ACIM CE PWA v27.1 — release-bound offline book.
+/* ACIM CE PWA v27.2 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v27.1';
-const RELEASE_ID = 'a36f73e699414f8c5e6dd0a64fee8a17461a0c1d0cd1ca15d277496cc13d3aeb';
+const CACHE_VERSION = 'v27.2';
+const RELEASE_ID = 'b46da4ba9ca87986e63191a3f48ac56fb5955a28bfd997f73dff79bc099acae0';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = 'fdc5a4fb6927fe1641cc61aca577c63958907c5312e1eac4f83ca0f3dd39cb42';
+const BOOK_SHA256 = '40a1ebbd246919b03ba0367cd7c034a8e9a98f530643ec6035573289f4ecabf8';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
@@ -394,7 +394,7 @@ async function offlineStatus() {
     bookReady, shellReady: shellCount === CORE_FILES.length + 1,
     shellCached: shellCount, shellTotal: CORE_FILES.length + 1,
     fontsCached, fontsTotal: FONT_FILES.length, imagesCached, imagesTotal: IMAGE_FILES.length,
-    complete,
+    complete, checkedAt: Date.now(),
     warming: !!warmingTask, lastWarmError, storageError};
 }
 async function broadcast(message) {
@@ -479,7 +479,11 @@ async function warmResources(includeImages) {
   })();
   try { await warmingTask; }
   finally { warmingTask = null; }
-  await broadcast(await offlineStatus());
+  // Reuse only this operation's just-completed verification for its broadcast
+  // and reply. A later independent GET_OFFLINE_STATUS still scans every byte.
+  const status = await offlineStatus();
+  await broadcast(status);
+  return status;
 }
 self.addEventListener('message', event => {
   const type = event.data && event.data.type;
@@ -487,8 +491,9 @@ self.addEventListener('message', event => {
   if (!['GET_OFFLINE_STATUS', 'WARM_FONTS', 'PREPARE_OFFLINE'].includes(type)) return;
   event.waitUntil((async () => {
     try {
-      if (type !== 'GET_OFFLINE_STATUS') await warmResources(type === 'PREPARE_OFFLINE');
-      reply(event, await offlineStatus());
+      const warmedStatus = type !== 'GET_OFFLINE_STATUS'
+        ? await warmResources(type === 'PREPARE_OFFLINE') : null;
+      reply(event, warmedStatus || await offlineStatus());
     } catch (e) {
       reply(event, {type: 'ACIM_OFFLINE_STATUS', version: CACHE_VERSION, releaseId: RELEASE_ID, bookReady: false,
         shellReady: false, fontsCached: 0, fontsTotal: 8, imagesCached: 0, imagesTotal: 4,

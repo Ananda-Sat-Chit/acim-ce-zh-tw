@@ -2,11 +2,11 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v27.1">
-<meta name="acim-release-id" content="a36f73e699414f8c5e6dd0a64fee8a17461a0c1d0cd1ca15d277496cc13d3aeb">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="acim-version" content="v27.2">
+<meta name="acim-release-id" content="b46da4ba9ca87986e63191a3f48ac56fb5955a28bfd997f73dff79bc099acae0">
 <meta name="acim-build" content="2026-11-02">
-<meta name="acim-build-time" content="07:55">
+<meta name="acim-build-time" content="09:51">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -136,7 +136,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v27.1';
+var ACIM_VERSION = 'v27.2';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -1621,6 +1621,252 @@ ul{margin-bottom:0;}
   "image": "https://ananda-sat-chit.github.io/acim-ce-zh-tw/pwa-192x192.png"
 }
 </script>
+<!-- ACIM_V272_UI_STYLE_BEGIN -->
+<style id="reader-ui-v272">
+/* V27.2 reader UI. The original book and V27.1 protected styles stay intact. */
+:root{
+  --ui-surface:#FDFBFF;--ui-surface-alt:#F3EDF8;--ui-text:#291937;
+  --ui-muted:#655370;--ui-accent:#62358B;--ui-border:#C7B8D2;
+  --ui-hover:#EEE5F6;--ui-selected:#E5D9F0;--ui-gold:#765600;
+  --ui-danger:#A62B3B;--ui-shadow:0 8px 28px rgba(34,16,50,.15);
+  --reader-vh:100vh;--reader-vtop:0px;--reader-dock-clearance:16px;
+  --reader-top-clearance:0px;--reader-notice-clearance:0px;--reader-sidebar-space:300px;--sidebar-w:300px;
+}
+@supports(height:100dvh){:root{--reader-vh:100dvh;}}
+html.dark-mode{
+  --ui-surface:#251932;--ui-surface-alt:#30213E;--ui-text:#F2EBF7;
+  --ui-muted:#CEC0DC;--ui-accent:#D6B9F2;--ui-border:#685577;
+  --ui-hover:#382747;--ui-selected:#443052;--ui-gold:#E8C840;
+  --ui-danger:#FF9CA8;--ui-shadow:0 8px 28px rgba(0,0,0,.32);
+}
+.reader-svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none;pointer-events:none;}
+.reader-ui-label{pointer-events:none;}
+.reader-icon-button{display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;min-width:44px;height:44px;padding:0;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--ui-text);font:inherit;cursor:pointer;}
+.reader-icon-button:hover{background:var(--ui-hover);}
+html body :is(#sidebar-toc,#pwa-tools,#bm-panel,#footnote-bar,#tts-bar,#acim-spanel,#pwa-install-bar) :is(button,a,input,select,[tabindex]):focus-visible,
+html body #chapter-crumb:focus-visible{outline:3px solid var(--ui-accent);outline-offset:2px;}
+html body #toc-search-input:focus-visible{outline:none;}
+html{scrollbar-gutter:stable;scroll-padding-top:calc(var(--reader-top-clearance) + 16px);scroll-padding-bottom:calc(var(--reader-dock-clearance) + 24px);}
+#content-area{padding-right:calc(96px + 3%);padding-bottom:calc(var(--reader-dock-clearance) + 64px);}
+
+/* Navigation and settings are two pages in one sidebar, not stacked cards. */
+html body #sidebar-toc{
+  --c-sidebar:var(--ui-surface);--c-gold:var(--ui-gold);
+  width:var(--sidebar-w);min-width:var(--sidebar-w);height:var(--reader-vh);
+  top:var(--reader-vtop);background:var(--ui-surface)!important;
+  border-right:1px solid var(--ui-border)!important;color:var(--ui-text);
+  z-index:1300;min-height:0;isolation:isolate;
+}
+html body #sidebar-header{padding:10px 12px 12px;border-bottom:1px solid var(--ui-border);background:var(--ui-surface)!important;}
+.sidebar-topline{flex-wrap:nowrap;gap:8px;min-height:44px;}
+html body #sidebar-header h3{font-size:18px;color:var(--ui-text)!important;white-space:nowrap;}
+#app-version-tag{font-size:13px;color:var(--ui-muted);white-space:nowrap;}
+html body #sidebar-settings-toggle{gap:6px;min-height:44px;margin-left:auto;padding:7px 10px;border:1px solid var(--ui-border);border-radius:10px;background:var(--ui-surface);color:var(--ui-text);font-size:14px;line-height:1.3;}
+#sidebar-settings-toggle .reader-svg{width:18px;height:18px;}
+html body #sidebar-settings-toggle::after{display:none;}
+html body #sidebar-settings-toggle[aria-expanded="true"]{background:var(--ui-selected);border-color:var(--ui-accent);}
+#btn-sidebar-close{display:inline-flex;}
+html body #sidebar-settings-panel{flex:1 1 auto;min-height:0;max-height:none;margin:0;padding:16px;overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:16px;border:0;border-radius:0;background:var(--ui-surface-alt);color:var(--ui-text);font-size:16px;line-height:1.6;}
+html body #sidebar-settings-panel[hidden],html body #sidebar-toc #toc-wrapper[hidden],html body #toc-search-box[hidden]{display:none!important;}
+.settings-page-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:18px;}
+.settings-page-header h4{margin:0;font:700 18px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ui-text);}
+#sidebar-settings-back{display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:7px 10px;color:var(--ui-accent);background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:10px;font:inherit;font-size:14px;cursor:pointer;}
+#sidebar-settings-back .reader-svg{width:18px;height:18px;}
+html body .sidebar-book-title{font-size:16px;font-weight:650;line-height:1.6;margin:0 0 4px;color:var(--ui-text);}
+html body #app-version-info{font-size:14px;line-height:1.6;color:var(--ui-muted);margin:0 0 20px;}
+html body .theme-setting{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;font-size:16px;line-height:1.5;margin:0 0 20px;color:var(--ui-text);}
+html body #theme-mode{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--ui-border);border-radius:10px;background:var(--ui-surface);color:var(--ui-text);font-size:16px;}
+html body #sidebar-toc #acim-offline-panel{font-size:14px;line-height:1.6;gap:12px;margin:0 0 20px;padding:16px 0;border-color:var(--ui-border);color:var(--ui-muted);}
+html body #sidebar-toc #acim-offline-save{min-height:44px;padding:9px 12px;border-radius:10px;border-color:var(--ui-border);font-size:14px;color:var(--ui-accent);background:var(--ui-surface);}
+html body .sidebar-info-box{font-size:14px;line-height:1.7;padding:18px 0 12px;margin:0;border-top:1px solid var(--ui-border);color:var(--ui-muted);}
+html body .info-appeal{font-size:14px;line-height:1.7;margin:0 0 16px;color:var(--ui-muted)!important;}
+html body .info-section{margin-bottom:16px;}
+html body .info-section h4{display:block;margin:0 0 4px;color:var(--ui-text)!important;font-size:14px;line-height:1.6;}
+html body .info-section p{font-size:14px;line-height:1.7;}
+html body .info-section a{font-size:14px!important;line-height:1.7;color:var(--ui-accent)!important;}
+html body .info-note{font-size:13px;color:var(--ui-muted);}
+
+html body .reader-operation-help{margin-top:18px;padding-top:16px;border-top:1px solid var(--ui-border);font-size:14px;line-height:1.7;color:var(--ui-muted);}
+html body .reader-operation-help h4{margin:0 0 8px;font-size:15px;color:var(--ui-text);}
+html body .reader-operation-help p{margin:0 0 8px;font-size:14px;line-height:1.7;}
+
+/* V27.2 explicit state selectors also override older dark/hover rules. */
+html.dark-mode body #sidebar-toc{border-color:var(--ui-border)!important;}
+html body #bm-panel-close:hover{color:var(--ui-text);background:var(--ui-hover);}
+html body #fn-actions #fn-tts-btn.fn-tts-active{color:var(--ui-accent);background:var(--ui-selected);border-color:var(--ui-accent);}
+html body #sidebar-toc #sidebar-header{border-color:var(--ui-border)!important;}
+html body #sidebar-toc #toc-search-frame{background:var(--ui-surface)!important;border-color:var(--ui-border)!important;}
+html body #sidebar-toc #toc-search-input{color:var(--ui-text)!important;}
+html body #sidebar-toc #toc-search-results{background:var(--ui-surface)!important;border-color:var(--ui-border)!important;}
+html body #sidebar-toc .sr-item{color:var(--ui-text)!important;border-color:var(--ui-border)!important;}
+html body #sidebar-toc .sidebar-info-box{border-color:var(--ui-border)!important;}
+html body #tts-bar .tts-gender-btn{min-width:44px;min-height:44px;padding:6px;font-size:14px;}
+
+/* Search remains at a readable size when the keyboard is visible. */
+#toc-search-box{margin-top:10px;}
+html body #toc-search-frame{min-height:48px;padding:2px 4px 2px 12px;gap:8px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface)!important;}
+#toc-search-frame>.reader-svg{width:20px;height:20px;color:var(--ui-muted);}
+html body #toc-search-input{min-height:42px;font-size:16px;color:var(--ui-text)!important;}
+html body #toc-search-input::placeholder{color:var(--ui-muted);opacity:1;}
+html body #toc-search-clear{flex:none;min-width:44px;min-height:44px;padding:0;font-size:20px;color:var(--ui-muted);}
+html body #toc-search-results{max-height:min(48vh,calc(var(--reader-vh) - 180px));border:1px solid var(--ui-border);background:var(--ui-surface)!important;border-radius:12px;}
+html body .sr-item{min-height:48px;padding:12px;font-size:15px;line-height:1.6;color:var(--ui-text)!important;border-color:var(--ui-border)!important;}
+html body .sr-item:hover{background:var(--ui-hover);}
+html body .sr-hint{font-size:13px;line-height:1.5;color:var(--ui-muted);}
+html body #search-count-badge{font-size:13px;line-height:1.5;color:var(--ui-muted);}
+html body .sr-no-result{font-size:15px;color:var(--ui-muted);}
+
+/* All tree hit targets are explicit. Original protected gold rules are kept. */
+html body #sidebar-toc #toc-wrapper{--c-gold:var(--ui-gold);--c-muted:var(--ui-muted);flex:1 1 auto;min-height:0;padding:10px 12px 24px;background:var(--ui-surface)!important;scroll-padding-block:12px;}
+html body #sidebar-toc #toc-wrapper a{min-height:44px;display:flex;align-items:center;font-size:15px;line-height:1.55;padding:9px 10px;color:var(--ui-text)!important;border-radius:10px;}
+html body #sidebar-toc #toc-wrapper .toc-h1{font-size:16px;font-weight:700;}
+html body #sidebar-toc #toc-wrapper .toc-h2{font-size:15px;font-weight:600;}
+html body #sidebar-toc #toc-wrapper :is(.toc-h3,.toc-h4,.toc-h5){font-size:14px;}
+html body #sidebar-toc #toc-wrapper a:is(:hover,:focus-visible){color:var(--ui-gold)!important;background:var(--ui-hover)!important;}
+html body #sidebar-toc #toc-wrapper a:is(.toc-active,.toc-g-active){color:var(--ui-gold)!important;background:var(--ui-selected)!important;font-weight:650;box-shadow:inset 3px 0 0 var(--ui-gold);}
+html body #sidebar-toc #toc-wrapper .toc-arrow{display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;min-width:44px;min-height:44px;padding:0;font-size:12px;border-radius:10px;color:var(--ui-muted);}
+html body #sidebar-toc #toc-wrapper .toc-arrow:hover{background:var(--ui-hover);color:var(--ui-accent);}
+html body #sidebar-toc #toc-wrapper .toc-arrow-placeholder{width:44px;min-width:44px;}
+html body #sidebar-toc #toc-wrapper .toc-glossary{max-height:none;overflow:visible;scrollbar-gutter:auto;margin:4px 0 12px 14px;padding-left:4px;border-left:2px solid var(--ui-border);background:transparent;}
+html body #sidebar-toc #toc-wrapper .toc-glossary a{font-size:14px;min-height:44px;line-height:1.6;}
+
+/* Six labeled controls, in a dedicated rail. No emoji or hidden More menu. */
+html body #pwa-tools{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px))!important;width:72px;padding:6px;display:grid;grid-template-columns:1fr;gap:4px;z-index:1400;border:1px solid var(--ui-border);border-radius:18px;background:var(--ui-surface);box-shadow:var(--ui-shadow);transition:none;}
+html body #pwa-tools .pwa-btn-wrap{display:block!important;min-width:0;}
+html body #pwa-tools .pwa-btn-wrap::before{display:none;}
+html body #pwa-tools .pwa-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;min-width:44px;height:52px;padding:5px 2px;border:0;border-radius:12px;background:transparent!important;color:var(--ui-text);box-shadow:none;font:500 12px/1.15 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;transform:none;touch-action:manipulation;transition:background .15s,color .15s;}
+html body #pwa-tools .pwa-btn:hover{background:var(--ui-hover)!important;transform:none;box-shadow:none;}
+html body #pwa-tools .pwa-btn:active{background:var(--ui-selected)!important;transform:none;}
+html body #pwa-tools .pwa-btn[aria-disabled="true"]{opacity:.45;}
+html body #pwa-tools #btn-bm.bm-marked{color:var(--ui-accent);background:var(--ui-selected)!important;box-shadow:inset 0 0 0 2px var(--ui-accent);}
+#btn-bm.bm-marked .reader-svg{fill:var(--ui-accent);fill-opacity:.15;}
+#btn-dark .theme-sun{display:none;}
+#btn-dark[data-mode="dark"] .theme-sun{display:block;}
+#btn-dark[data-mode="dark"] .theme-moon{display:none;}
+#chapter-crumb{display:none;}
+
+/* Secondary panels leave the bottom dock clear and scroll inside their bounds. */
+html body #bm-panel{left:calc(var(--reader-sidebar-space) + 16px);right:96px;bottom:calc(var(--reader-dock-clearance) + 12px);width:min(420px,calc(100vw - var(--reader-sidebar-space) - 112px));max-height:calc(var(--reader-vh) - var(--reader-dock-clearance) - var(--reader-top-clearance) - 40px);background:var(--ui-surface);color:var(--ui-text);border:1px solid var(--ui-border);border-radius:16px;box-shadow:var(--ui-shadow);z-index:1600;}
+html body #bm-list{min-height:0;}
+html body #bm-panel-header{min-height:60px;padding:8px 12px 8px 16px;border-color:var(--ui-border);}
+html body #bm-panel-title{font-size:16px;line-height:1.5;color:var(--ui-text);}
+html body #bm-panel-close{min-width:44px;min-height:44px;padding:0;border-radius:10px;color:var(--ui-text);font-size:22px;}
+html body .bm-item{min-height:72px;padding:12px 12px 12px 16px;border-color:var(--ui-border);gap:8px;}
+html body .bm-item:hover{background:var(--ui-hover);}
+html body .bm-item-title{font-size:15px;line-height:1.6;color:var(--ui-text);white-space:normal;}
+html body .bm-item-time{font-size:12px;line-height:1.5;color:var(--ui-muted);}
+html body .bm-item-excerpt{font-size:14px;line-height:1.6;color:var(--ui-muted);}
+html body .bm-item-del{min-width:44px;min-height:44px;padding:0;border-radius:10px;color:var(--ui-muted);font-size:18px;}
+html body .bm-item-del:hover{color:var(--ui-danger);background:var(--ui-hover);}
+html body .bm-empty,html body #bm-storage-status{font-size:14px;line-height:1.6;color:var(--ui-muted);}
+html body #bm-panel-footer{padding:12px;gap:8px;justify-content:flex-start;border-color:var(--ui-border);}
+html body #bm-panel-footer button{min-height:44px;padding:8px 12px;border:1px solid var(--ui-border);border-radius:10px;font-size:14px;color:var(--ui-accent);}
+html body #footnote-bar{left:calc(var(--reader-sidebar-space) + 16px);right:96px;bottom:calc(var(--reader-dock-clearance) + 12px)!important;display:none;max-height:min(50vh,calc(var(--reader-vh) - var(--reader-dock-clearance) - var(--reader-top-clearance) - 32px));padding:0;overflow:hidden;flex-direction:column;background:var(--ui-surface)!important;color:var(--ui-text);border:1px solid var(--ui-border)!important;border-radius:16px;box-shadow:var(--ui-shadow);z-index:1700;transition:none;}
+html body #footnote-bar:is(.open,.fn-visible){display:flex;}
+.fn-panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;padding:8px 10px 8px 16px;border-bottom:1px solid var(--ui-border);}
+html body #fn-context{min-width:0;margin:0;font:650 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ui-text);}
+html body #fn-actions{display:flex;flex-direction:row;gap:4px;flex:none;}
+html body #fn-actions button{min-width:44px;min-height:44px;border:1px solid var(--ui-border);border-radius:10px;color:var(--ui-text);background:var(--ui-surface-alt);}
+html body #fn-close{font-size:22px;}
+html body #fn-inner{display:flex;gap:10px;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:16px;}
+html body #fn-num{font-size:15px;line-height:1.8;min-width:24px;color:var(--ui-muted);}
+html body #footnote-bar #fn-text{min-width:0;font-size:16px;line-height:1.8;color:var(--ui-text);}
+html body #footnote-bar #fn-text *{color:var(--ui-text)!important;}
+html body #footnote-bar #fn-text p{font-size:16px!important;line-height:1.8!important;}
+html body #footnote-bar #fn-text a{color:var(--ui-accent)!important;}
+html body #tts-bar{left:calc(var(--reader-sidebar-space) + 16px);right:96px;bottom:calc(var(--reader-dock-clearance) + 12px);transform:none;max-width:780px;max-height:calc(var(--reader-vh) - var(--reader-dock-clearance) - var(--reader-top-clearance) - 24px);overflow-y:auto;overscroll-behavior:contain;padding:12px;gap:8px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-surface);color:var(--ui-text);box-shadow:var(--ui-shadow);z-index:1500;display:flex;flex-wrap:wrap;white-space:normal;}
+html body #tts-bar-label{max-width:none;min-width:80px;flex:1 1 100px;font-size:14px;line-height:1.5;color:var(--ui-muted);opacity:1;white-space:nowrap;}
+html body #tts-bar button{min-width:44px;min-height:44px;padding:6px;border:1px solid var(--ui-border);border-radius:10px;font-size:14px;color:var(--ui-text);background:var(--ui-surface-alt);}
+html body #tts-bar .tts-gender-active{color:var(--ui-accent);border-color:var(--ui-accent);background:var(--ui-selected);}
+html body :is(#tts-gender-wrap,#tts-rate-wrap){padding:0;border:0;gap:4px;}
+html body :is(#tts-gender-label,#tts-rate-label,#tts-rate-val){display:inline;font-size:12px;opacity:1;color:var(--ui-muted);}
+html body #tts-rate-wrap{min-width:120px;flex:1 1 140px;}
+html body #tts-rate-slider{flex:1 1 64px;min-width:40px;width:90px;height:44px;background:transparent;}
+#tts-rate-slider::-webkit-slider-runnable-track{height:4px;background:var(--ui-border);border-radius:2px;}
+#tts-rate-slider::-webkit-slider-thumb{width:20px;height:20px;margin-top:-8px;background:var(--ui-accent);border-radius:50%;box-shadow:none;}
+#tts-rate-slider::-moz-range-track{height:4px;background:var(--ui-border);border-radius:2px;}
+#tts-rate-slider::-moz-range-thumb{width:20px;height:20px;background:var(--ui-accent);border:0;}
+/* Inline paragraph audio and footnote badges retain their typographic size. */
+html body #acim-spanel{left:calc(var(--reader-sidebar-space) + 16px)!important;right:96px!important;top:auto!important;bottom:calc(var(--reader-dock-clearance) + 12px)!important;transform:none!important;width:auto!important;max-width:680px!important;max-height:calc(var(--reader-vh) - var(--reader-dock-clearance) - var(--reader-top-clearance) - 32px)!important;overflow-y:auto!important;overscroll-behavior:contain;padding:16px!important;background:var(--ui-surface)!important;color:var(--ui-text)!important;border-color:var(--ui-border)!important;border-radius:16px!important;box-shadow:var(--ui-shadow)!important;z-index:1800!important;}
+html body #acim-spanel :is(div,span){color:var(--ui-text)!important;font-size:14px!important;line-height:1.6;}
+html body #acim-spanel :is(button,a){min-width:44px;min-height:44px;padding:8px!important;font-size:14px!important;line-height:1.5!important;background:var(--ui-surface-alt)!important;color:var(--ui-accent)!important;border-color:var(--ui-border)!important;border-radius:10px!important;}
+html body #acim-spanel :is(#acim-sp-zh,#acim-sp-en){padding:12px!important;background:var(--ui-surface-alt)!important;border-color:var(--ui-border)!important;}
+html body #acim-sbar{padding:0 10px!important;border-radius:12px!important;z-index:1750!important;background:var(--ui-surface)!important;border-color:var(--ui-border)!important;}
+html body #acim-sbar button{min-height:44px;padding:7px!important;font-size:14px!important;line-height:1.5!important;color:var(--ui-accent)!important;}
+html body #pwa-install-bar{left:calc(var(--reader-sidebar-space) + 16px);right:96px;bottom:calc(var(--reader-dock-clearance) + 12px);width:auto;padding:12px;gap:8px;border:1px solid var(--ui-border);border-radius:14px;background:var(--ui-surface);color:var(--ui-text);font-size:14px;z-index:1900;}
+html body #pwa-install-bar button{min-width:44px;min-height:44px;border-radius:10px;font-size:14px;}
+html body #pwa-install-btn{background:var(--ui-accent);color:var(--ui-surface);}
+html body #pwa-install-close{color:var(--ui-text);}
+/* Network state has a reserved header area; update/undo notices clear the dock. */
+html body #acim-offline-bar{left:var(--reader-sidebar-space);right:0;top:0;height:calc(60px + env(safe-area-inset-top,0px));display:flex;align-items:center;justify-content:center;padding:calc(8px + env(safe-area-inset-top,0px)) 16px 8px;font-size:14px;line-height:1.5;z-index:1950;background:var(--ui-surface-alt);color:var(--ui-text);border-bottom:1px solid var(--ui-border);}
+html.reader-offline-visible,body.reader-offline-visible{--reader-notice-clearance:calc(60px + env(safe-area-inset-top,0px));--reader-top-clearance:var(--reader-notice-clearance);}
+body.reader-offline-visible #content-area{padding-top:calc(32px + var(--reader-top-clearance));}
+html body #acim-update-toast{top:calc(var(--reader-top-clearance) + 12px)!important;bottom:auto!important;left:calc(var(--reader-sidebar-space) + 16px)!important;right:96px!important;transform:none!important;width:auto;max-width:680px;min-height:44px;padding:12px 16px!important;border:1px solid var(--ui-border)!important;border-radius:12px!important;background:var(--ui-accent)!important;color:var(--ui-surface)!important;font-size:14px!important;line-height:1.5;white-space:normal!important;z-index:1955!important;}
+html body #acim-bookmark-toast{bottom:calc(var(--reader-dock-clearance) + 16px)!important;max-width:calc(100vw - 24px)!important;font-size:14px!important;line-height:1.5;z-index:1956!important;}
+html body #acim-bookmark-toast button{min-width:44px;min-height:44px;font-size:14px!important;}
+body.reader-install-open #tts-bar{visibility:hidden!important;pointer-events:none!important;}
+body.reader-bm-open #pwa-install-bar,body.fn-open #pwa-install-bar,body.reader-share-open #pwa-install-bar{visibility:hidden!important;pointer-events:none!important;}
+body.reader-bm-open #tts-bar,body.fn-open #tts-bar,body.reader-share-open #tts-bar,
+body.reader-share-open #bm-panel,body.reader-share-open #footnote-bar,
+body.reader-bm-open #acim-sbar,body.fn-open #acim-sbar{visibility:hidden!important;pointer-events:none!important;}
+body.reader-nav-open :is(#pwa-tools,#tts-bar,#bm-panel,#footnote-bar,#acim-sbar,#acim-spanel,#pwa-install-bar,#acim-offline-bar,#acim-update-toast,#acim-bookmark-toast,#chapter-crumb){visibility:hidden!important;pointer-events:none!important;}
+html.reader-nav-open,body.reader-nav-open{overflow:hidden;overscroll-behavior:none;}
+html body #sidebar-overlay{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;background:rgba(20,12,30,.48)!important;z-index:2000!important;touch-action:none;transition:opacity .18s ease!important;}
+body.reader-nav-open #sidebar-toc{z-index:2100;}
+body.reader-sidebar-hidden{--reader-sidebar-space:0px;}
+
+@media(min-width:1400px){:root{--sidebar-w:320px;--reader-sidebar-space:320px;}}
+@media(max-width:1023px){
+  :root{--reader-sidebar-space:0px;--reader-top-clearance:calc(48px + env(safe-area-inset-top,0px));--reader-dock-clearance:calc(66px + env(safe-area-inset-bottom,0px));}
+  #book-container{display:block;}
+  html body #content-area{width:100%;padding:calc(var(--reader-top-clearance) + 18px) 16px calc(var(--reader-dock-clearance) + 32px);}
+  #content-area>*{max-width:100%!important;margin-left:0!important;margin-right:0!important;}
+  html body #chapter-crumb{position:fixed;top:var(--reader-notice-clearance);left:0;right:0;width:100%;height:calc(48px + env(safe-area-inset-top,0px));min-height:48px;display:flex;align-items:center;gap:10px;padding:env(safe-area-inset-top,0px) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));margin:0;border:0;border-bottom:1px solid var(--ui-border);border-radius:0;background:var(--ui-surface)!important;color:var(--ui-text);font:600 14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:left;cursor:pointer;z-index:1200;box-shadow:0 2px 8px rgba(34,16,50,.04);}
+  html.reader-offline-visible,body.reader-offline-visible{--reader-top-clearance:calc(48px + var(--reader-notice-clearance));}
+  html body.reader-offline-visible #chapter-crumb{height:48px;padding-top:0;}
+  html body.reader-offline-visible #content-area{padding-top:calc(var(--reader-top-clearance) + 18px);}
+  html body #acim-update-toast{left:12px!important;right:12px!important;max-width:none;}
+  html body #crumb-text{font-size:14px;color:var(--ui-text);}
+  html body #sidebar-toc{position:fixed;left:0;top:var(--reader-vtop);height:var(--reader-vh);width:min(360px,calc(100vw - 16px));min-width:0;max-width:100%;transform:translateX(-102%);transition:transform .18s ease;box-shadow:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+  html body #sidebar-toc.mobile-open{left:0;transform:translateX(0);box-shadow:var(--ui-shadow);}
+  html body #pwa-tools{left:0;right:0;bottom:0!important;width:auto;height:var(--reader-dock-clearance);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));grid-template-columns:repeat(6,minmax(44px,1fr));gap:2px;border:0;border-top:1px solid var(--ui-border);border-radius:0;box-shadow:0 -4px 18px rgba(34,16,50,.08);}
+  html body #pwa-tools .pwa-btn{height:52px;}
+  html body :is(#bm-panel,#footnote-bar,#tts-bar,#pwa-install-bar){left:12px;right:12px;width:auto;max-width:none;bottom:calc(var(--reader-dock-clearance) + 8px)!important;}
+  html body #acim-spanel{left:12px!important;right:12px!important;bottom:calc(var(--reader-dock-clearance) + 8px)!important;max-width:none!important;}
+  html body #acim-sbar{left:50%!important;right:auto!important;top:auto!important;bottom:calc(var(--reader-dock-clearance) + 8px)!important;transform:translateX(-50%)!important;}
+  html body #bm-panel{max-height:calc(var(--reader-vh) - var(--reader-dock-clearance) - var(--reader-top-clearance) - 24px);}
+}
+@media(max-width:599px){
+  html body #tts-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px;}
+  html body #tts-bar-label{grid-column:1/3;min-width:0;width:100%;}
+  html body #tts-pause-btn{grid-column:3;}
+  html body #tts-stop-btn{grid-column:4;}
+  html body #tts-gender-wrap{grid-column:1/3;min-width:0;justify-content:flex-start;}
+  html body #tts-rate-wrap{grid-column:3/5;min-width:0;}
+  html body #tts-bar .tts-gender-btn{width:44px;min-width:44px;padding:4px;font-size:14px;}
+  html body #tts-rate-slider{min-width:34px;width:48px;}
+  html body #tts-rate-val{min-width:24px;font-size:12px;}
+  html body #tts-bar button{padding:4px;font-size:13px;}
+}
+@media(min-width:1024px) and (max-height:600px){
+  :root{--reader-dock-clearance:calc(66px + env(safe-area-inset-bottom,0px));}
+  html body #content-area{padding-right:3%;}
+  html body #pwa-tools{left:calc(var(--reader-sidebar-space) + 16px);right:16px;bottom:0!important;width:auto;height:var(--reader-dock-clearance);grid-template-columns:repeat(6,minmax(44px,1fr));gap:2px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));border-radius:14px 14px 0 0;}
+  html body :is(#bm-panel,#footnote-bar,#tts-bar,#pwa-install-bar){right:16px;}
+  html body #acim-spanel{right:16px!important;}
+  html body #acim-sbar{top:auto!important;bottom:calc(var(--reader-dock-clearance) + 8px)!important;}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important;}
+  html body :is(#sidebar-toc,#sidebar-overlay,#pwa-tools,.pwa-btn,#bm-panel,#tts-bar,#footnote-bar,.glossary-flash,mark.search-hl){transition:none!important;animation:none!important;}
+}
+@media print{
+  html,body{overflow:visible!important;overscroll-behavior:auto!important;}
+  #sidebar-toc,#pwa-tools,#chapter-crumb,#sidebar-overlay,#bm-panel,#footnote-bar,#tts-bar,#pwa-install-bar,#acim-sbar,#acim-spanel,#acim-update-toast,#acim-offline-bar,#acim-bookmark-toast{display:none!important;}
+  html body #content-area{padding:0!important;width:100%!important;}
+}
+</style>
+<!-- ACIM_V272_UI_STYLE_END -->
 </head>
 
 <body>
@@ -1632,24 +1878,39 @@ ul{margin-bottom:0;}
 <!-- ═══ 固定 DOM 結構（不靠 JS 搬移） ═══ -->
 <div id="reading-progress"></div>
 
-<div id="chapter-crumb">
-  <span style="font-size:14px;color:#6B2FA0;flex-shrink:0;">☰</span>
+<button id="chapter-crumb" type="button" aria-label="開啟書籍目錄" aria-controls="sidebar-toc" aria-expanded="false">
+  <svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
   <span id="crumb-text">目錄</span>
-</div>
+</button>
 
 <div id="book-container">
 
-  <!-- 側邊欄 -->
+  <!-- ACIM_V272_SIDEBAR_MARKUP_BEGIN -->
   <div id="sidebar-toc" role="navigation" aria-label="書籍目錄">
     <div id="sidebar-header">
       <div class="sidebar-topline">
         <h3 title="完整加註版奇蹟課程">目錄</h3>
         <span id="app-version-tag"></span>
-        <button id="sidebar-settings-toggle" type="button" aria-expanded="false" aria-controls="sidebar-settings-panel">設定與資訊</button>
+        <button id="sidebar-settings-toggle" type="button" aria-label="設定與資訊" aria-expanded="false" aria-controls="sidebar-settings-panel"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5"/><circle cx="15" cy="17" r="2.5"/></svg><span>設定與資訊</span></button>
+        <button id="btn-sidebar-close" type="button" class="reader-icon-button" aria-label="關閉目錄" title="關閉目錄"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
-      <div id="sidebar-settings-panel" hidden>
+      <div id="toc-search-box" role="search" aria-label="搜尋書籍內文">
+        <div id="toc-search-frame">
+          <svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+          <input id="toc-search-input" type="search" placeholder="搜尋內文關鍵字…" autocomplete="off" spellcheck="false">
+          <button id="toc-search-clear" type="button" aria-label="清除搜尋"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </div>
+        <div id="search-count-badge" role="status" aria-live="polite" aria-atomic="true"></div>
+        <div id="toc-search-results" role="region" aria-label="搜尋結果" aria-live="polite"></div>
+      </div>
+    </div>
+    <div id="sidebar-settings-panel" role="region" aria-labelledby="sidebar-settings-title" hidden>
+      <div class="settings-page-header">
+        <h4 id="sidebar-settings-title">設定與資訊</h4>
+        <button id="sidebar-settings-back" type="button"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m10 5-7 7 7 7M3 12h18"/></svg><span>返回目錄</span></button>
+      </div>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 07:55</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 09:51</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -1662,19 +1923,15 @@ ul{margin-bottom:0;}
             <p>Line：huijun0928 <span class="info-note">（購書/課程）</span><br>
             信箱：<a href="mailto:chang.wenchih@gmail.com">chang.wenchih@gmail.com</a></p></div>
         </div>
-      </div>
-      <div id="toc-search-box" role="search" aria-label="搜尋書籍內文">
-        <div id="toc-search-frame">
-          <span style="font-size:14px;color:#8B5BAE;flex-shrink:0;">🔍</span>
-          <input id="toc-search-input" type="search" placeholder="搜尋內文關鍵字…" autocomplete="off" spellcheck="false">
-          <button id="toc-search-clear" aria-label="清除搜尋">✕</button>
-        </div>
-        <div id="search-count-badge" role="status" aria-live="polite" aria-atomic="true"></div>
-        <div id="toc-search-results" role="region" aria-label="搜尋結果" aria-live="polite"></div>
-      </div>
+      <section class="reader-operation-help" aria-label="操作提示">
+        <h4>操作提示</h4>
+        <p>書籤：短按新增或移除；長按 0.5 秒開啟清單。</p>
+        <p>明暗：短按切換；長按 0.6 秒跟隨系統。</p>
+      </section>
     </div>
     <div id="toc-wrapper"></div>
   </div>
+  <!-- ACIM_V272_SIDEBAR_MARKUP_END -->
 
   <!-- 閱讀內容區 -->
   <main id="content-area" role="main" aria-label="書籍內容"><div class="WordSection1"><section class="csec" style="contain-intrinsic-size:auto 2961px"><p align="center" class="mns st0"> </p><p align="center" class="mn st1"><span class="st2"><img alt="完整加註版奇蹟課程封面圖" fetchpriority="high" height="784" id="圖片 1" src="index.files/image001.webp" width="554"/></span></p><span class="st2"><br class="st3" clear="all"/>
@@ -21928,36 +22185,37 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   <button id="pwa-install-close" title="關閉">✕</button>
 </div>
 
-<!-- 工具按鈕（JS 建立） -->
-<div id="pwa-tools">
-  <div class="pwa-btn-wrap" data-tip="回到頂部" id="wrap-top" style='display: none'>
-    <button id="btn-top" class="pwa-btn" title="回到頂部" aria-label="回到頂部" style="background:rgba(107,47,160,0.75)">↑</button>
+<!-- ACIM_V272_READER_TOOLS_BEGIN -->
+<div id="pwa-tools" role="group" aria-label="閱讀工具">
+  <div class="pwa-btn-wrap" data-tip="開啟或關閉目錄">
+    <button id="btn-toc" type="button" class="pwa-btn" title="開啟或關閉目錄" aria-label="開啟或關閉目錄" aria-controls="sidebar-toc" aria-expanded="false"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span class="reader-ui-label" aria-hidden="true">目錄</span></button>
+  </div>
+  <div class="pwa-btn-wrap" data-tip="加入或移除書籤；長按 0.5 秒開啟書籤清單">
+    <button id="btn-bm" type="button" class="pwa-btn" title="加入或移除書籤；長按 0.5 秒開啟書籤清單" aria-label="加入或移除書籤；長按 0.5 秒開啟書籤清單"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-4-6 4v-16a1 1 0 0 1 1-1Z"/></svg><span class="reader-ui-label" aria-hidden="true">書籤</span></button>
   </div>
   <div class="pwa-btn-wrap" data-tip="放大字體">
-    <button id="btn-fup" class="pwa-btn" title="放大字體" aria-label="放大字體" style="background:#4A2080">A＋</button>
+    <button id="btn-fup" type="button" class="pwa-btn" title="放大字體" aria-label="放大字體"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 18 5-12 5 12M5 14h6M18 7v8M14 11h8"/></svg><span class="reader-ui-label" aria-hidden="true">放大</span></button>
   </div>
   <div class="pwa-btn-wrap" data-tip="縮小字體">
-    <button id="btn-fdn" class="pwa-btn" title="縮小字體" aria-label="縮小字體" style="background:#4A2080">A－</button>
+    <button id="btn-fdn" type="button" class="pwa-btn" title="縮小字體" aria-label="縮小字體"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 18 5-12 5 12M5 14h6M15 11h7"/></svg><span class="reader-ui-label" aria-hidden="true">縮小</span></button>
   </div>
-  <div class="pwa-btn-wrap" data-tip="切換深色">
-    <button id="btn-dark" class="pwa-btn" title="切換深色" aria-label="切換深色" style="background:#2D1B4E">🌓</button>
+  <div class="pwa-btn-wrap" data-tip="切換明暗；長按 0.6 秒跟隨系統">
+    <button id="btn-dark" type="button" class="pwa-btn" title="切換明暗；長按 0.6 秒跟隨系統" aria-label="切換明暗；長按 0.6 秒跟隨系統"><svg class="reader-svg theme-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.5 13.2A8.5 8.5 0 0 1 10.8 3.5 8.5 8.5 0 1 0 20.5 13.2Z"/></svg><svg class="reader-svg theme-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></svg><span class="reader-ui-label" aria-hidden="true">明暗</span></button>
   </div>
-  <div class="pwa-btn-wrap" data-tip="目錄">
-    <button id="btn-toc" class="pwa-btn" title="目錄" aria-label="目錄" style="background:#6B2FA0">☰</button>
-  </div>
-  <div class="pwa-btn-wrap" data-tip="書籤">
-    <button id="btn-bm" class="pwa-btn" title="加入/移除書籤" aria-label="加入或移除書籤" style="background:#4A2080">🔖</button>
+  <div class="pwa-btn-wrap" data-tip="回到頂部" id="wrap-top">
+    <button id="btn-top" type="button" class="pwa-btn" title="回到頂部" aria-label="回到頂部" aria-disabled="true"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4h14M12 21V8m-6 6 6-6 6 6"/></svg><span class="reader-ui-label" aria-hidden="true">頁首</span></button>
   </div>
 </div>
+<!-- ACIM_V272_READER_TOOLS_END -->
 
 <!-- 書籤面板 -->
 <div id="bm-panel" role="dialog" aria-modal="false" aria-label="我的書籤" aria-hidden="true" inert>
   <div id="bm-panel-header">
-    <span id="bm-panel-title">🔖 我的書籤</span>
-    <button id="bm-panel-close" aria-label="關閉書籤面板">✕</button>
+    <span id="bm-panel-title">我的書籤</span>
+    <button id="bm-panel-close" type="button" class="reader-icon-button" aria-label="關閉書籤面板"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
   </div>
   <div id="bm-list" role="list" aria-label="書籤列表">
-    <div class="bm-empty">尚無書籤<br>閱讀時點擊 🔖 可標記當前位置</div>
+    <div class="bm-empty">尚無書籤<br>閱讀時點按「書籤」可標記當前位置</div>
   </div>
   <p id="bm-storage-status" role="status" aria-live="polite"></p>
   <div id="bm-panel-footer">
@@ -21968,18 +22226,21 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   </div>
 </div>
 
-<!-- 註腳彈出列 -->
+<!-- ACIM_V272_FOOTNOTE_PANEL_BEGIN -->
 <div id="footnote-bar" role="region" aria-label="註文">
-  <div id="fn-context"></div>
+  <div class="fn-panel-header">
+    <div id="fn-context"></div>
+    <div id="fn-actions">
+      <button id="fn-tts-btn" type="button" class="fn-action-btn" title="朗讀此腳注" aria-label="朗讀此腳注"></button>
+      <button id="fn-close" type="button" class="reader-icon-button" title="關閉註文" aria-label="關閉註文"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    </div>
+  </div>
   <div id="fn-inner">
     <span id="fn-num"></span>
     <div id="fn-text"></div>
-    <div id="fn-actions">
-      <button id="fn-tts-btn" class="fn-action-btn" title="朗讀此腳注" aria-label="朗讀此腳注"></button>
-      <button id="fn-close" title="關閉" aria-label="關閉">✕</button>
-    </div>
   </div>
 </div>
+<!-- ACIM_V272_FOOTNOTE_PANEL_END -->
 
 <div id="sidebar-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:10000; opacity:0; transition:opacity 0.25s"></div>
 
@@ -22157,70 +22418,221 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     });
   };
 
-  /* ── 工具按鈕建立 ── */
-  /* ── 回頂按鈕（靜態 HTML，只控制顯隱） ── */
+  /* ACIM_V272_TOP_SLOT_BEGIN — keep all six control positions stable. */
   var topWrap = document.getElementById('wrap-top');
-  window.addEventListener('scroll', function(){
-    topWrap.style.display = window.scrollY > 700 ? '' : 'none';
-  }, {passive:true});
-  document.getElementById('btn-top').addEventListener('click', function(){
-    window.__acimJump(0);
-  });
+  var topButton = document.getElementById('btn-top');
+  function syncTopButton(){topButton.setAttribute('aria-disabled',window.scrollY>1?'false':'true');}
+  window.addEventListener('scroll',syncTopButton,{passive:true});
+  syncTopButton();
+  topButton.addEventListener('click',function(){if(window.scrollY>1)window.__acimJump(0);});
+  /* ACIM_V272_TOP_SLOT_END */
 
-  /* ── 側邊欄（最先宣告，buildTOC 用到 closeSidebar）── */
+  /* ACIM_V272_READER_UI_BEGIN — UI state only; never waits for service worker. */
   var sidebar = document.getElementById('sidebar-toc');
   var overlay = document.getElementById('sidebar-overlay');
-  var settingsToggle=document.getElementById('sidebar-settings-toggle');
-  var settingsPanel=document.getElementById('sidebar-settings-panel');
+  var settingsToggle = document.getElementById('sidebar-settings-toggle');
+  var settingsPanel = document.getElementById('sidebar-settings-panel');
+  var settingsBack = document.getElementById('sidebar-settings-back');
+  var sidebarClose = document.getElementById('btn-sidebar-close');
+  var tocWrapper = document.getElementById('toc-wrapper');
+  var searchBox = document.getElementById('toc-search-box');
+  var tocButton = document.getElementById('btn-toc');
+  var crumbButton = document.getElementById('chapter-crumb');
+  var drawerOpen = false, desktopSidebarHidden = false, lastSidebarTrigger = null;
+  function compactUI(){
+    return window.matchMedia ? window.matchMedia('(max-width:1023px)').matches : window.innerWidth < 1024;
+  }
+  var lastCompact = compactUI();
+  function safeFocus(node){
+    if(node && node.isConnected && node.focus){
+      try{node.focus({preventScroll:true});}catch(e){node.focus();}
+    }
+  }
+  function uiInert(node,value){
+    if(!node)return;
+    if(node.inert!==value)node.inert=value;
+    if(value){if(!node.hasAttribute('inert'))node.setAttribute('inert','');}
+    else if(node.hasAttribute('inert'))node.removeAttribute('inert');
+  }
+  function uiHidden(node,value){
+    if(!node)return;
+    var v=value?'true':'false';
+    if(node.getAttribute('aria-hidden')!==v)node.setAttribute('aria-hidden',v);
+    uiInert(node,value);
+  }
+  function sidebarVisible(){return compactUI()?drawerOpen:!desktopSidebarHidden;}
+  function notifyReaderUI(){
+    document.dispatchEvent(new CustomEvent('acim:reader-ui-change',{detail:{
+      sidebarOpen:sidebarVisible(),compact:compactUI(),settingsOpen:!settingsPanel.hidden
+    }}));
+  }
+  function syncExternalUI(){
+    var modal=compactUI()&&drawerOpen;
+    var bm=document.getElementById('bm-panel'),fn=document.getElementById('footnote-bar');
+    var share=document.getElementById('acim-spanel'),tts=document.getElementById('tts-bar');
+    var install=document.getElementById('pwa-install-bar');
+    var bmOpen=!!(bm&&bm.classList.contains('bm-open'));
+    var fnOpen=!!(fn&&(fn.classList.contains('open')||fn.classList.contains('fn-visible')));
+    var shareOpen=!!(share&&share.style.display!=='none');
+    var installOpen=!!(install&&install.style.display!=='none');
+    document.body.classList.toggle('reader-bm-open',bmOpen);
+    document.body.classList.toggle('reader-share-open',shareOpen);
+    document.body.classList.toggle('reader-install-open',installOpen);
+    document.body.classList.toggle('reader-offline-visible',!!document.getElementById('acim-offline-bar'));
+    document.documentElement.classList.toggle('reader-offline-visible',!!document.getElementById('acim-offline-bar'));
+    uiInert(document.getElementById('content-area'),modal);
+    uiHidden(document.getElementById('pwa-tools'),modal);
+    uiHidden(crumbButton,modal);
+    uiHidden(bm,modal||!bmOpen||shareOpen);
+    uiHidden(fn,modal||!fnOpen||shareOpen);
+    uiHidden(tts,modal||!tts||!tts.classList.contains('tts-bar-on')||bmOpen||fnOpen||shareOpen||installOpen);
+    uiHidden(share,modal||!shareOpen);
+    uiHidden(document.getElementById('acim-sbar'),modal||bmOpen||fnOpen);
+    uiHidden(install,modal||!installOpen||bmOpen||fnOpen||shareOpen);
+    ['acim-offline-bar','acim-update-toast','acim-bookmark-toast'].forEach(function(id){
+      uiHidden(document.getElementById(id),modal);
+    });
+    if(share){
+      share.setAttribute('role','dialog');share.setAttribute('aria-modal','false');share.setAttribute('aria-label','分享金句');
+      var close=document.getElementById('acim-sp-close');if(close)close.setAttribute('aria-label','關閉分享金句');
+    }
+  }
+  function applySidebarState(){
+    var compact=compactUI(),visible=sidebarVisible(),modal=compact&&visible;
+    sidebar.style.display=compact||visible?'flex':'none';
+    sidebar.classList.toggle('mobile-open',modal);
+    sidebar.setAttribute('role',modal?'dialog':'navigation');
+    if(modal)sidebar.setAttribute('aria-modal','true');else sidebar.removeAttribute('aria-modal');
+    uiHidden(sidebar,!visible);
+    document.documentElement.classList.toggle('reader-nav-open',modal);
+    document.body.classList.toggle('reader-nav-open',modal);
+    document.body.classList.toggle('reader-sidebar-hidden',!compact&&!visible);
+    overlay.style.display=modal?'block':'none';overlay.style.opacity=modal?'1':'0';
+    tocButton.setAttribute('aria-expanded',visible?'true':'false');
+    crumbButton.setAttribute('aria-expanded',visible?'true':'false');
+    syncExternalUI();notifyReaderUI();
+  }
   function setSidebarSettings(open,restoreFocus){
-    if(!settingsToggle||!settingsPanel)return;
     settingsPanel.hidden=!open;
     settingsToggle.setAttribute('aria-expanded',open?'true':'false');
+    tocWrapper.hidden=open;searchBox.hidden=open;
     document.getElementById('toc-search-results').hidden=open;
     document.getElementById('search-count-badge').hidden=open;
-    if(!open&&restoreFocus)settingsToggle.focus();
+    sidebar.classList.toggle('settings-open',open);
+    if(open)safeFocus(settingsBack);
+    else if(restoreFocus)safeFocus(settingsToggle);
+    notifyReaderUI();
   }
-  if(settingsToggle&&settingsPanel){
-    settingsToggle.addEventListener('click',function(){
-      var opening=settingsPanel.hidden;
-      setSidebarSettings(opening,!opening);
-    });
-    function closeSettingsOnEscape(event){
-      if(event.key==='Escape'&&!settingsPanel.hidden&&!event.defaultPrevented){
-        event.preventDefault();event.stopPropagation();setSidebarSettings(false,true);
+  function closeOtherReaderPanels(kind){
+    if(kind!=='bookmarks'){
+      var bm=document.getElementById('bm-panel');
+      if(bm&&bm.classList.contains('bm-open'))document.getElementById('bm-panel-close').click();
+    }
+    if(kind!=='footnote'){
+      var fn=document.getElementById('footnote-bar');
+      if(fn&&fn.classList.contains('open'))document.getElementById('fn-close').click();
+    }
+    if(kind==='sidebar'){
+      var close=document.getElementById('acim-sp-close');if(close)close.click();
+    }else if(compactUI()&&drawerOpen){closeSidebar(false);}
+    /* Closing the drawer synchronizes hidden panels first; release the target
+       afterwards so showFn's immediate focus is never blocked by inert. */
+    if(kind==='footnote')uiHidden(document.getElementById('footnote-bar'),false);
+  }
+  function openSidebar(trigger){
+    lastSidebarTrigger=trigger&&trigger.nodeType===1?trigger:document.activeElement;
+    closeOtherReaderPanels('sidebar');
+    if(compactUI())drawerOpen=true;else desktopSidebarHidden=false;
+    applySidebarState();
+    if(compactUI())safeFocus(sidebarClose);
+  }
+  function closeSidebar(restoreFocus){
+    var wasOpen=compactUI()&&drawerOpen;
+    setSidebarSettings(false,false);drawerOpen=false;applySidebarState();
+    if(wasOpen&&restoreFocus!==false)safeFocus(lastSidebarTrigger&&lastSidebarTrigger.isConnected?lastSidebarTrigger:tocButton);
+  }
+  function toggleSidebar(trigger){
+    if(compactUI()){
+      if(drawerOpen)closeSidebar(true);else openSidebar(trigger);
+    }else if(desktopSidebarHidden){openSidebar(trigger);}
+    else{
+      setSidebarSettings(false,false);desktopSidebarHidden=true;applySidebarState();safeFocus(tocButton);
+    }
+  }
+  settingsToggle.addEventListener('click',function(){setSidebarSettings(settingsPanel.hidden,!settingsPanel.hidden);});
+  settingsBack.addEventListener('click',function(){setSidebarSettings(false,true);});
+  sidebarClose.addEventListener('click',function(){
+    if(compactUI())closeSidebar(true);
+    else{setSidebarSettings(false,false);desktopSidebarHidden=true;applySidebarState();safeFocus(tocButton);}
+  });
+  crumbButton.addEventListener('click',function(){toggleSidebar(crumbButton);});
+  tocButton.addEventListener('click',function(){toggleSidebar(tocButton);});
+  overlay.addEventListener('click',function(){closeSidebar(true);});
+  document.getElementById('toc-search-input').addEventListener('focus',function(){setSidebarSettings(false,false);});
+  function availableFocusTargets(){
+    return Array.from(sidebar.querySelectorAll('a[href],button,input,select,textarea,[tabindex]')).filter(function(node){
+      if(node.disabled||node.tabIndex<0)return false;
+      for(var p=node;p&&p!==sidebar.parentElement;p=p.parentElement){
+        if(p.hidden||p.hasAttribute('inert')||p.style.display==='none'||p.getAttribute('aria-hidden')==='true')return false;
+        if(p.classList&&p.classList.contains('toc-children')&&!p.classList.contains('open'))return false;
       }
-    }
-    settingsToggle.addEventListener('keydown',closeSettingsOnEscape);
-    settingsPanel.addEventListener('keydown',closeSettingsOnEscape);
-    document.getElementById('toc-search-input').addEventListener('focus',function(){
-      setSidebarSettings(false,false);
+      return node.id!=='toc-search-clear'||node.style.display!=='none';
     });
   }
-
-  function openSidebar(){
-    sidebar.classList.add('mobile-open');
-    overlay.style.display='block';
-    requestAnimationFrame(function(){ overlay.style.opacity='1'; });
-  }
-  function closeSidebar(){
-    setSidebarSettings(false,false);
-    sidebar.classList.remove('mobile-open');
-    overlay.style.opacity='0';
-    setTimeout(function(){ overlay.style.display='none'; }, 280);
-  }
-  document.getElementById('crumb-text').parentElement.addEventListener('click', function(){
-    sidebar.classList.contains('mobile-open') ? closeSidebar() : openSidebar();
-  });
-  document.getElementById('btn-toc').addEventListener('click', function(){
-    if(window.innerWidth<=768){
-      sidebar.classList.contains('mobile-open') ? closeSidebar() : openSidebar();
-    } else {
-      var hiding=sidebar.style.display!=='none';
-      if(hiding)setSidebarSettings(false,false);
-      sidebar.style.display=hiding?'none':'flex';
+  sidebar.addEventListener('keydown',function(event){
+    if(event.key==='Escape'){
+      event.preventDefault();event.stopPropagation();
+      if(!settingsPanel.hidden)setSidebarSettings(false,true);
+      else if(compactUI())closeSidebar(true);
+      return;
     }
+    if(event.key!=='Tab'||!compactUI()||!drawerOpen)return;
+    var list=availableFocusTargets(),first=list[0],last=list[list.length-1];
+    if(!first){event.preventDefault();safeFocus(sidebarClose);return;}
+    if(event.shiftKey&&(document.activeElement===first||!sidebar.contains(document.activeElement))){event.preventDefault();safeFocus(last);}
+    else if(!event.shiftKey&&(document.activeElement===last||!sidebar.contains(document.activeElement))){event.preventDefault();safeFocus(first);}
   });
-  overlay.addEventListener('click', closeSidebar);
+  var viewportFrame=0;
+  function syncReaderViewport(){
+    viewportFrame=0;
+    var viewport=window.visualViewport;
+    if(viewport){
+      document.documentElement.style.setProperty('--reader-vh',Math.max(1,viewport.height)+'px');
+      document.documentElement.style.setProperty('--reader-vtop',Math.max(0,viewport.offsetTop)+'px');
+    }
+    var compact=compactUI();
+    if(compact!==lastCompact){
+      var focusInside=sidebar.contains(document.activeElement);
+      if(compact){drawerOpen=focusInside&&!desktopSidebarHidden;}
+      else drawerOpen=false;
+      lastCompact=compact;applySidebarState();
+      if(!sidebarVisible()&&focusInside)safeFocus(tocButton);
+    }
+  }
+  function scheduleReaderViewport(){if(!viewportFrame)viewportFrame=requestAnimationFrame(syncReaderViewport);}
+  window.addEventListener('resize',scheduleReaderViewport,{passive:true});
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',scheduleReaderViewport,{passive:true});
+    window.visualViewport.addEventListener('scroll',scheduleReaderViewport,{passive:true});
+  }
+  window.__acimReaderUI={compact:compactUI,beforePanel:closeOtherReaderPanels};
+  applySidebarState();syncReaderViewport();
+  function watchReaderPanels(){
+    var watched=[];
+    var observer=new MutationObserver(function(){watchKnown();syncExternalUI();});
+    function watchKnown(){
+      ['tts-bar','bm-panel','footnote-bar','acim-spanel','acim-sbar','pwa-install-bar'].forEach(function(id){
+        var node=document.getElementById(id);
+        if(node&&watched.indexOf(node)<0){watched.push(node);observer.observe(node,{attributes:true,attributeFilter:['class','style']});}
+      });
+    }
+    observer.observe(document.body,{childList:true});
+    watchKnown();syncExternalUI();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watchReaderPanels,{once:true});
+  else watchReaderPanels();
+  /* ACIM_V272_READER_UI_END */
+
 
   /* ── 字型縮放 ── */
   var content = document.getElementById('content-area');
@@ -22267,7 +22679,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   function syncDark() {
     var dark=document.documentElement.classList.contains('dark-mode');
     var saved=window.__acimStorage.get('acim-dark');
-    btnDark.innerHTML=dark?'☀️':'🌓';
+    btnDark.setAttribute('data-mode',dark?'dark':'light');
+    btnDark.setAttribute('aria-pressed',dark?'true':'false');
     btnDark.title=(dark?'切換亮色':'切換深色')+'；長按 0.6 秒跟隨系統';
     btnDark.setAttribute('aria-label',btnDark.title);
     btnDark.parentElement.setAttribute('data-tip',btnDark.title);
@@ -22420,7 +22833,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           }
           p = p.parentElement;
         }
-        if(window.innerWidth<=768) closeSidebar();
+        if(compactUI()) closeSidebar(false);
       });
       return a;
     }
@@ -22572,7 +22985,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
             childWrap.querySelectorAll('a').forEach(function(x){ x.classList.remove('toc-g-active'); x.removeAttribute('aria-current'); });
             self.classList.add('toc-g-active');
             self.setAttribute('aria-current','location');
-            if(window.innerWidth<=768) closeSidebar();
+            if(compactUI()) closeSidebar(false);
           });
           childWrap.appendChild(a);
         }
@@ -22610,36 +23023,73 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       });
     });
 
-    /* IntersectionObserver 高亮 + breadcrumb */
+    /* V27.2: coalesce TOC observations; no geometry reads for hidden panes.
+       Read geometry once before writes, and scroll only the TOC container.
+       A background tab keeps its latest target for the next visible frame. */
     if('IntersectionObserver' in window){
       var links={};
       tocWrapper.querySelectorAll('.toc-link').forEach(function(l){links[l.dataset.id]=l;});
-      var previousActive=null;
-      var io=new IntersectionObserver(function(entries){
-        entries.forEach(function(e){
-          if(!e.isIntersecting) return;
-          var al=links[e.target.id]; if(!al) return;
-          if(previousActive && previousActive!==al) previousActive.classList.remove('toc-active');
-          al.classList.add('toc-active');
-          previousActive=al;
-          /* ── IntersectionObserver 只負責高亮 + breadcrumb + 捲動 TOC ──
-             不自動展開任何 toc-children：展開/收合由使用者點箭頭決定，
-             避免捲動時多個 heading 同時進入視窗造成多群組被意外展開。 */
+      var previousActive=null, pendingHeading=null, lastHeading=null, tocFrame=null, tocSuspended=false;
+      function tocPaneVisible(){
+        return !document.hidden && !tocSuspended && !sidebar.hidden && !sidebar.inert
+          && sidebar.getAttribute('aria-hidden')!=='true' && sidebar.style.display!=='none'
+          && !tocWrapper.hidden && (!settingsPanel || settingsPanel.hidden);
+      }
+      function flushTocObservation(){
+        tocFrame=null;
+        if(document.hidden || tocSuspended || !pendingHeading) return;
+        var target=pendingHeading, al=links[target.id];
+        pendingHeading=null;
+        if(!al || !al.isConnected) return;
+        var delta=0;
+        if(tocPaneVisible() && al.getClientRects().length){
           var wr=tocWrapper.getBoundingClientRect(), lr=al.getBoundingClientRect();
-          if(lr.top<wr.top||lr.bottom>wr.bottom) al.scrollIntoView({block:'nearest',behavior:'smooth'});
-          /* breadcrumb：組合 h1 › h2 › h3 路徑 */
-          var anc=headingAncestors[e.target.id];
-          var ct=document.getElementById('crumb-text');
-          if(ct && anc){
-            var parts=[];
-            if(anc.h1) parts.push(anc.h1.length>20?anc.h1.slice(0,20)+'…':anc.h1);
-            if(anc.lv>=2 && anc.h2) parts.push(anc.h2.length>20?anc.h2.slice(0,20)+'…':anc.h2);
-            if(anc.lv>=3 && anc.h3) parts.push(anc.h3.length>16?anc.h3.slice(0,16)+'…':anc.h3);
-            ct.textContent=parts.join(' › ');
-          }
+          delta=lr.top<wr.top ? lr.top-wr.top : lr.bottom>wr.bottom ? lr.bottom-wr.bottom : 0;
+        }
+        if(previousActive && previousActive!==al) previousActive.classList.remove('toc-active');
+        if(previousActive!==al) al.classList.add('toc-active');
+        previousActive=al;
+        if(delta) tocWrapper.scrollTop+=delta;
+        /* The reader controls expansion. Observer updates never open branches. */
+        var anc=headingAncestors[target.id], ct=document.getElementById('crumb-text');
+        if(ct && anc){
+          var parts=[];
+          if(anc.h1) parts.push(anc.h1.length>20?anc.h1.slice(0,20)+'…':anc.h1);
+          if(anc.lv>=2 && anc.h2) parts.push(anc.h2.length>20?anc.h2.slice(0,20)+'…':anc.h2);
+          if(anc.lv>=3 && anc.h3) parts.push(anc.h3.length>16?anc.h3.slice(0,16)+'…':anc.h3);
+          var text=parts.join(' › ');
+          if(ct.textContent!==text) ct.textContent=text;
+        }
+      }
+      function queueTocObservation(){
+        if(!pendingHeading) pendingHeading=lastHeading;
+        if(document.hidden || tocSuspended || !pendingHeading || tocFrame!==null) return;
+        tocFrame=requestAnimationFrame(flushTocObservation);
+      }
+      var io=new IntersectionObserver(function(entries){
+        var changed=false;
+        entries.forEach(function(e){
+          if(e.isIntersecting && links[e.target.id]){pendingHeading=lastHeading=e.target;changed=true;}
         });
+        if(changed)queueTocObservation();
       },{rootMargin:'-8% 0px -75% 0px',threshold:0});
       headings.forEach(function(h){io.observe(h);});
+      document.addEventListener('visibilitychange',function(){
+        if(document.hidden){
+          if(tocFrame!==null){cancelAnimationFrame(tocFrame);tocFrame=null;}
+        }else queueTocObservation();
+      });
+      window.addEventListener('pagehide',function(){
+        tocSuspended=true;
+        if(tocFrame!==null){cancelAnimationFrame(tocFrame);tocFrame=null;}
+      });
+      window.addEventListener('pageshow',function(){tocSuspended=false;queueTocObservation();});
+      document.addEventListener('freeze',function(){
+        tocSuspended=true;
+        if(tocFrame!==null){cancelAnimationFrame(tocFrame);tocFrame=null;}
+      });
+      document.addEventListener('resume',function(){tocSuspended=false;queueTocObservation();});
+      document.addEventListener('acim:reader-ui-change',queueTocObservation);
     }
 
 
@@ -22893,14 +23343,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         if(ref){
           if(fnHideTimer)clearTimeout(fnHideTimer);
           window.__fnSkip=true;window.__fnClickOpen=true;showFn(ref);
-          if(window.innerWidth<=768)closeSidebar();return;
+          if(compactUI())closeSidebar(false);return;
         }
       }
       var firstMark=(_nativeSearchHighlight && _searchRanges[en.id]) || el.querySelector('mark.search-hl') || el;
       var rect=firstMark.getBoundingClientRect();if(!rect.height)rect=el.getBoundingClientRect();
       window.__acimJump(window.scrollY+rect.top-Math.round(window.innerHeight/3));
       window.__acimCorrectScroll(el, Math.round(window.innerHeight/3));
-      if(window.innerWidth<=768)closeSidebar();
+      if(compactUI())closeSidebar(false);
     });
     item.addEventListener('keydown',function(e){
       if(e.key==='Enter'||e.key===' '){e.preventDefault();item.click();}
@@ -23284,6 +23734,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       updateBmStorageStatus();
       if(!toastEl){
         toastEl=document.createElement('div');
+        toastEl.id='acim-bookmark-toast';toastEl.setAttribute('role','status');toastEl.setAttribute('aria-live','polite');
         toastEl.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);'
           +'background:rgba(30,10,55,0.93);color:#EDE6F8;font-size:13px;'
           +'padding:8px 18px;border-radius:20px;z-index:999999;'
@@ -23327,7 +23778,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       var arr=bmLoad();
       updateBmStorageStatus();
       if(arr.length===0){
-        bmList.innerHTML='<div class="bm-empty">尚無書籤<br>閱讀時點擊 🔖 可標記當前位置</div>';
+        bmList.innerHTML='<div class="bm-empty">尚無書籤<br>閱讀時點按「書籤」可標記當前位置</div>';
         return;
       }
       arr=arr.slice().sort(function(a,b){return b.ts-a.ts;});
@@ -23400,6 +23851,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 
     /* ── 面板開關 ── */
     function openBmPanel(){
+      if(window.__acimReaderUI)window.__acimReaderUI.beforePanel('bookmarks');
       renderBmList();
       bmPanel.inert=false; bmPanel.removeAttribute('inert'); bmPanel.setAttribute('aria-hidden','false');
       bmPanel.classList.add('bm-open');
@@ -23552,7 +24004,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 
     /* ── 點擊面板外部 → 關閉 ── */
     document.addEventListener('pointerdown',function(e){
-      if(bmOpen && !bmPanel.contains(e.target) && e.target!==btnBm)
+      if(bmOpen && !bmPanel.contains(e.target) && !btnBm.contains(e.target))
         closeBmPanel();
     },true);
 
@@ -23599,6 +24051,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var m=h.match(/#_(?:ftn|edn)(\d+)$/);
     if(!m) return;
     var el=document.getElementById('ftn'+m[1]); if(!el) return;
+    if(window.__acimReaderUI)window.__acimReaderUI.beforePanel('footnote');
     var noteInfo=window.__acimFootnoteInfo?window.__acimFootnoteInfo(m[1]):null;
     fnNum.textContent=(noteInfo?noteInfo.number:m[1])+'.';
     var noteContext=document.getElementById('fn-context');
@@ -23717,18 +24170,18 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 </script>
 
 <!-- ══ TTS 語音朗讀模組 ══ -->
-<div id="tts-bar">
+<div id="tts-bar" role="group" aria-label="朗讀控制" aria-hidden="true" inert>
   <span id="tts-bar-label">🔊 朗讀中…</span>
   <button id="tts-pause-btn">⏸ 暫停</button>
   <button id="tts-stop-btn">⏹ 停止</button>
   <div id="tts-gender-wrap">
     <span id="tts-gender-label">音色</span>
-    <button id="tts-gender-f" class="tts-gender-btn tts-gender-active" title="女聲">♀</button>
-    <button id="tts-gender-m" class="tts-gender-btn" title="男聲">♂</button>
+    <button id="tts-gender-f" class="tts-gender-btn tts-gender-active" type="button" title="女聲" aria-label="女聲">♀</button>
+    <button id="tts-gender-m" class="tts-gender-btn" type="button" title="男聲" aria-label="男聲">♂</button>
   </div>
   <div id="tts-rate-wrap">
     <span id="tts-rate-label">語速</span>
-    <input id="tts-rate-slider" type="range" min="1" max="6" step="1" value="3" title="調整語速">
+    <input id="tts-rate-slider" type="range" min="1" max="6" step="1" value="3" title="調整語速" aria-labelledby="tts-rate-label">
     <span id="tts-rate-val">中</span>
   </div>
 </div>
@@ -25530,7 +25983,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 </script>
 
 <script id="acim-offline-controller">
-/* V27: verified offline state must match both the version and exact release. */
+/* V27.2: deferred lifecycle checks, explicit snapshot age and exact release identity. */
 (function initOfflineStatus(){
   'use strict';
   var host=document.getElementById('sidebar-offline-slot');
@@ -25557,7 +26010,12 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   document.head.appendChild(style);
   var sw=navigator.serviceWorker, latest=null, busy=false, serial=0, epoch=0;
   var autoWarmedController=null, retryTimer=null, pending=Object.create(null);
-  var checking=null, statusRevision=0;
+  var checking=null, statusRevision=0, unconfirmed=false, acceptAfter=0;
+  var freshTimer=null, hiddenAt=document.hidden?Date.now():null, frozen=false, resumeNeedsEpoch=false;
+  var scheduleTimer=null, scheduleIdle=null, scheduled=false, scheduledWarm=false, scheduledForce=false, scheduledAfter=0;
+  var scheduleGeneration=0;
+  var lastInteractionAt=0, lastError='';
+  var FRESH_MS=5*60*1000, AUTO_DELAY_MS=750, IDLE_TIMEOUT_MS=1800;
   function count(value,max){return Number.isInteger(value)&&value>=0&&value<=max;}
   function sameRelease(d){return !!(d&&d.version===version&&/^[a-f0-9]{64}$/.test(releaseId)&&d.releaseId===releaseId);}
   function validState(d){
@@ -25568,52 +26026,85 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       &&typeof d.warming==='boolean'&&typeof d.complete==='boolean';
   }
   function complete(d){return !!(sameRelease(d)&&d.complete&&d.bookReady&&d.shellReady&&d.fontsCached===8&&d.imagesCached===4);}
+  function checkedAt(d){return d&&Number.isFinite(d.checkedAt)&&d.checkedAt>=0?d.checkedAt:null;}
+  function fresh(d){
+    var at=checkedAt(d), now=Date.now();
+    return !!(sameRelease(d)&&!unconfirmed&&at!==null&&at>=acceptAfter&&now>=at&&now-at<FRESH_MS);
+  }
+  function checkedLabel(d){
+    var at=checkedAt(d);
+    if(at===null)return '時間不明';
+    var date=new Date(at), pad=function(n){return n<10?'0'+n:String(n);};
+    return (date.getMonth()+1)+'/'+date.getDate()+' '+pad(date.getHours())+':'+pad(date.getMinutes());
+  }
+  function text(node,value){if(node.textContent!==value)node.textContent=value;}
   function updateBanner(){
     var bar=document.getElementById('acim-offline-bar');
     if(navigator.onLine!==false){if(bar)bar.remove();return;}
     if(!bar){bar=document.createElement('div');bar.id='acim-offline-bar';bar.setAttribute('role','status');document.body.prepend(bar);}
-    bar.textContent=sameRelease(latest)&&latest.bookReady
-      ?'目前離線；本機已驗證的 '+version.toUpperCase()+' 全書可閱讀。'
-      :'目前離線；尚未確認本機保存的書籍版本。';
+    text(bar,fresh(latest)&&latest.bookReady
+      ?'目前離線；本機已驗證的 '+version.toUpperCase()+' 全書可閱讀（'+checkedLabel(latest)+' 檢查）。'
+      :'目前離線；尚未確認本機保存的書籍版本與目前狀態。');
   }
   function paint(message){
-    if(message)status.textContent=message;
-    else if(!latest)status.textContent='正在檢查離線保存狀態。';
-    else if(!sameRelease(latest))status.textContent='版本更新尚未套用；請套用更新提示，再確認離線保存。';
-    else if(complete(latest))
-      status.textContent=version.toUpperCase()+' 全書、字型與書內圖片已驗證保存。';
-    else if(latest.warming)status.textContent='正在保存離線資料；目前頁面可繼續閱讀。';
-    else if(latest.storageError)status.textContent='離線保存未完成，請確認瀏覽器的儲存空間與權限後重試。';
-    else if(!latest.bookReady||!latest.shellReady)status.textContent='離線書籍尚未完整保存，請連線後補齊。';
-    else status.textContent='全書已驗證保存；字型 '+latest.fontsCached+'/8，書內圖片 '+latest.imagesCached+'/4。';
-    button.disabled=busy||!!(sameRelease(latest)&&latest.warming);
-    panel.setAttribute('aria-busy',button.disabled?'true':'false');
-    button.textContent=button.disabled?'處理中…':!sameRelease(latest)?'檢查保存狀態':complete(latest)?'重新檢查':'補齊離線資料';
+    var isFresh=fresh(latest), value;
+    if(message)value=message;
+    else if(lastError)value=lastError;
+    else if(busy&&isFresh&&latest.warming)value='正在保存離線資料；目前頁面可繼續閱讀。';
+    else if(checking||busy)value='正在重新驗證離線保存狀態；目前頁面可繼續閱讀。';
+    else if(!latest)value='尚未確認離線保存狀態，將在空閒時檢查。';
+    else if(!sameRelease(latest))value='版本更新尚未套用；請套用更新提示，再確認離線保存。';
+    else if(!isFresh)value='上次檢查（'+checkedLabel(latest)+'）'+(complete(latest)?'已完整保存':'尚未確認完整保存')+'；目前狀態待重新驗證。';
+    else if(complete(latest))value=version.toUpperCase()+' 全書、字型與書內圖片已驗證保存（'+checkedLabel(latest)+' 檢查）。';
+    else if(latest.warming)value='正在保存離線資料；目前頁面可繼續閱讀。';
+    else if(latest.storageError)value='離線保存未完成，請確認瀏覽器的儲存空間與權限後重試。';
+    else if(!latest.bookReady||!latest.shellReady)value='離線書籍尚未完整保存，請連線後補齊。';
+    else value='全書已驗證保存；字型 '+latest.fontsCached+'/8，書內圖片 '+latest.imagesCached+'/4（'+checkedLabel(latest)+' 檢查）。';
+    text(status,value);
+    button.disabled=busy||!!(isFresh&&latest.warming);
+    panel.setAttribute('aria-busy',button.disabled||checking?'true':'false');
+    panel.setAttribute('data-offline-freshness',!latest?'none':!sameRelease(latest)?'mismatch':isFresh?'fresh':'stale');
+    panel.setAttribute('data-offline-state',isFresh?(complete(latest)?'complete':'incomplete'):'unknown');
+    text(button,button.disabled?'處理中…':!sameRelease(latest)?'檢查保存狀態':!isFresh||complete(latest)?'重新檢查':'補齊離線資料');
     updateBanner();
   }
+  function armFreshnessTimer(){
+    if(freshTimer!==null){clearTimeout(freshTimer);freshTimer=null;}
+    var at=checkedAt(latest), now=Date.now();
+    if(at!==null&&fresh(latest))freshTimer=setTimeout(function(){freshTimer=null;paint();},Math.max(1,at+FRESH_MS-now));
+  }
   function receive(d,source){
-    if(source&&sw&&source!==sw.controller)return;
-    if(validState(d)){statusRevision++;latest=d;paint();return;}
-    if(d&&d.type==='ACIM_OFFLINE_PROGRESS'&&sameRelease(d)&&count(d.completed,32)&&count(d.total,32)&&d.total>0&&d.completed<=d.total){
-      status.textContent='離線資料已處理 '+d.completed+'/'+d.total+'，保存結果確認中；目前頁面可繼續閱讀。';
+    if(source&&sw&&source!==sw.controller)return false;
+    if(validState(d)){
+      var at=checkedAt(d), previousAt=checkedAt(latest), now=Date.now();
+      if(sameRelease(d)&&at!==null&&at<acceptAfter)return false;
+      if(sameRelease(d)&&sameRelease(latest)&&at!==null&&previousAt!==null&&previousAt<=now&&at<previousAt)return false;
+      statusRevision++;latest=d;unconfirmed=false;lastError='';armFreshnessTimer();paint();return true;
     }
+    if(d&&d.type==='ACIM_OFFLINE_PROGRESS'&&sameRelease(d)&&count(d.completed,32)&&count(d.total,32)&&d.total>0&&d.completed<=d.total&&fresh(latest)&&latest.warming&&!document.hidden){
+      text(status,'離線資料已處理 '+d.completed+'/'+d.total+'，保存結果確認中；目前頁面可繼續閱讀。');
+    }
+    return false;
   }
   function request(type,timeoutMs){
     return new Promise(function(resolve,reject){
       var controller=sw&&sw.controller;
       if(!controller){reject(new Error('no-controller'));return;}
       var id=version+'-offline-'+(++serial), requestEpoch=epoch, requestRevision=statusRevision, port=null;
-      var timer=setTimeout(function(){finish(null,new Error('status-timeout'));},timeoutMs||10000);
+      var timeout=timeoutMs||10000;
+      var timer=setTimeout(function(){finish(null,new Error('status-timeout'));},timeout);
       function finish(data,error){
         if(!pending[id])return;
-        delete pending[id];clearTimeout(timer);if(port)port.close();
-        if(requestEpoch!==epoch||controller!==sw.controller){reject(new Error('controller-changed'));return;}
+        delete pending[id];clearTimeout(timer);
+        if(port){port.onmessage=null;port.close();}
+        if(requestEpoch!==epoch||controller!==sw.controller){reject(error||new Error('controller-changed'));return;}
         if(error){reject(error);return;}
         if(!validState(data)){reject(new Error('invalid-status'));return;}
         if(type==='GET_OFFLINE_STATUS'&&requestRevision!==statusRevision&&latest){resolve(latest);return;}
-        receive(data,controller);resolve(data);
+        if(!receive(data,controller)){reject(new Error('stale-status'));return;}
+        resolve(data);
       }
-      pending[id]=finish;
+      pending[id]={finish:finish,deadline:Date.now()+timeout};
       try{
         if(typeof MessageChannel==='function'){
           var channel=new MessageChannel();port=channel.port1;
@@ -25623,61 +26114,141 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       }catch(e){finish(null,e);}
     });
   }
+  function cancelScheduled(){
+    scheduleGeneration++;
+    if(scheduleTimer!==null){clearTimeout(scheduleTimer);scheduleTimer=null;}
+    if(scheduleIdle!==null){
+      if(window.cancelIdleCallback)cancelIdleCallback(scheduleIdle);else clearTimeout(scheduleIdle);
+      scheduleIdle=null;
+    }
+  }
+  function scheduleCheck(autoWarm,force){
+    scheduled=true;scheduledWarm=scheduledWarm||!!autoWarm;scheduledForce=scheduledForce||!!force;
+    if(force)scheduledAfter=Date.now();
+    if(document.hidden||frozen||checking||busy)return;
+    if(!scheduledForce&&fresh(latest)){
+      scheduled=scheduledWarm=scheduledForce=false;cancelScheduled();paint();return;
+    }
+    if(scheduleTimer!==null||scheduleIdle!==null)return;
+    var scheduledEpoch=epoch, scheduledGeneration=scheduleGeneration;
+    function run(){
+      if(scheduledEpoch!==epoch||scheduledGeneration!==scheduleGeneration)return;
+      scheduleIdle=null;
+      if(!scheduled||document.hidden||frozen||checking||busy)return;
+      if(Date.now()-lastInteractionAt<150){scheduleTimer=setTimeout(ready,150);return;}
+      var warm=scheduledWarm, forced=scheduledForce;
+      scheduled=scheduledWarm=scheduledForce=false;
+      if(!forced&&fresh(latest)){paint();return;}
+      check(warm);
+    }
+    function ready(){
+      if(scheduledEpoch!==epoch||scheduledGeneration!==scheduleGeneration)return;
+      scheduleTimer=null;
+      if(document.hidden||frozen||!scheduled)return;
+      if(window.requestIdleCallback)scheduleIdle=requestIdleCallback(run,{timeout:IDLE_TIMEOUT_MS});
+      else scheduleIdle=setTimeout(run,0);
+    }
+    scheduleTimer=setTimeout(ready,AUTO_DELAY_MS);
+  }
   function check(autoWarm){
     var currentEpoch=epoch;
     if(checking)return checking;
-    if(!sw||!sw.controller){paint('離線保存尚未就緒；請連線載入，等待安裝完成。');return Promise.resolve(null);}
-    checking=request('GET_OFFLINE_STATUS').then(function(d){
-      if(autoWarm&&sameRelease(d)&&!d.warming&&d.fontsCached<8&&navigator.onLine!==false&&autoWarmedController!==sw.controller){
+    if(!sw||!sw.controller){lastError='離線保存尚未就緒；請連線載入，等待安裝完成。';paint();return Promise.resolve(null);}
+    lastError='';
+    var task=request('GET_OFFLINE_STATUS').then(function(d){
+      if(currentEpoch!==epoch)return null;
+      var warmRequested=autoWarm||scheduledWarm;
+      if(scheduled&&fresh(d)&&checkedAt(d)>=scheduledAfter)scheduled=scheduledWarm=scheduledForce=false;
+      if(warmRequested&&sameRelease(d)&&fresh(d)&&!d.warming&&d.fontsCached<8&&navigator.onLine!==false&&autoWarmedController!==sw.controller){
         autoWarmedController=sw.controller;
         latest=Object.assign({},d,{warming:true});statusRevision++;paint();
         sw.controller.postMessage({type:'WARM_FONTS'});
-        if(retryTimer)clearTimeout(retryTimer);
-        retryTimer=setTimeout(function(){retryTimer=null;check(false);},28000);
+        if(retryTimer!==null)clearTimeout(retryTimer);
+        retryTimer=setTimeout(function(){retryTimer=null;scheduleCheck(false,true);},28000);
       }
       return latest||d;
     }).catch(function(){
-      if(currentEpoch===epoch){latest=null;paint('尚未確認離線版本；請連線並套用更新後再試。');}
+      if(currentEpoch===epoch){unconfirmed=true;acceptAfter=Date.now();lastError='尚未確認本次離線保存結果；上次紀錄不代表目前完整，請重新檢查。';paint();}
       return null;
-    }).finally(function(){if(currentEpoch===epoch)checking=null;});
-    return checking;
+    }).finally(function(){
+      if(currentEpoch===epoch&&checking===task){
+        checking=null;paint();
+        if(scheduled)scheduleCheck(scheduledWarm,scheduledForce);
+      }
+    });
+    checking=task;paint();return task;
+  }
+  function rotateEpoch(clearSnapshot){
+    epoch++;statusRevision++;checking=null;busy=false;unconfirmed=true;acceptAfter=Date.now();lastError='';
+    cancelScheduled();
+    if(retryTimer!==null){clearTimeout(retryTimer);retryTimer=null;}
+    if(freshTimer!==null){clearTimeout(freshTimer);freshTimer=null;}
+    Object.keys(pending).forEach(function(id){pending[id].finish(null,new Error('lifecycle-changed'));});
+    autoWarmedController=null;
+    if(clearSnapshot)latest=null;
+  }
+  function resume(persisted){
+    if(document.hidden||frozen)return;
+    var now=Date.now();
+    var expired=Object.keys(pending).some(function(id){return pending[id].deadline<=now;});
+    var longPause=hiddenAt!==null&&(now<hiddenAt||now-hiddenAt>=FRESH_MS);
+    var reset=!!persisted||expired||longPause||resumeNeedsEpoch;
+    if(reset)rotateEpoch(false);
+    hiddenAt=null;resumeNeedsEpoch=false;paint();scheduleCheck(true,reset);
   }
   button.addEventListener('click',function(){
     if(busy)return;
-    busy=true;paint();
-    var currentEpoch=epoch;
-    check(false).then(function(d){
-      if(currentEpoch!==epoch)return;
+    busy=true;lastError='';paint();cancelScheduled();
+    scheduled=scheduledWarm=scheduledForce=false;
+    var currentEpoch=epoch, preceding=checking;
+    /* A manual check always starts a fresh GET. If an automatic check is still
+       running, wait for it to settle, then verify again after the click. */
+    Promise.resolve(preceding).then(function(){
+      if(currentEpoch!==epoch)return null;
+      return check(false);
+    }).then(function(d){
+      if(currentEpoch!==epoch||!d)return;
       if(!sameRelease(d)||complete(d))return;
       if(d.warming){paint();return;}
-      if(navigator.onLine===false){paint('目前離線，請恢復連線後再補齊資料。');return;}
+      if(navigator.onLine===false){lastError='目前離線，請恢復連線後再補齊資料。';paint();return;}
+      latest=Object.assign({},d,{warming:true});statusRevision++;
       paint('正在保存離線資料；目前頁面可繼續閱讀。');
       return request('PREPARE_OFFLINE',35000);
     }).catch(function(){
-      if(currentEpoch===epoch){latest=null;paint('尚未確認保存結果，請確認連線後重新檢查。');}
+      if(currentEpoch===epoch){unconfirmed=true;acceptAfter=Date.now();lastError='尚未確認保存結果，請確認連線後重新檢查。';paint();}
     }).finally(function(){
-      if(currentEpoch===epoch){busy=false;button.disabled=!!(sameRelease(latest)&&latest.warming);panel.setAttribute('aria-busy',button.disabled?'true':'false');button.textContent=button.disabled?'處理中…':complete(latest)?'重新檢查':sameRelease(latest)?'補齊離線資料':'檢查保存狀態';}
+      if(currentEpoch===epoch){busy=false;paint();if(scheduled)scheduleCheck(scheduledWarm,scheduledForce);}
     });
   });
   if(!sw){status.textContent='此瀏覽器未提供離線保存功能；可連線閱讀。';button.hidden=true;updateBanner();return;}
   sw.addEventListener('message',function(e){
     if(e.source&&e.source!==sw.controller)return;
     var d=e.data;
-    if(d&&pending[d.requestId])pending[d.requestId](d);
-    else receive(d,e.source);
+    if(d&&Object.prototype.hasOwnProperty.call(d,'requestId')){
+      if(pending[d.requestId])pending[d.requestId].finish(d);
+      return; /* A timed-out / previous-epoch reply is never a new broadcast. */
+    }
+    receive(d,e.source);
   });
   sw.addEventListener('controllerchange',function(){
-    epoch++;statusRevision++;checking=null;busy=false;latest=null;autoWarmedController=null;
-    if(retryTimer){clearTimeout(retryTimer);retryTimer=null;}
-    Object.keys(pending).forEach(function(id){pending[id](null,new Error('controller-changed'));});
-    paint();
-    check(true);
+    rotateEpoch(true);paint();scheduleCheck(true,true);
   });
-  window.addEventListener('online',function(){updateBanner();check(true);});
-  window.addEventListener('offline',function(){updateBanner();check(false);});
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){if(hiddenAt===null)hiddenAt=Date.now();cancelScheduled();return;}
+    resume(false);
+  });
+  window.addEventListener('pagehide',function(){if(hiddenAt===null)hiddenAt=Date.now();cancelScheduled();});
+  window.addEventListener('pageshow',function(e){resume(e.persisted);});
+  document.addEventListener('freeze',function(){frozen=true;resumeNeedsEpoch=true;if(hiddenAt===null)hiddenAt=Date.now();cancelScheduled();});
+  document.addEventListener('resume',function(){frozen=false;resume(false);});
+  window.addEventListener('focus',function(){resume(false);});
+  window.addEventListener('online',function(){updateBanner();scheduleCheck(true,true);});
+  window.addEventListener('offline',function(){updateBanner();scheduleCheck(false,true);});
+  document.addEventListener('acim:reader-ui-change',function(){paint();scheduleCheck(false,false);});
+  window.addEventListener('pointerdown',function(){lastInteractionAt=Date.now();},{passive:true,capture:true});
   paint();
-  if(sw.controller)check(true);
-  sw.ready.then(function(){if(!latest)check(true);}).catch(function(){paint('離線保存尚未就緒，請稍後重新檢查。');});
+  if(sw.controller)scheduleCheck(true,false);
+  sw.ready.then(function(){if(!latest)scheduleCheck(true,false);}).catch(function(){lastError='離線保存尚未就緒，請稍後重新檢查。';paint();});
 })();
 </script>
 </body>
