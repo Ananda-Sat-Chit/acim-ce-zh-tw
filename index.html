@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="acim-version" content="v27.6">
-<meta name="acim-release-id" content="b797bdbb3c33bde36a6cbbf699efa829af0e81f0d80a0a136a6180b2e4979791">
+<meta name="acim-version" content="v27.6.1">
+<meta name="acim-release-id" content="57c2cc2a82d8b2c3446be6f00ad6875a3926654df13ecc619a22c8c3b9a9e2a1">
 <meta name="acim-build" content="2026-11-02">
-<meta name="acim-build-time" content="13:32">
+<meta name="acim-build-time" content="14:20">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -136,7 +136,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v27.6';
+var ACIM_VERSION = 'v27.6.1';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -1925,7 +1925,7 @@ html body #sidebar-toc.mobile-open{z-index:2100;}
         <button id="sidebar-settings-back" type="button"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m10 5-7 7 7 7M3 12h18"/></svg><span>返回目錄</span></button>
       </div>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 13:32</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 14:20</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -26909,11 +26909,21 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   stop.addEventListener('click',function(){stopRecording('user');});
   save.addEventListener('click',function(){
     if(running||!session)return;
-    var url=URL.createObjectURL(new Blob([JSON.stringify(session,null,2)],{type:'application/json'}));
-    var a=document.createElement('a');a.href=url;a.download='ACIM_'+session.version+'_performance.json';
-    document.body.appendChild(a);a.click();a.remove();
-    setTimeout(function(){URL.revokeObjectURL(url);},1000);
-    update('紀錄已準備下載。您可將 JSON 檔提供給維護者分析。');
+    var url=null,a=null,filename='ACIM_'+session.version+'_performance.json';
+    try{
+      url=URL.createObjectURL(new Blob([JSON.stringify(session,null,2)],{type:'application/json'}));
+      a=document.createElement('a');a.href=url;a.download=filename;
+      a.hidden=true;a.tabIndex=-1;
+      /* Keep this action inside the active settings panel. The compact
+         reader's modal guard must still block clicks outside the sidebar. */
+      save.parentNode.appendChild(a);a.click();
+      update('已要求瀏覽器下載 '+filename+'。請到手機的檔案／下載資料夾查看；此頁無法確認檔案是否已存入手機。');
+    }catch(e){
+      update('無法啟動下載，紀錄仍保留在此頁。請再按一次匯出紀錄；請勿重新整理。');
+    }finally{
+      if(a&&a.parentNode)a.remove();
+      if(url)setTimeout(function(){URL.revokeObjectURL(url);},1000);
+    }
   });
   document.addEventListener('visibilitychange',function(){if(document.hidden)stopRecording('background');});
   window.addEventListener('pagehide',function(){stopRecording('background');});
