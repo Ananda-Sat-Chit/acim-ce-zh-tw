@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="acim-version" content="v27">
-<meta name="acim-candidate" content="V27-S2">
-<meta name="acim-release-id" content="f7241c763cc7139d8dce482f33a38f8aac018390e5445fdaf1a837154ff1ce74">
+<meta name="acim-candidate" content="V27-S3">
+<meta name="acim-release-id" content="5b279a73989df6a430134058b03f2241089fc1f8d34b68ba604f07cabb8a9d6e">
 <meta name="acim-build" content="2026-11-02">
-<meta name="acim-build-time" content="17:04">
+<meta name="acim-build-time" content="17:28">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -1641,14 +1641,14 @@ ul{margin-bottom:0;}
       <div class="sidebar-topline">
         <h3 title="完整加註版奇蹟課程">目錄</h3>
         <span id="app-version-tag"></span>
-        <span class="sidebar-candidate-label" title="設定聚焦對照驗證版">S2</span>
+        <span class="sidebar-candidate-label" title="設定開關焦點對照驗證版">S3</span>
         <button id="sidebar-settings-toggle" type="button" aria-expanded="false" aria-controls="sidebar-settings-panel">設定與資訊</button>
       </div>
     </div>
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 17:04</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 17:28</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -22182,9 +22182,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(!open&&restoreFocus)settingsToggle.focus();
   }
   if(settingsToggle&&settingsPanel){
-    settingsToggle.addEventListener('click',function(){
+    settingsToggle.addEventListener('click',function(event){
       var opening=settingsPanel.hidden;
-      setSidebarSettings(opening,!opening);
+      var pointerClose=!opening&&typeof settingsToggle.__acimConsumeSettingsPointerClose==='function'&&
+        settingsToggle.__acimConsumeSettingsPointerClose(event);
+      setSidebarSettings(opening,!opening&&!pointerClose);
     });
     function closeSettingsOnEscape(event){
       if(event.key==='Escape'&&!settingsPanel.hidden&&!event.defaultPrevented){
@@ -25546,20 +25548,20 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   sw.ready.then(function(){if(!latest)check(true);}).catch(function(){paint('離線保存尚未就緒，請稍後重新檢查。');});
 })();
 </script>
-<script id="acim-settings-s2">
+<script id="acim-settings-s3">
 (function(){
   'use strict';
-  // S2 isolates the touch/pen compatibility-mouse focus prelude. The existing
-  // click handler remains the only pointer activation path. No layout reads,
-  // delayed focus, synthetic pointer clicks, or gesture/scroll guards are added.
+  // S3 applies the same bounded touch/pen policy to opening and closing.
+  // Only a consumed, state-matched close pointer can skip explicit restoration.
+  // Keyboard, programmatic and opt-out activation keep the original focus path.
   var toggle=document.getElementById('sidebar-settings-toggle');
   var panel=document.getElementById('sidebar-settings-panel');
   if(!toggle||!panel||!window.PointerEvent)return;
-  var token=null;
+  var pending=null, handoff=null;
   var origins=[document.body,document.documentElement,toggle,
     document.getElementById('btn-fup'),document.getElementById('btn-fdn'),
     document.getElementById('btn-dark'),document.getElementById('btn-toc')];
-  function clearToken(){token=null;}
+  function clearState(){pending=null;handoff=null;}
   function otherPanelOpen(){
     var bookmarks=document.getElementById('bm-panel');
     var footnotes=document.getElementById('footnote-bar');
@@ -25568,59 +25570,89 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       (footnotes&&(footnotes.classList.contains('open')||footnotes.classList.contains('fn-visible')))||
       (share&&share.style.display!=='none'));
   }
-  // This passive observer only discards a previous handoff; it never cancels
-  // external pointer events or watches pointermove/touchmove/wheel.
-  document.addEventListener('pointerdown',clearToken,{capture:true,passive:true});
+  function samePointerClick(event,record){
+    return !!(record&&event.type==='click'&&!event.defaultPrevented&&event.button===0&&
+      !event.ctrlKey&&!event.altKey&&!event.metaKey&&!event.shiftKey&&
+      (typeof event.pointerId!=='number'||event.pointerId===record.pointerId)&&
+      (!event.pointerType||event.pointerType===record.pointerType)&&
+      (event.pointerType||event.detail>0));
+  }
+  function sameSafeOrigin(record){
+    return !!(record&&record.origin&&record.origin.isConnected&&
+      origins.indexOf(record.origin)>=0&&document.activeElement===record.origin&&
+      !panel.contains(record.origin));
+  }
+  // A local bridge, read only by the existing settings click handler before
+  // DOM writes. Consume even invalid pending data; it cannot authorize twice.
+  toggle.__acimConsumeSettingsPointerClose=function(event){
+    var record=pending;
+    clearState();
+    if(!record||record.wasHidden!==false||panel.hidden!==false||
+       !samePointerClick(event,record)||!(event.detail>0)||
+       !sameSafeOrigin(record)||otherPanelOpen())return false;
+    handoff={origin:record.origin,hidden:true,ready:false,clickEvent:event};
+    return true;
+  };
+  // Passive observers only clear transient state; no outside event is canceled.
+  document.addEventListener('pointerdown',clearState,{capture:true,passive:true});
   toggle.addEventListener('pointerdown',function(event){
-    if(!panel.hidden||event.defaultPrevented||!event.cancelable||
-       event.isPrimary!==true||event.button!==0||
-       (event.pointerType!=='touch'&&event.pointerType!=='pen')||
+    if(event.defaultPrevented||!event.cancelable||event.isPrimary!==true||
+       event.button!==0||(event.pointerType!=='touch'&&event.pointerType!=='pen')||
        event.ctrlKey||event.altKey||event.metaKey||event.shiftKey)return;
     var origin=document.activeElement;
-    // A strict allowlist preserves native blur/keyboard handling for search,
-    // editable content, links, embedded frames and unrelated controls.
-    if(origins.indexOf(origin)<0||otherPanelOpen())return;
+    if(origins.indexOf(origin)<0||panel.contains(origin)||otherPanelOpen())return;
     event.preventDefault();
     if(event.defaultPrevented){
-      token={origin:origin,pointerId:event.pointerId,pointerType:event.pointerType,opened:false};
+      pending={origin:origin,pointerId:event.pointerId,pointerType:event.pointerType,
+        wasHidden:panel.hidden};
     }
   },{passive:false});
-  toggle.addEventListener('pointercancel',clearToken,{passive:true});
+  toggle.addEventListener('pointercancel',clearState,{passive:true});
   toggle.addEventListener('click',function(event){
-    if(!token)return;
-    // This listener runs after the unchanged S1 click handler. A keyboard or
-    // programmatic activation cannot inherit a canceled pointer's handoff.
-    if(panel.hidden||event.defaultPrevented||
-       (typeof event.pointerId==='number'&&event.pointerId!==token.pointerId)||
-       (event.pointerType&&event.pointerType!==token.pointerType)||
-       (!event.pointerType&&event.detail===0)){
-      clearToken();return;
+    // The original click handler has already performed the state change.
+    if(handoff&&handoff.clickEvent===event){
+      if(panel.hidden!==true||document.activeElement!==handoff.origin){clearState();return;}
+      handoff.clickEvent=null;handoff.ready=true;return;
     }
-    token.opened=true;
+    var record=pending;
+    clearState();
+    if(!record||record.wasHidden!==true||panel.hidden!==false||
+       !samePointerClick(event,record)||!sameSafeOrigin(record)||otherPanelOpen())return;
+    handoff={origin:record.origin,hidden:false,ready:true,clickEvent:null};
   });
   document.addEventListener('focusin',function(event){
-    if(token&&event.target!==token.origin)clearToken();
+    var origin=pending?pending.origin:handoff?handoff.origin:null;
+    if(origin&&event.target!==origin)clearState();
   },{passive:true});
-  window.addEventListener('blur',clearToken,{passive:true});
+  window.addEventListener('blur',clearState,{passive:true});
   document.addEventListener('keydown',function(event){
-    if(!token)return;
-    var origin=token.origin;
-    if(!token.opened||panel.hidden||!origin.isConnected||
+    // A keyboard action between pointerdown and click invalidates the pointer.
+    pending=null;
+    if(!handoff)return;
+    var origin=handoff.origin;
+    if(!handoff.ready||panel.hidden!==handoff.hidden||!origin.isConnected||
        document.activeElement!==origin||event.target!==origin||
        origin===toggle||panel.contains(origin)){
-      clearToken();return;
+      clearState();return;
     }
     if(event.defaultPrevented||event.isComposing||event.keyCode===229||
        event.ctrlKey||event.altKey||event.metaKey)return;
-    if(event.key!=='Tab'&&event.key!=='Escape')return;
+    if(event.key!=='Tab'&&event.key!=='Escape'){
+      if(handoff.hidden&&event.key!=='Shift'&&event.key!=='Control'&&
+         event.key!=='Alt'&&event.key!=='Meta')clearState();
+      return;
+    }
     if(event.key==='Escape'&&event.shiftKey)return;
-    if(otherPanelOpen()){clearToken();return;}
-    clearToken();
-    // Only an explicit keyboard action performs focus work. Touch opening
-    // performs none. Native Tab traversal itself still needs device validation.
+    if(otherPanelOpen()){clearState();return;}
+    var closed=handoff.hidden;
+    clearState();
     if(event.key==='Escape'){
+      // Closed settings must never reopen in response to Escape.
+      if(closed)return;
       event.preventDefault();event.stopPropagation();toggle.click();
     }else{
+      // Defer the keyboard starting point until actual Tab/Shift+Tab input,
+      // not to a timer or another stage of the touch interaction.
       toggle.focus({preventScroll:true});
     }
   },true);
