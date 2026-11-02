@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v27">
-<meta name="acim-release-id" content="a12301848f24093316c8ac5a2f8a80510646d9f33c63310af349abc6459d83b3">
+<meta name="acim-version" content="v27.1">
+<meta name="acim-release-id" content="a36f73e699414f8c5e6dd0a64fee8a17461a0c1d0cd1ca15d277496cc13d3aeb">
 <meta name="acim-build" content="2026-11-02">
-<meta name="acim-build-time" content="02:46">
+<meta name="acim-build-time" content="07:55">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -136,7 +136,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v27';
+var ACIM_VERSION = 'v27.1';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -381,15 +381,17 @@ html.dark-mode #content-area h3{color:#B090D8;}
   margin:2px 0; border-radius:5px; padding:3px 7px;
   line-height:1.45; 
 }
-#toc-wrapper a:hover{color:var(--c-gold);background:rgba(107,47,160,0.08);}
-.toc-link.toc-active{
-  color:var(--c-accent)!important; background:rgba(107,47,160,0.1)!important;
+/* V27.1：一般章節、附錄三與詞彙子目錄使用相同金色互動狀態。 */
+#toc-wrapper a:hover,#toc-wrapper a:focus-visible{color:var(--c-gold)!important;background:rgba(107,47,160,0.08);}
+#toc-wrapper a:focus-visible{outline:2px solid var(--c-gold);outline-offset:-2px;}
+#toc-wrapper a.toc-link.toc-active{
+  color:var(--c-gold)!important; background:rgba(107,47,160,0.1)!important;
   font-weight:600;
-  box-shadow:inset 3px 0 0 var(--c-accent);
+  box-shadow:inset 3px 0 0 var(--c-gold);
 }
-html.dark-mode .toc-link.toc-active{color:var(--c-gold)!important;background:rgba(255,255,255,0.08)!important;box-shadow:inset 3px 0 0 var(--c-gold);}
+html.dark-mode #toc-wrapper a.toc-link.toc-active{color:var(--c-gold)!important;background:rgba(255,255,255,0.08)!important;box-shadow:inset 3px 0 0 var(--c-gold);}
 html.dark-mode #toc-wrapper a{color:#9580b0!important;}
-html.dark-mode #toc-wrapper a:hover{color:var(--c-gold)!important;background:rgba(255,255,255,0.06)!important;}
+html.dark-mode #toc-wrapper a:hover,html.dark-mode #toc-wrapper a:focus-visible{color:var(--c-gold)!important;background:rgba(255,255,255,0.06)!important;}
 
 /* TOC 階層 */
 .toc-group{margin-bottom:2px;}
@@ -1566,6 +1568,24 @@ html.dark-mode .st381{color:var(--c-text)!important;background-color:var(--c-bg)
 html.dark-mode .st382{color:var(--c-text)!important;background-color:var(--c-bg)!important;}
 #content-area .cover-kt{font-size:clamp(19px,5.2vw,24px)!important;}
 #content-area sup.fn-badge{cursor:pointer;}
+
+/* V27.1：僅覆蓋本次指定的題記、手稿圖片與詞彙標題版面。 */
+#content-area p.acim-first-chapter-epigraph{
+  text-align:center!important;text-indent:0!important;
+  margin-left:0!important;margin-right:0!important;
+}
+#content-area p.acim-cameo29-manuscript{
+  text-align:left!important;text-indent:0!important;
+  margin-left:0!important;margin-right:0!important;max-width:100%;
+}
+#content-area img.acim-responsive-manuscript{
+  display:block;width:100%!important;max-width:620px!important;
+  height:auto!important;margin-left:0!important;margin-right:auto!important;
+}
+#content-area p.acim-glossary-term{
+  margin-top:1.9em!important;margin-bottom:1.9em!important;
+  margin-top:1lh!important;margin-bottom:1lh!important;
+}
 </style>
 <style>
 /* Minimal Word compatibility styles — @font-face block removed (was 1474 unused entries) */
@@ -1629,7 +1649,7 @@ ul{margin-bottom:0;}
       </div>
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 02:46</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 07:55</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -1896,7 +1916,7 @@ C-Ep
 </p><p class="mn st21">
 ³<span class="kf"><b>凡不真實的，即不存在。</b></span></p><p class="mn st22">⁴<span class="kf"><b>上主的平安就在其中。</b></span></p></section><section class="csec" style="contain-intrinsic-size:auto 184px"><h1>卷一<br/>
 〈正文〉<br/>
-Text</h1></section><section class="csec" style="contain-intrinsic-size:auto 17575px"><h2>第一章　奇蹟原則</h2><p class="mn st23">
+Text</h1></section><section class="csec" style="contain-intrinsic-size:auto 17575px"><h2>第一章　奇蹟原則</h2><p class="mn st23 acim-first-chapter-epigraph">
 <span class="kf"><b>你會看到奇蹟透過我由你的雙手展現
 </b></span><sup><span class="kf"><sup class="fn-badge" data-fn="17">17</sup></span></sup></p><p class="mn st24">
 <b>一、奇蹟原則第一條是「奇蹟沒有難易的程度之分」。</b>²<b>一個奇蹟不會比另一個更「難」或更「大」，</b>³<b>它們都是一樣的。</b></p><p class="mn st24">
@@ -15340,8 +15360,8 @@ bone”〔血肉無存的骨架〕5:1）。正是在這詩意的一節之中，�
 holiness...（…你以為在自身內所見的…。…祂的神聖性）</p><p class="mn st9">
 在這兩例裡，原文都符合節拍，而海倫更改後的版本則否。後來，海倫開始非常重視抑揚五步格，她會小心檢查任何不符之處，加以更正。
 因此，很難想像她會故意做完全相反的事――把符合格律的句子「訂正」成不符合的樣子。由此，我們可以肯定地推測，當抑揚五步格剛開始出現時，海倫並沒有注意到。肯尼斯•霍布尼克也報導過同樣的事，他說：「海倫起初不知道有這個［抑揚五步格］，但後來她意識到文句是以一種確定的節奏呈現的。<sup class="fn-badge" data-fn="2871">2871</sup>」</p><p class="mn st9">
-然而到了下一章（第25章第4節），海倫顯然已經注意到抑揚五步格，我們可以在她的筆記上看到這一點――她用雙引號標出使用抑揚五步格的文字的分界。以下是T-25.VII中的一個例子：</p><p class="mn st352">
-<img class="st353" loading="lazy" width="620" height="133" data-src="index.files/ce-manuscript.webp" src="" alt="海倫手稿中的抑揚五步格引號標記"></p><p class="mn st9">
+然而到了下一章（第25章第4節），海倫顯然已經注意到抑揚五步格，我們可以在她的筆記上看到這一點――她用雙引號標出使用抑揚五步格的文字的分界。以下是T-25.VII中的一個例子：</p><p class="mn st352 acim-cameo29-manuscript">
+<img class="st353 acim-responsive-manuscript" loading="lazy" width="620" height="133" data-src="index.files/ce-manuscript.webp" src="" alt="海倫手稿中的抑揚五步格引號標記"></p><p class="mn st9">
 請注意第一行中“comes”之後的雙引號，及第二行
  “sanity”和第三行“hope”之後的雙引號。這是海倫在這個時期標出抑揚五步格文句的方式。</p><p class="mn st9">
 這裡會引起一個與前面類似的問題。就像我們會問抑揚五步格是來自海倫還是耶穌，現在我們也會問：是海倫自己曉得要在哪裡分界，還是耶穌告訴她的？最自然的解釋似乎是前者，因為海倫可以輕易數出五音步，然後插入引號。她只要回頭數一數音節，就可以知道分界處了。</p><p class="mn st9">
@@ -16009,9 +16029,9 @@ verba</i>）。我們怎能不把這些話呈現在世人眼前呢？</p><p clas
 </p></section><section class="csec" style="contain-intrinsic-size:auto 14148px"><h2>
 附錄三　課程術語詞彙表<br/>
 Glossary
-of Course terms</h2><p class="mn st15">
+of Course terms</h2><p class="mn st15 acim-glossary-term">
 <b>Atonement</b><br/>
-<b>救贖</b></p><p class="mn st17">
+<b>救贖</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-0" id="glossary-0-en" lang="en">
 Reconciliation
 with God through the wiping away of that which seems to separate us
 from God: our sins. In Christianity, this was achieved through Jesus
@@ -16022,11 +16042,11 @@ demonstrated in his resurrection (which is referred to as “the
 Atonement” in the Course). “The full awareness of Atonement,
 then, is the recognition that the separation <i>never
 occurred</i>”
-(T-6.III.5:5).<br/>
+(T-6.III.5:5).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-0" id="glossary-0-zh" lang="zh-TW">
 藉由抹去使我們彷彿與上主分裂的罪，而與上主和解。在基督教中，這是透過耶穌在十字架上為人類的罪付出代價而達成的；在《課程》中，則是因我們認清自己的「罪」從來就不真實，而完成救贖，將其消除。救贖是一個原則，耶穌以他的復活予以展現（耶穌的復活在《課程》中被稱為「救贖行動」〔the
-Atonement〕）。「因此，對救贖的徹底覺知，其實就是認清分裂<span class="kf"><b>從未發生過</b></span>。」（T-6.III.5:5）。</p><p class="mn st15">
+Atonement〕）。「因此，對救贖的徹底覺知，其實就是認清分裂<span class="kf"><b>從未發生過</b></span>。」（T-6.III.5:5）。</p><p class="mn st15 acim-glossary-term">
 <b>Christ</b><br/>
-<b>基督</b></p><p class="mn st17">
+<b>基督</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-1" id="glossary-1-en" lang="en">
 God’s
 one Son, “the holy Self we share” (W-Re.5.In.4:2). Although there
 are an infinite number of individual Sons, they all share a single
@@ -16034,10 +16054,10 @@ universal Self: Christ. Christ is distinct from Jesus, since Jesus is
 <i>one</i>
 of the Sons, while Christ is the single Son of which all the
 individual Sons are
-part.<br/>
-上主的唯一聖子，「我們共有的神聖真我」（W-Re.5.In.4:2）。雖然有無數個別的上主之子，但他們都共有一個單一的普同之我：基督。基督有別於耶穌，因為耶穌是上主的眾子<span class="kf"><b>之一</b></span>，而基督則是那唯一的聖子，所有的上主之子都是祂的一部分。</p><p class="mn st15">
+part.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-1" id="glossary-1-zh" lang="zh-TW">
+上主的唯一聖子，「我們共有的神聖真我」（W-Re.5.In.4:2）。雖然有無數個別的上主之子，但他們都共有一個單一的普同之我：基督。基督有別於耶穌，因為耶穌是上主的眾子<span class="kf"><b>之一</b></span>，而基督則是那唯一的聖子，所有的上主之子都是祂的一部分。</p><p class="mn st15 acim-glossary-term">
 <b>creation</b><br/>
-<b>創造</b></p><p class="mn st17">
+<b>創造</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-2" id="glossary-2-en" lang="en">
 The
 act in which God extends His will to bring into being His creations,
 and in which we extend our will to bring into being our own
@@ -16045,11 +16065,11 @@ creations. Creation does not take place in this world, only in
 Heaven. What is created is pure spirit, without form or body. The
 created shares all the attributes of its creator, since it is merely
 the extension of its creator’s being.
-<br/>
-上主延伸（extend）祂的意志，以此行動生出祂的造化（creations）；我們也以此行動延伸我們的意志，生出我們自己的造化（creations）。創造不會發生在這個世界，只發生在天堂。被創造者是純粹的靈性，沒有形相或身體。被創造者共有其創造主的所有屬性，因為前者只是後者生命的延伸。</p><p class="mn st15">
+</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-2" id="glossary-2-zh" lang="zh-TW">
+上主延伸（extend）祂的意志，以此行動生出祂的造化（creations）；我們也以此行動延伸我們的意志，生出我們自己的造化（creations）。創造不會發生在這個世界，只發生在天堂。被創造者是純粹的靈性，沒有形相或身體。被創造者共有其創造主的所有屬性，因為前者只是後者生命的延伸。</p><p class="mn st15 acim-glossary-term">
 <b>creations,
 our</b><br/>
-<b>我們的造化</b></p><p class="mn st17">
+<b>我們的造化</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-3" id="glossary-3-en" lang="en">
 Our
 own eternal creations in Heaven, which are like us in every
 respect—being pure spirit, without change or limitation. The only
@@ -16058,10 +16078,10 @@ they are eternal beings in their own right, our creations are not our
 extensions or thoughts of love in this world, although we will
 ultimately remember them <i>through</i>
 extending love in this
-world.<br/>
-我們自己在天堂的永恆造化，在各方面都與我們肖似――是純粹的靈性，既不會改變，也沒有限制。唯一不同之處在於我們是他們的因，他們是我們的果。由於他們本身是永恆的生命，所以雖然我們終將<span class="kf"><b>藉由</b></span>在此世間將愛延伸出去而憶起他們，但他們並不是我們在世間的延伸物或者愛之念。</p><p class="mn st15">
+world.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-3" id="glossary-3-zh" lang="zh-TW">
+我們自己在天堂的永恆造化，在各方面都與我們肖似――是純粹的靈性，既不會改變，也沒有限制。唯一不同之處在於我們是他們的因，他們是我們的果。由於他們本身是永恆的生命，所以雖然我們終將<span class="kf"><b>藉由</b></span>在此世間將愛延伸出去而憶起他們，但他們並不是我們在世間的延伸物或者愛之念。</p><p class="mn st15 acim-glossary-term">
 <b>ego</b><br/>
-<b>小我</b></p><p class="mn st17">
+<b>小我</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-4" id="glossary-4-en" lang="en">
 The
 mind’s belief that it is separate from others and on its own
 (independent from God), and that its needs are met through attack.
@@ -16071,10 +16091,10 @@ is a false belief, for our real nature is at one with God and with
 all living things. The ego’s voice is a constant, insistent voice
 in our minds, yet it is the voice of something that does not exist.
 As such, the only power it has is what we give
-it.<br/>
-心靈的信念，相信它自己是與別的心靈分開且自主的（獨立於上主之外），而且它的需求是藉攻擊來滿足的。我們有此信念，因而體驗到自己是一個被身體束縛的獨立個體（在夢境中，身體是小我的象徵）；但這是一個錯誤的信念，因為我們的真實本性乃是與上主及一切有生之物合一的。小我在我們心中不斷堅定地發聲，但這個聲音出自一個並不存在之物。因此，它唯一擁有的力量其實是我們賦予的。</p><p class="mn st15">
+it.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-4" id="glossary-4-zh" lang="zh-TW">
+心靈的信念，相信它自己是與別的心靈分開且自主的（獨立於上主之外），而且它的需求是藉攻擊來滿足的。我們有此信念，因而體驗到自己是一個被身體束縛的獨立個體（在夢境中，身體是小我的象徵）；但這是一個錯誤的信念，因為我們的真實本性乃是與上主及一切有生之物合一的。小我在我們心中不斷堅定地發聲，但這個聲音出自一個並不存在之物。因此，它唯一擁有的力量其實是我們賦予的。</p><p class="mn st15 acim-glossary-term">
 <b>eternity</b><br/>
-<b>永恆</b></p><p class="mn st17">
+<b>永恆</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-5" id="glossary-5-en" lang="en">
 A
 state that is completely outside of time, rather than an infinite
 stretch of time. Instead of being a linear progression from past to
@@ -16084,10 +16104,10 @@ containing the three dimensions of past, present, and future,
 “Eternity is one
 time, its only
 dimension being ‘always’”
-(T-9.VI.7:6).<br/>
-一種完全超乎時間的狀態，而不是時間的無限延伸。永恆不是從過去到無盡未來的線性進程，而只包含「無限的當下，在此沒有任何過去與未來的概念」（W-169.6:3）。永恆「是一體時間，它只有一個向度，那就是『恆常不變』」（T-9.VI.7:6），因此並不包含過去、現在和未來三個向度。</p><p class="mn st15">
+(T-9.VI.7:6).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-5" id="glossary-5-zh" lang="zh-TW">
+一種完全超乎時間的狀態，而不是時間的無限延伸。永恆不是從過去到無盡未來的線性進程，而只包含「無限的當下，在此沒有任何過去與未來的概念」（W-169.6:3）。永恆「是一體時間，它只有一個向度，那就是『恆常不變』」（T-9.VI.7:6），因此並不包含過去、現在和未來三個向度。</p><p class="mn st15 acim-glossary-term">
 <b>extension</b><br/>
-<b>延伸</b>、<b>推恩</b></p><p class="mn st17">
+<b>延伸</b>、<b>推恩</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-6" id="glossary-6-en" lang="en">
 The
 natural dynamic of the mind whereby ideas in the mind are expressed
 outwardly, looked upon, and then strengthened in the mind. In Heaven,
@@ -16096,21 +16116,21 @@ to extend love and healing to other minds, using the body as an
 instrument of this extension. Projection is the distorted use of
 extension, in which the mind disowns what is within it by “hurling”
 it
-outside.<br/>
-心靈的自然動力，心中的想法藉此向外表達、被看見，然後在心中被強化。在天堂，我們在創造的行為中延伸我們的生命。在世間，我們的任務是以身體為延伸或推恩的工具，使愛與療癒及於其他心靈。投射是對延伸的扭曲運用，心靈藉由將內在之物「投擲」到外面而否認它。</p><p class="mn st15">
+outside.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-6" id="glossary-6-zh" lang="zh-TW">
+心靈的自然動力，心中的想法藉此向外表達、被看見，然後在心中被強化。在天堂，我們在創造的行為中延伸我們的生命。在世間，我們的任務是以身體為延伸或推恩的工具，使愛與療癒及於其他心靈。投射是對延伸的扭曲運用，心靈藉由將內在之物「投擲」到外面而否認它。</p><p class="mn st15 acim-glossary-term">
 <b>face
 of Christ</b><br/>
-<b>基督聖容</b></p><p class="mn st17">
+<b>基督聖容</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-7" id="glossary-7-en" lang="en">
 What
 is seen with vision or true perception. Seeing the face of Christ
 means looking past the veil of sin that seems to separate us from
 another person and seeing the holiness in that person. Seeing the
 face of Christ involves perception and must take place before the
 memory of God, which involves knowledge, can
-return.<br/>
-慧見或真實知見之所見。看見基督的面容，意謂看穿那似乎將我們與另一個人分隔開的罪的面紗，而看見那人內在的神聖性。重新憶起上主，關乎真知；在此之前，會先看見基督聖容，而這關乎知見。</p><p class="mn st15">
+return.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-7" id="glossary-7-zh" lang="zh-TW">
+慧見或真實知見之所見。看見基督的面容，意謂看穿那似乎將我們與另一個人分隔開的罪的面紗，而看見那人內在的神聖性。重新憶起上主，關乎真知；在此之前，會先看見基督聖容，而這關乎知見。</p><p class="mn st15 acim-glossary-term">
 <b>fear</b><br/>
-<b>恐懼</b></p><p class="mn st17">
+<b>恐懼</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-8" id="glossary-8-en" lang="en">
 The
 emotion that stems from the belief that danger is near and that we
 are vulnerable to it. The ego’s single emotion and fundamental
@@ -16118,21 +16138,21 @@ mood, which includes within it the emotions that led to it: anger and
 guilt. There is no actual basis for fear; it is solely of our own
 making. “Fear cannot be real without a cause, and God
 is the only cause”
-(T-9.I.10:6).<br/>
-因為相信「自己瀕臨危險而易受傷害」所產生的情緒。是小我唯一具有的情緒與其感受基調，其中包含導致它的情緒――憤怒和罪疚。恐懼沒有真實的基礎，完全是我們自己製造出來的。「恐懼既無肇因，自然不可能是真的，而上主是唯一的肇因。」（T-9.I.10:6）</p><p class="mn st15">
+(T-9.I.10:6).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-8" id="glossary-8-zh" lang="zh-TW">
+因為相信「自己瀕臨危險而易受傷害」所產生的情緒。是小我唯一具有的情緒與其感受基調，其中包含導致它的情緒――憤怒和罪疚。恐懼沒有真實的基礎，完全是我們自己製造出來的。「恐懼既無肇因，自然不可能是真的，而上主是唯一的肇因。」（T-9.I.10:6）</p><p class="mn st15 acim-glossary-term">
 <b>final
 (or last) step</b><br/>
-<b>最後一步</b></p><p class="mn st17">
+<b>最後一步</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-9" id="glossary-9-en" lang="en">
 Our
 final awakening to God, in which, once we have achieved perfect
 perception, God Himself will lift us permanently out of perception
 and back into the knowledge of Him. The journey to this point is one
 that we undertake with the Holy Spirit’s help, but neither we nor
 the Holy Spirit play any part in the final
-step.<br/>
-我們對上主的最終覺醒，一旦我們獲得完美的知見，上主便會親自將我們從知見中永遠提升出來，回到對祂的真知之中。我們在聖靈的幫助下來到旅程的這一步，但不論我們或者聖靈在這最後一步上都沒有任何作用。</p><p class="mn st15">
+step.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-9" id="glossary-9-zh" lang="zh-TW">
+我們對上主的最終覺醒，一旦我們獲得完美的知見，上主便會親自將我們從知見中永遠提升出來，回到對祂的真知之中。我們在聖靈的幫助下來到旅程的這一步，但不論我們或者聖靈在這最後一步上都沒有任何作用。</p><p class="mn st15 acim-glossary-term">
 <b>forgiveness</b><br/>
-<b>寬恕</b></p><p class="mn st17">
+<b>寬恕</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-10" id="glossary-10-en" lang="en">
 Letting
 go of our false perception that another sinned against us and
 deserves our anger, and thereby releasing that person from the guilt
@@ -16144,10 +16164,10 @@ then try to let go of the anger that is <i>part</i>
 of that perception. “Forgiveness is the central theme which runs
 throughout salvation” (W-169.10:5). The Course teaches that through
 forgiving our brothers, we come to forgive
-ourselves.<br/>
-放下以為「別人冒犯了我、對我犯了罪，理應承受我的憤怒」的錯誤知見，從而使那人解脫於我加諸他的負罪感或罪疚。因此，寬恕就是承認「沒有什麼好寬恕的」（T-15.VIII.5:7）。這與傳統上對於寬恕的理解形成對比；在通常的理解中，我們認定別人對我犯了罪，故應承受我的憤怒，但又努力想放下內在於這種知見有的憤怒。「寬恕是貫穿救恩的主旨」（W-169.10:5）。《課程》教導的是：透過寬恕弟兄，我們也會寬恕自己。</p><p class="mn st15">
+ourselves.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-10" id="glossary-10-zh" lang="zh-TW">
+放下以為「別人冒犯了我、對我犯了罪，理應承受我的憤怒」的錯誤知見，從而使那人解脫於我加諸他的負罪感或罪疚。因此，寬恕就是承認「沒有什麼好寬恕的」（T-15.VIII.5:7）。這與傳統上對於寬恕的理解形成對比；在通常的理解中，我們認定別人對我犯了罪，故應承受我的憤怒，但又努力想放下內在於這種知見有的憤怒。「寬恕是貫穿救恩的主旨」（W-169.10:5）。《課程》教導的是：透過寬恕弟兄，我們也會寬恕自己。</p><p class="mn st15 acim-glossary-term">
 <b>God</b><br/>
-<b>上主</b>、<b>神</b></p><p class="mn st17">
+<b>上主</b>、<b>神</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-11" id="glossary-11-en" lang="en">
 The
 infinite Being Who created the Sons of God, created Heaven as the
 dwelling place of His Sons, created the Holy Spirit as the
@@ -16158,10 +16178,10 @@ love, without the slightest hint of anger or attack. His love for us
 is beyond our current comprehension. However, He does communicate
 with us in the dream of time and space: He hears all our prayers and
 speaks to us through the Holy
-Spirit.<br/>
-創造主、無限的生命――祂創造了無數聖子，創造了天堂作為聖子的居所，創造了聖靈作為與祂分離的聖子交流的管道，且創造了真理實相本身。神或上主沒有性別或形相，但是有意志、思想和情感，這些都是永恆且無限的。祂是純粹的愛，沒有絲毫憤怒或攻擊。祂對我們的愛是我們目前無法理解的。然而，祂確實會在我們的時空之夢中與我們溝通――祂會傾聽我們所有的祈禱，並透過聖靈對我們說話。</p><p class="mn st15">
+Spirit.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-11" id="glossary-11-zh" lang="zh-TW">
+創造主、無限的生命――祂創造了無數聖子，創造了天堂作為聖子的居所，創造了聖靈作為與祂分離的聖子交流的管道，且創造了真理實相本身。神或上主沒有性別或形相，但是有意志、思想和情感，這些都是永恆且無限的。祂是純粹的愛，沒有絲毫憤怒或攻擊。祂對我們的愛是我們目前無法理解的。然而，祂確實會在我們的時空之夢中與我們溝通――祂會傾聽我們所有的祈禱，並透過聖靈對我們說話。</p><p class="mn st15 acim-glossary-term">
 <b>guilt</b><br/>
-<b>罪疚</b>、<b>內疚</b></p><p class="mn st17">
+<b>罪疚</b>、<b>內疚</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-12" id="glossary-12-en" lang="en">
 The
 painful emotion that stems from believing that we have sinned and
 have thus corrupted our identity, making ourselves worthy of
@@ -16172,10 +16192,10 @@ no reason” (T-13.XI.6:3). In the ego’s thought system, we are
 actually <i>attracted</i>
 to guilt, because the ego wants to compound guilt, “until it
 becomes all-encompassing and demands vengeance forever”
-(T-15.I.8:7).<br/>
-痛苦的情感，源自於我們相信自己犯了罪，因而本性墮落、失去真實身份，理應遭受懲罰，並且不值得被愛。但由於我們不可能犯罪，也不可能傷及自己的真實身份，所以「罪疚<span class="kf"><b>永遠</b></span>是徹底瘋狂而<span class="kf"><b>毫無根據</b></span>的」（T-13.XI.6:3）。在認同小我思想體系的情況下，我們實際上<i><span class="kf">被罪疚吸引</span></i>，由於小我想加重這罪疚，「使得罪疚充斥心靈，直到無所遁逃而招致永恆的報復」（T-15.I.8:7），所以我們會被罪疚所吸引。</p><p class="mn st15">
+(T-15.I.8:7).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-12" id="glossary-12-zh" lang="zh-TW">
+痛苦的情感，源自於我們相信自己犯了罪，因而本性墮落、失去真實身份，理應遭受懲罰，並且不值得被愛。但由於我們不可能犯罪，也不可能傷及自己的真實身份，所以「罪疚<span class="kf"><b>永遠</b></span>是徹底瘋狂而<span class="kf"><b>毫無根據</b></span>的」（T-13.XI.6:3）。在認同小我思想體系的情況下，我們實際上<i><span class="kf">被罪疚吸引</span></i>，由於小我想加重這罪疚，「使得罪疚充斥心靈，直到無所遁逃而招致永恆的報復」（T-15.I.8:7），所以我們會被罪疚所吸引。</p><p class="mn st15 acim-glossary-term">
 <b>Heaven</b><br/>
-<b>天堂</b></p><p class="mn st17">
+<b>天堂</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-13" id="glossary-13-en" lang="en">
 The
 transcendental abode that God created for His Son, beyond time and
 space; a realm of pure spirit, perfect oneness, and absolute
@@ -16183,21 +16203,21 @@ changelessness. Heaven is the only realm that is actually real. It is
 our true home; we are there now, merely dreaming we are in this
 world. We do not go to Heaven after we die; we awaken to Heaven when
 we have completely relinquished the
-ego.<br/>
-上主為祂的聖子所創造的超越時空的居所，一個純粹靈性、徹底合一且絕無改變之境。天堂是唯一真實存在的境界，是我們真正的家；我們現在就在那裡，只是夢見自己在這個世界。我們不會在死後去天堂，而是徹底放棄小我時，就會覺醒於天堂。</p><p class="mn st15">
+ego.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-13" id="glossary-13-zh" lang="zh-TW">
+上主為祂的聖子所創造的超越時空的居所，一個純粹靈性、徹底合一且絕無改變之境。天堂是唯一真實存在的境界，是我們真正的家；我們現在就在那裡，只是夢見自己在這個世界。我們不會在死後去天堂，而是徹底放棄小我時，就會覺醒於天堂。</p><p class="mn st15 acim-glossary-term">
 <b>holiness</b><br/>
-<b>神聖本質</b></p><p class="mn st17">
+<b>神聖本質</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-14" id="glossary-14-en" lang="en">
 A
 quality of divine purity, untainted by sin. Holiness is characterized
 not by separation from the impure (as in some traditional notions),
 but by the will to love and unite with all beings. Holiness is a
 fundamental quality of God Himself and of all that God creates, a
 quality that can never be stained or
-lost.<br/>
-一種永不受罪咎污染的、超凡的純潔品質。神聖性的特點並非與不潔的事物區隔（如某些傳統觀念所主張），而是具有愛一切眾生、且與眾生合一的意志。神聖性是上主本身及其所有造化的本質，是一種永不失去的特質。</p><p class="mn st15">
+lost.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-14" id="glossary-14-zh" lang="zh-TW">
+一種永不受罪咎污染的、超凡的純潔品質。神聖性的特點並非與不潔的事物區隔（如某些傳統觀念所主張），而是具有愛一切眾生、且與眾生合一的意志。神聖性是上主本身及其所有造化的本質，是一種永不失去的特質。</p><p class="mn st15 acim-glossary-term">
 <b>holy
 instant</b><br/>
-<b>神聖一刻</b></p><p class="mn st17">
+<b>神聖一刻</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-15" id="glossary-15-en" lang="en">
 A
 moment in which we set aside the past and the ego and enter into
 “<i>another</i>
@@ -16207,11 +16227,11 @@ experience the miracle. As an “out-of-pattern time interval”
 overturning the old pattern and ushering in a new future. A holy
 instant can be an individual experience, such as in meditation, or it
 can be interpersonal (which would make it a holy
-encounter).<br/>
-在這一刻，我們拋開過去與小我，進入「<span class="kf"><b>另一種</b></span>心態」（T-27.V.2:3）；在這一刻，我們憶起愛，並體驗到奇蹟。神聖一刻「打破時序的常軌」（T-1.47.4:6），讓上主的法則介入，推翻舊有的模式，迎接新的未來。神聖一刻可以是個人的經驗（如靜心冥想中的體驗），也可以是人與人之間的經驗（成為「神聖的會晤」）。</p><p class="mn st15">
+encounter).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-15" id="glossary-15-zh" lang="zh-TW">
+在這一刻，我們拋開過去與小我，進入「<span class="kf"><b>另一種</b></span>心態」（T-27.V.2:3）；在這一刻，我們憶起愛，並體驗到奇蹟。神聖一刻「打破時序的常軌」（T-1.47.4:6），讓上主的法則介入，推翻舊有的模式，迎接新的未來。神聖一刻可以是個人的經驗（如靜心冥想中的體驗），也可以是人與人之間的經驗（成為「神聖的會晤」）。</p><p class="mn st15 acim-glossary-term">
 <b>holy
 relationship</b><br/>
-<b>神聖的關係</b></p><p class="mn st17">
+<b>神聖的關係</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-16" id="glossary-16-en" lang="en">
 A
 relationship in which two people have joined in a truly common goal.
 This allows holiness to enter the relationship at an unconscious
@@ -16221,11 +16241,11 @@ occur in a variety of contexts; for instance, between two work
 colleagues (Helen and Bill, for example), a spiritual teacher and his
 pupil (such as the Manual discusses), or a psychotherapist and her
 patient (as in the <i>Psychotherapy</i>
-supplement).<br/>
-在此關係中，兩個人為了真正的共同目標而結合。這結合之舉使得神聖性得以在潛意識層次進入這關係，逐漸引導，直到這關係能將神聖性呈現出來。神聖關係可能發生在各種不同的情境中，例如：兩個同事之間（如海倫和比爾）、一位靈性導師和他的學生之間（如〈教師指南〉中討論的），或是心理治療師及其患者之間（如見於〈<i><span class="kf">心理治療</span></i>補編〉）。</p><p class="mn st15">
+supplement).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-16" id="glossary-16-zh" lang="zh-TW">
+在此關係中，兩個人為了真正的共同目標而結合。這結合之舉使得神聖性得以在潛意識層次進入這關係，逐漸引導，直到這關係能將神聖性呈現出來。神聖關係可能發生在各種不同的情境中，例如：兩個同事之間（如海倫和比爾）、一位靈性導師和他的學生之間（如〈教師指南〉中討論的），或是心理治療師及其患者之間（如見於〈<i><span class="kf">心理治療</span></i>補編〉）。</p><p class="mn st15 acim-glossary-term">
 <b>Holy
 Spirit</b><br/>
-<b>聖靈</b></p><p class="mn st17">
+<b>聖靈</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-17" id="glossary-17-en" lang="en">
 The
 third Person of the Trinity, Who was created by God in response to
 the separation as God’s remaining communication link with His
@@ -16236,10 +16256,10 @@ Holy Spirit is described throughout the course as giving us the
 answer to the separation and bringing the plan of the Atonement to
 us, establishing our particular part in it, and showing us exactly
 what it is”
-(C-5.2:1).<br/>
-「三位一體」中的第三位，是上主為了回應分裂而創造的生命，作為祂與分裂的聖子們之間僅存的溝通管道。祂既是代上主發言<span class="kf"><b>的</b></span>聲音，也是上主本身<span class="kf"><b>的</b></span>聲音，引導所有沉睡的聖子甦醒過來。「本課程通篇描述聖靈為我們答覆分裂、將救贖計畫帶給我們、確定我們在計畫中的角色，並清楚告知我們的任務。」（C-5.2:1）</p><p class="mn st15">
+(C-5.2:1).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-17" id="glossary-17-zh" lang="zh-TW">
+「三位一體」中的第三位，是上主為了回應分裂而創造的生命，作為祂與分裂的聖子們之間僅存的溝通管道。祂既是代上主發言<span class="kf"><b>的</b></span>聲音，也是上主本身<span class="kf"><b>的</b></span>聲音，引導所有沉睡的聖子甦醒過來。「本課程通篇描述聖靈為我們答覆分裂、將救贖計畫帶給我們、確定我們在計畫中的角色，並清楚告知我們的任務。」（C-5.2:1）</p><p class="mn st15 acim-glossary-term">
 <b>idol</b><br/>
-<b>偶像</b></p><p class="mn st17">
+<b>偶像</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-18" id="glossary-18-en" lang="en">
 A
 false god that we worship and look to for salvation, in place of the
 true God and our own true divinity. The term refers mainly to any
@@ -16247,20 +16267,20 @@ external thing, activity, body, or right that we think will save us
 and make us complete. An important secondary meaning is the image we
 hold of ourselves. The Course calls our self-images “graven images”
 (W-110.7:3), a biblical term for
-idols.<br/>
-我們崇拜並寄望救恩的假神，以之取代真神和我們自己真實的神性。主要是指我們以為能拯救我們、使我們變得完整的任何外在事物、活動、身體或權利等。其次是指我們對自己所持的形象。本課程稱我們的自我形象為「雕塑出來的形象」（W-110.7:3），這是《聖經》中對偶像的稱呼。</p><p class="mn st15">
+idols.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-18" id="glossary-18-zh" lang="zh-TW">
+我們崇拜並寄望救恩的假神，以之取代真神和我們自己真實的神性。主要是指我們以為能拯救我們、使我們變得完整的任何外在事物、活動、身體或權利等。其次是指我們對自己所持的形象。本課程稱我們的自我形象為「雕塑出來的形象」（W-110.7:3），這是《聖經》中對偶像的稱呼。</p><p class="mn st15 acim-glossary-term">
 <b>Jesus</b><br/>
-<b>耶穌</b></p><p class="mn st17">
+<b>耶穌</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-19" id="glossary-19-en" lang="en">
 One
 of God’s Sons, inherently equal to the rest, who became fully awake
 to his identity as Christ. By becoming the first to complete his own
 part in the plan for salvation, he became the leader of that plan. He
 is still available for help and therefore encourages us to cultivate
 a relationship with him and to regard that relationship as
-real.<br/>
-上主的聖子之一，已完全覺醒於自己的基督身份，但本質上與其他上主之子平等。他已率先完成自己在救恩計畫中的任務，因此成了這計畫的領袖。他至今仍在幫助世人，因此鼓勵我們與他建立關係，並承認這關係的真實性。</p><p class="mn st15">
+real.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-19" id="glossary-19-zh" lang="zh-TW">
+上主的聖子之一，已完全覺醒於自己的基督身份，但本質上與其他上主之子平等。他已率先完成自己在救恩計畫中的任務，因此成了這計畫的領袖。他至今仍在幫助世人，因此鼓勵我們與他建立關係，並承認這關係的真實性。</p><p class="mn st15 acim-glossary-term">
 <b>justice</b><br/>
-<b>正義</b></p><p class="mn st17">
+<b>正義</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-20" id="glossary-20-en" lang="en">
 An
 impartial principle by which everyone receives what he or she
 deserves. Because each person is God’s holy Son who in reality has
@@ -16269,21 +16289,21 @@ God’s <i>love</i>.
 “For love and justice are not
 different. <i>Because</i>
 they are the same does mercy stand at God’s right hand”
-(T-25.VIII.9:7-8).<br/>
-讓每一個人都得到應得待遇的公正原則。由於每個人都是上主的神聖之子，在實相中並未犯罪，所以他應得的不是上主的懲罰，而是祂的<span class="kf"><b>愛</b></span>。「愛與正義其實並無分別；正<span class="kf"><b>因</b></span>它們相同，悲憫才會站在上主右手邊。」（T-25.VIII.9:7-8）</p><p class="mn st15">
+(T-25.VIII.9:7-8).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-20" id="glossary-20-zh" lang="zh-TW">
+讓每一個人都得到應得待遇的公正原則。由於每個人都是上主的神聖之子，在實相中並未犯罪，所以他應得的不是上主的懲罰，而是祂的<span class="kf"><b>愛</b></span>。「愛與正義其實並無分別；正<span class="kf"><b>因</b></span>它們相同，悲憫才會站在上主右手邊。」（T-25.VIII.9:7-8）</p><p class="mn st15 acim-glossary-term">
 <b>Kingdom
 of God</b><br/>
-<b>天國、上主的國度</b></p><p class="mn st17">
+<b>天國、上主的國度</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-21" id="glossary-21-en" lang="en">
 A
 synonym for Heaven that emphasizes what <i>dwells</i>
 in Heaven—the unified Sonship. Since in Heaven there is no
 difference between having and being, we both <i>have</i>
 the Kingdom and <i>are</i>
 the
-Kingdom.<br/>
-天堂的同義詞，強調<span class="kf"><b>住</b></span>在天堂的是一體的聖子。在天堂，「有什麼」和「是什麼」沒有差別，所以我們既<span class="kf"><b>擁有</b></span>天國，<span class="kf"><b>也是</b></span>天國本身。</p><p class="mn st15">
+Kingdom.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-21" id="glossary-21-zh" lang="zh-TW">
+天堂的同義詞，強調<span class="kf"><b>住</b></span>在天堂的是一體的聖子。在天堂，「有什麼」和「是什麼」沒有差別，所以我們既<span class="kf"><b>擁有</b></span>天國，<span class="kf"><b>也是</b></span>天國本身。</p><p class="mn st15 acim-glossary-term">
 <b>knowledge</b><br/>
-<b>真知</b></p><p class="mn st17">
+<b>真知</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-22" id="glossary-22-en" lang="en">
 The
 mode of awareness that we have in Heaven, in which we know reality
 through direct union with it, without the mediation of physical
@@ -16292,11 +16312,11 @@ mode) always involves uncertainty, knowledge by definition entails
 unshakable certainty, since in it our <i>knowing</i>
 of something and the thing <i>itself</i>
 are one and the
-same.<br/>
-我們在天堂的覺知方式，透過與實相的直接合一而認識實相，並不需要身體感官或心理詮釋為中介。知見（我們目前的模式）總是帶有不確定性，而真知則顧名思義具有不可動搖的確定性，因為在真知中，我們對事物的<span class="kf"><b>認識</b></span>與該事物<span class="kf"><b>本身</b></span>是無二無別的。</p><p class="mn st15">
+same.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-22" id="glossary-22-zh" lang="zh-TW">
+我們在天堂的覺知方式，透過與實相的直接合一而認識實相，並不需要身體感官或心理詮釋為中介。知見（我們目前的模式）總是帶有不確定性，而真知則顧名思義具有不可動搖的確定性，因為在真知中，我們對事物的<span class="kf"><b>認識</b></span>與該事物<span class="kf"><b>本身</b></span>是無二無別的。</p><p class="mn st15 acim-glossary-term">
 <b>Last
 (or Final) Judgment</b><br/>
-<b>最後（最終）的審判</b></p><p class="mn st17">
+<b>最後（最終）的審判</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-23" id="glossary-23-en" lang="en">
 A
 final healing, in which, at the end of our journey, we evaluate all
 of our thoughts and deeds throughout time, rejecting the false and
@@ -16304,11 +16324,11 @@ retaining in our minds only what is true. This prepares our minds to
 return to knowledge. Also refers to God’s Final Judgment of us:
 “You are still My holy Son, forever innocent, forever loving and
 forever loved”
-(W-WI.10.5:1).<br/>
-旅程終點的終極療癒，我們會評價自己在時間歷程中的所有思想和行為，捨棄虛假的，只在心中保留真實的。這讓我們的心靈準備好回歸真知。也指上主對我們的最終審判：「你仍是我的神聖之子，永遠清白純真，永遠慈愛，也永遠被愛。」（W-WI.10.5:1）</p><p class="mn st15">
+(W-WI.10.5:1).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-23" id="glossary-23-zh" lang="zh-TW">
+旅程終點的終極療癒，我們會評價自己在時間歷程中的所有思想和行為，捨棄虛假的，只在心中保留真實的。這讓我們的心靈準備好回歸真知。也指上主對我們的最終審判：「你仍是我的神聖之子，永遠清白純真，永遠慈愛，也永遠被愛。」（W-WI.10.5:1）</p><p class="mn st15 acim-glossary-term">
 <b>level
 confusion</b><br/>
-<b>層次混淆</b></p><p class="mn st17">
+<b>層次混淆</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-24" id="glossary-24-en" lang="en">
 Confusing
 different levels by assigning the attributes of one level to another.
 Primarily refers to confusing the <i>physical</i>
@@ -16318,10 +16338,10 @@ to the physical. Reality, identity, and happiness actually belong
 only to the spiritual level, but we mistakenly see these attributes
 as being found on the physical level. Miracles are “the means of
 correcting level confusion”
-(T-2.VII.3:3).<br/>
-將某一層次的屬性歸於另一層次，而混淆了不同層次。主要是指混淆了<span class="kf"><b>物質</b></span>層次與<span class="kf"><b>靈性</b></span>層次，尤其是將靈性層次的屬性賦予物質層次。實相、身份與幸福其實只屬於靈性層次，但我們誤以為能在物質層次上找到這些屬性。奇蹟是「糾正層次混淆的方法」（T-2.VII.3:3）。</p><p class="mn st15">
+(T-2.VII.3:3).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-24" id="glossary-24-zh" lang="zh-TW">
+將某一層次的屬性歸於另一層次，而混淆了不同層次。主要是指混淆了<span class="kf"><b>物質</b></span>層次與<span class="kf"><b>靈性</b></span>層次，尤其是將靈性層次的屬性賦予物質層次。實相、身份與幸福其實只屬於靈性層次，但我們誤以為能在物質層次上找到這些屬性。奇蹟是「糾正層次混淆的方法」（T-2.VII.3:3）。</p><p class="mn st15 acim-glossary-term">
 <b>love</b><br/>
-<b>愛</b></p><p class="mn st17">
+<b>愛</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-25" id="glossary-25-en" lang="en">
 The
 single real emotion, which includes in itself all other positive
 emotions. Love is the inevitable response to the recognition of worth
@@ -16330,10 +16350,10 @@ totally and equally. Special love, which is selective and partial, is
 really hate masquerading as love. The Course often contrasts love and
 fear: “The opposite of love is fear, but what is all-encompassing
 can have no opposite” (In.1:8).
-<br/>
-唯一真實的情感，其中包含所有其他的正向情感。愛是認同他人價值時的必然反應。上主全然且平等地愛每一個人，所以我們的真實之愛，只會像祂一樣。特殊之愛有選擇性，且是局部或不完全的，乃是由恨所偽裝。《課程》經常將愛和恐懼作對比：「與愛相反的是恐懼，但涵容一切之境是不可能有對立的」（T-In.1:8）。</p><p class="mn st15">
+</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-25" id="glossary-25-zh" lang="zh-TW">
+唯一真實的情感，其中包含所有其他的正向情感。愛是認同他人價值時的必然反應。上主全然且平等地愛每一個人，所以我們的真實之愛，只會像祂一樣。特殊之愛有選擇性，且是局部或不完全的，乃是由恨所偽裝。《課程》經常將愛和恐懼作對比：「與愛相反的是恐懼，但涵容一切之境是不可能有對立的」（T-In.1:8）。</p><p class="mn st15 acim-glossary-term">
 <b>magic</b><br/>
-<b>幻術</b></p><p class="mn st17">
+<b>幻術</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-26" id="glossary-26-en" lang="en">
 The
 belief that something has the power to heal us, save us, or make us
 safe when, according to the laws of God, it has no such power. The
@@ -16343,11 +16363,11 @@ like bodies, “pills, money, ‘protective’ clothing, influence,
 prestige, being liked, knowing the ‘right’ people,” etc.
 (W-50.1:3), and second, our own separate will, which we wrongly see
 as having the power to keep us safe and solve our
-problems.<br/>
-一種信念，相信某些東西有能力醫治、拯救我們，給我們安全保障，但根據上主的法則，它們並沒有這樣的力量。也指被賦予這種虛假力量之物所做的事。我們主要把虛假的能力投資給兩類東西：第一，外在之物，如身體、「藥丸、金錢、『防護』服、影響力、聲望、他人的愛戴、結交『正確』對象」（W-50.1:3）等；第二，我們自己的分裂意志，我們誤以為它有能力保護自己的安全並解決自己的問題。</p><p class="mn st15">
+problems.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-26" id="glossary-26-zh" lang="zh-TW">
+一種信念，相信某些東西有能力醫治、拯救我們，給我們安全保障，但根據上主的法則，它們並沒有這樣的力量。也指被賦予這種虛假力量之物所做的事。我們主要把虛假的能力投資給兩類東西：第一，外在之物，如身體、「藥丸、金錢、『防護』服、影響力、聲望、他人的愛戴、結交『正確』對象」（W-50.1:3）等；第二，我們自己的分裂意志，我們誤以為它有能力保護自己的安全並解決自己的問題。</p><p class="mn st15 acim-glossary-term">
 <b>memory
 of God</b><br/>
-<b>對上主的記憶</b></p><p class="mn st17">
+<b>對上主的記憶</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-27" id="glossary-27-en" lang="en">
 Our
 remembering of our true state of oneness with God. What happens in
 the final step, in which God lifts us back into the eternal knowledge
@@ -16355,10 +16375,10 @@ of Himself. “This is not
 a memory of past events, but only
 of a <i>present</i>
 state”
-(T-28.I.4:2).<br/>
-我們回憶起自己與上主合一的真實狀態。這是在「最後一步」發生的事；在這一步中，上主將我們提昇而回到對於祂的永恆真知中。「這純粹是對<span class="kf"><b>當下</b></span>之境的記憶，而不是對過去事件的記憶」（T-28.I.4:2）。</p><p class="mn st15">
+(T-28.I.4:2).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-27" id="glossary-27-zh" lang="zh-TW">
+我們回憶起自己與上主合一的真實狀態。這是在「最後一步」發生的事；在這一步中，上主將我們提昇而回到對於祂的永恆真知中。「這純粹是對<span class="kf"><b>當下</b></span>之境的記憶，而不是對過去事件的記憶」（T-28.I.4:2）。</p><p class="mn st15 acim-glossary-term">
 <b>mind</b><br/>
-<b>心靈</b></p><p class="mn st17">
+<b>心靈</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-28" id="glossary-28-en" lang="en">
 The
 aspect of the self that includes the faculties of awareness,
 volition, thought, and emotion. Mind is completely nonphysical; it
@@ -16366,10 +16386,10 @@ should not be confused with the physical brain. Mind in Heaven is one
 with spirit. Mind on earth is separated from its true nature and
 split between the opposing voices of the ego and the Holy Spirit,
 requiring it to choose between
-them.<br/>
-自我的一部分，包括覺知、意志、思想和情感的能力。心靈是完全非物質的，不應該和物質的大腦混淆。在天堂，心靈與靈性是合一的；在人間，心靈與其本性是分裂的，被小我和聖靈對立的聲音分開了，所以需要在兩者之間作出選擇。</p><p class="mn st15">
+them.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-28" id="glossary-28-zh" lang="zh-TW">
+自我的一部分，包括覺知、意志、思想和情感的能力。心靈是完全非物質的，不應該和物質的大腦混淆。在天堂，心靈與靈性是合一的；在人間，心靈與其本性是分裂的，被小我和聖靈對立的聲音分開了，所以需要在兩者之間作出選擇。</p><p class="mn st15 acim-glossary-term">
 <b>miracle</b><br/>
-<b>奇蹟</b></p><p class="mn st17">
+<b>奇蹟</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-29" id="glossary-29-en" lang="en">
 A
 divine healing of the mind, which takes place either <i>through</i>
 us or <i>within</i>
@@ -16382,11 +16402,11 @@ secondary usage refers to miracles healing our own minds: “A
 miracle is a correction factor introduced into false thinking by me.
 It acts as a catalyst, shaking up erroneous perception and snapping
 it into place”
-(T-1.37.1:1-2).<br/>
-一種出自神性的心靈療癒，<span class="kf"><b>透過</b></span>我們而發生，或<span class="kf"><b>在我們心中</b></span>發生，而將某人從他被禁錮的痛苦思維模式中釋放出來。主要用法為：奇蹟是「愛的表達」（《課程》中這說法出現了六次），即某人――通常以很普通的方式――向另一人表達愛，以此療癒了對方的知見。第二種用法是：奇蹟療癒我們自己的心靈，「奇蹟是我〔耶穌〕在人們錯誤的思維中導入的修正動力。它的作用有如催化劑，能動搖錯誤的認知，瞬間調整到正確狀態。」（T-1.37.1:1-2）</p><p class="mn st15">
+(T-1.37.1:1-2).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-29" id="glossary-29-zh" lang="zh-TW">
+一種出自神性的心靈療癒，<span class="kf"><b>透過</b></span>我們而發生，或<span class="kf"><b>在我們心中</b></span>發生，而將某人從他被禁錮的痛苦思維模式中釋放出來。主要用法為：奇蹟是「愛的表達」（《課程》中這說法出現了六次），即某人――通常以很普通的方式――向另一人表達愛，以此療癒了對方的知見。第二種用法是：奇蹟療癒我們自己的心靈，「奇蹟是我〔耶穌〕在人們錯誤的思維中導入的修正動力。它的作用有如催化劑，能動搖錯誤的認知，瞬間調整到正確狀態。」（T-1.37.1:1-2）</p><p class="mn st15 acim-glossary-term">
 <b>miracle
 worker</b><br/>
-<b>奇蹟行者</b></p><p class="mn st17">
+<b>奇蹟行者</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-30" id="glossary-30-en" lang="en">
 The
 one who gives miracles (expressions of love) to a “miracle
 receiver” (usually called simply “the receiver”). The content
@@ -16394,10 +16414,10 @@ of these miracles is the worker’s perception of the receiver’s
 worth, holiness, and equality with him. While these miracles aim at
 healing the receiver’s mind, they may also heal the body. Also
 called the “doer” and the
-“giver.”<br/>
-將奇蹟（愛的表達）給予一位「奇蹟接受者」的人。這些奇蹟的內容是奇蹟行者對於接受者的價值、神聖性以及他和自己的平等性的認知。雖然這些奇蹟的目的在於療癒接受者的心靈，但也可能治好他的身體。奇蹟行者也稱為奇蹟的「施作者」和「給予者」。</p><p class="mn st15">
+“giver.”</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-30" id="glossary-30-zh" lang="zh-TW">
+將奇蹟（愛的表達）給予一位「奇蹟接受者」的人。這些奇蹟的內容是奇蹟行者對於接受者的價值、神聖性以及他和自己的平等性的認知。雖然這些奇蹟的目的在於療癒接受者的心靈，但也可能治好他的身體。奇蹟行者也稱為奇蹟的「施作者」和「給予者」。</p><p class="mn st15 acim-glossary-term">
 <b>perception</b><br/>
-<b>知見、認知、感知</b></p><p class="mn st17">
+<b>知見、認知、感知</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-31" id="glossary-31-en" lang="en">
 The
 mode of awareness in which we try to know an object while separate
 from it, normally by interpreting information received by our senses.
@@ -16407,10 +16427,10 @@ inherently uncertain. In that uncertainty, we end up seeing what we
 to see, rather than what is really there. The goal of the spiritual
 journey is to move from false perception to true perception (which
 does not use our physical senses), from which we will awaken to
-knowledge.<br/>
-嘗試在與客體分離的情況下認識客體的覺知方式，通常藉由對感官所接收到的資訊加以詮釋而做到。由於與認識的對象分離，所以知見本質上是不確定的。最終在這種不確定性中，我們會看見自己<span class="kf"><b>想</b></span>看見的事物，而不是真正存在之物。靈性旅程的目標是從錯誤的知見進展至真實的知見（不使用我們的身體感官），由此而覺醒於真知。</p><p class="mn st15">
+knowledge.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-31" id="glossary-31-zh" lang="zh-TW">
+嘗試在與客體分離的情況下認識客體的覺知方式，通常藉由對感官所接收到的資訊加以詮釋而做到。由於與認識的對象分離，所以知見本質上是不確定的。最終在這種不確定性中，我們會看見自己<span class="kf"><b>想</b></span>看見的事物，而不是真正存在之物。靈性旅程的目標是從錯誤的知見進展至真實的知見（不使用我們的身體感官），由此而覺醒於真知。</p><p class="mn st15 acim-glossary-term">
 <b>practice</b><br/>
-<b>練習、操練</b></p><p class="mn st17">
+<b>練習、操練</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-32" id="glossary-32-en" lang="en">
 Repeated
 exercise in mind training, especially as taught by the Workbook,
 through which we apply the Course’s ideas and seek to heal our
@@ -16419,10 +16439,10 @@ and concentrated repeating of transformative verbal statements, while
 applying them to ourselves, our situations, and other people,
 although the Workbook’s meditation instructions involve repeating
 few words or no
-words.<br/>
-重複性的心靈訓練，尤指如〈學員練習手冊〉中所教；我們藉以運用《課程》的觀念，以療癒知見，並體驗神聖一刻。常需要緩慢而專注地重複默念具有轉化力的語句，應用在我們自己、我們的處境和其他人身上；至於〈練習手冊〉的靜坐指示，則較少或無需複誦語句。</p><p class="mn st15">
+words.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-32" id="glossary-32-zh" lang="zh-TW">
+重複性的心靈訓練，尤指如〈學員練習手冊〉中所教；我們藉以運用《課程》的觀念，以療癒知見，並體驗神聖一刻。常需要緩慢而專注地重複默念具有轉化力的語句，應用在我們自己、我們的處境和其他人身上；至於〈練習手冊〉的靜坐指示，則較少或無需複誦語句。</p><p class="mn st15 acim-glossary-term">
 <b>projection</b><br/>
-<b>投射</b></p><p class="mn st17">
+<b>投射</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-33" id="glossary-33-en" lang="en">
 The
 ego’s distorted use of extension, whereby we take something
 unwanted in our mind (such as guilt) and “hurl” it outward,
@@ -16433,10 +16453,10 @@ will in others” (T-7.VI.10:5). Through projection, we take our
 ego’s murderous will and see it in others. Now this will seems to
 act on us from the outside, “doing” to us from without what it
 actually does to us from
-within.<br/>
-小我對於「延伸」的扭曲運用；我們藉此將心中不想要的東西（如罪疚）向外「投擲」，看見它是外面世界上的東西，而事實上它仍然在我們裡面。「投射永遠會使你在別人身上看到你自己的意志」（T-7.VI.10:5）。透過投射，我們將自己小我的謀害之志丟給別人，使得這意志彷彿是從外面作用在我們身上，由外對我們「做」那些其實是由內而發的事。</p><p class="mn st15">
+within.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-33" id="glossary-33-zh" lang="zh-TW">
+小我對於「延伸」的扭曲運用；我們藉此將心中不想要的東西（如罪疚）向外「投擲」，看見它是外面世界上的東西，而事實上它仍然在我們裡面。「投射永遠會使你在別人身上看到你自己的意志」（T-7.VI.10:5）。透過投射，我們將自己小我的謀害之志丟給別人，使得這意志彷彿是從外面作用在我們身上，由外對我們「做」那些其實是由內而發的事。</p><p class="mn st15 acim-glossary-term">
 <b>pupil</b><br/>
-<b>學徒、弟子</b></p><p class="mn st17">
+<b>學徒、弟子</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-34" id="glossary-34-en" lang="en">
 Someone
 who learns under the close supervision of a teacher. A pupil is
 different than a student, in that the definition of “student”
@@ -16444,11 +16464,11 @@ does not require that one has a teacher. In the Manual for Teachers,
 a pupil is someone who learns a spiritual path, such as <i>A
 Course in Miracles</i>,
 under the mentorship of a teacher of that path.
-<br/>
-在老師的密切指導下學習的人。學徒或弟子與一般學生不同，在於就定義而言，「學生」並不一定需要有一位老師。在〈教師指南〉中，學徒是指在某一靈性法門（如<span class="kf"><b>《奇蹟課程》</b></span>）的老師的輔導下學習的人。</p><p class="mn st17">
-〔譯註：雖然英文中pupil和student這兩字在意義上有上述近似中文裡「學徒、弟子」和「學生」的差別；但若翻譯成「學徒、弟子」，似乎又稍嫌強烈，所以譯者仍決定在課文中只譯成「學生」。］</p><p class="mn st15">
+</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-34" id="glossary-34-zh" lang="zh-TW">
+在老師的密切指導下學習的人。學徒或弟子與一般學生不同，在於就定義而言，「學生」並不一定需要有一位老師。在〈教師指南〉中，學徒是指在某一靈性法門（如<span class="kf"><b>《奇蹟課程》</b></span>）的老師的輔導下學習的人。</p><p class="mn st17 acim-glossary-note" data-glossary-id="glossary-34" id="glossary-34-note" lang="zh-TW">
+〔譯註：雖然英文中pupil和student這兩字在意義上有上述近似中文裡「學徒、弟子」和「學生」的差別；但若翻譯成「學徒、弟子」，似乎又稍嫌強烈，所以譯者仍決定在課文中只譯成「學生」。］</p><p class="mn st15 acim-glossary-term">
 <b>reality</b><br/>
-<b>真相、真理實相</b></p><p class="mn st17">
+<b>真相、真理實相</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-35" id="glossary-35-en" lang="en">
 What
 truly and permanently exists independent of deception, illusion, and
 subjective opinion. In the Course, reality is a realm of pure spirit
@@ -16456,41 +16476,41 @@ that is perfectly united and without form or change. Thus, anything
 that <i>has</i>
 form or <i>can</i>
 change—which includes the entire physical universe—is
-illusion.<br/>
-不受欺騙、幻相和主觀意見等影響而真實永存的東西。在《課程》中，真理實相是一個純粹靈性的範疇，完美合一，沒有形相，也不會有任何變化。因此，任何<span class="kf"><b>有</b></span>形或<span class="kf"><b>能</b></span>改變的東西――包括整個物質宇宙――都是幻相。</p><p class="mn st15">
+illusion.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-35" id="glossary-35-zh" lang="zh-TW">
+不受欺騙、幻相和主觀意見等影響而真實永存的東西。在《課程》中，真理實相是一個純粹靈性的範疇，完美合一，沒有形相，也不會有任何變化。因此，任何<span class="kf"><b>有</b></span>形或<span class="kf"><b>能</b></span>改變的東西――包括整個物質宇宙――都是幻相。</p><p class="mn st15 acim-glossary-term">
 <b>real
 world</b><br/>
-<b>真實世界</b></p><p class="mn st17">
+<b>真實世界</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-36" id="glossary-36-en" lang="en">
 The
 world we see with vision or true perception. In the real world, we
 see only the holiness in everyone and everything, only the loving
 thoughts in the world, and only God’s purpose in all forms and
 events. Instead of a world that attacks us, we see a world that
 loves, protects, and blesses us, and in which we feel completely
-safe.<br/>
-我們以慧見或真實知見所看到的世界。在真實世界裡，我們只看見每個人和所有事物的神聖性，只看見人間的有愛之念，只看見寓於所有形相與事件中的上主的目的。我們不會看見一個攻擊自己的世界，而會看見一個愛我們、保護我們、祝福我們的世界，而我們在其中感到絕對安全。</p><p class="mn st15">
+safe.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-36" id="glossary-36-zh" lang="zh-TW">
+我們以慧見或真實知見所看到的世界。在真實世界裡，我們只看見每個人和所有事物的神聖性，只看見人間的有愛之念，只看見寓於所有形相與事件中的上主的目的。我們不會看見一個攻擊自己的世界，而會看見一個愛我們、保護我們、祝福我們的世界，而我們在其中感到絕對安全。</p><p class="mn st15 acim-glossary-term">
 <b>response
 to temptation</b><br/>
-<b>回應誘惑</b></p><p class="mn st17">
+<b>回應誘惑</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-37" id="glossary-37-en" lang="en">
 Responding
 with right-minded thoughts to the temptation to give in to egoic
 thinking. According to the Course, whenever we notice any kind of
 disturbance of our peace, we should as a matter of habit instantly
 respond with a right-minded thought, especially our Workbook idea for
 the
-day.<br/>
-以正見之念回應小我思維的誘惑。《課程》教我們在發現自己的平安遭到任何侵擾時，應該習慣性地立即以正確的心念――尤其是〈練習手冊〉中的當日觀念――回應。</p><p class="mn st15">
+day.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-37" id="glossary-37-zh" lang="zh-TW">
+以正見之念回應小我思維的誘惑。《課程》教我們在發現自己的平安遭到任何侵擾時，應該習慣性地立即以正確的心念――尤其是〈練習手冊〉中的當日觀念――回應。</p><p class="mn st15 acim-glossary-term">
 <b>revelation</b><br/>
-<b>啟示</b></p><p class="mn st17">
+<b>啟示</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-38" id="glossary-38-en" lang="en">
 The
 experience in which God reveals Himself to us in direct, wordless
 experience of union with Him (traditionally called the mystical
 experience). Experiences of revelation in this world are temporary,
 but they reveal to us what awaits us at the end of the journey.
-<br/>
-與上主合一的體驗，上主以這種直接且無法言喻的經驗向我們顯示祂自己（傳統上稱為神秘經驗）。世間的啟示經驗雖是暫時的，但能向我們揭露在靈性旅程終點等待我們的是什麼。</p><p class="mn st15">
+</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-38" id="glossary-38-zh" lang="zh-TW">
+與上主合一的體驗，上主以這種直接且無法言喻的經驗向我們顯示祂自己（傳統上稱為神秘經驗）。世間的啟示經驗雖是暫時的，但能向我們揭露在靈性旅程終點等待我們的是什麼。</p><p class="mn st15 acim-glossary-term">
 <b>sacrifice</b><br/>
-<b>犧牲</b></p><p class="mn st17">
+<b>犧牲</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-39" id="glossary-39-en" lang="en">
 To
 give up something, usually for another person or God, in order to
 forestall punishment or gain some kind of return. We believe that God
@@ -16500,20 +16520,20 @@ unknown to God, Who only gives. It is the ego that “<i>does</i>
 demand total sacrifice of you” (T-15.X.7:4). The special
 relationship is based on the idea that by sacrificing for our
 partner, we obligate our partner to sacrifice for us in
-return.<br/>
-放棄某些東西，通常是為了他人或上主，以避免懲罰，或獲得某種回報。我們相信上主要求我們犧牲，所以我們躲避祂，而投入小我的懷抱，以為小我對我們的要求較低。然而上主根本不曉得什麼是犧牲，祂只會給予，是小我「<span class="kf"><b>確實</b></span>要你徹底犧牲。」（T-15.X.7:4）。我們藉著為伴侶犧牲而使對方有義務以犧牲回報我們――這是特殊關係所根據的想法。</p><p class="mn st15">
+return.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-39" id="glossary-39-zh" lang="zh-TW">
+放棄某些東西，通常是為了他人或上主，以避免懲罰，或獲得某種回報。我們相信上主要求我們犧牲，所以我們躲避祂，而投入小我的懷抱，以為小我對我們的要求較低。然而上主根本不曉得什麼是犧牲，祂只會給予，是小我「<span class="kf"><b>確實</b></span>要你徹底犧牲。」（T-15.X.7:4）。我們藉著為伴侶犧牲而使對方有義務以犧牲回報我們――這是特殊關係所根據的想法。</p><p class="mn st15 acim-glossary-term">
 <b>salvation</b><br/>
-<b>救恩</b></p><p class="mn st17">
+<b>救恩</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-40" id="glossary-40-en" lang="en">
 Liberation
 from the entire separated condition in which we feel alone, afraid,
 guilty, and cut off from God. Salvation is of the mind, through the
 reversal of our thinking. It is not of the body, through purifying
 the body or forcing it to behave properly; nor is it of the spirit,
 which was never lost and so need not be
-saved.<br/>
-從感到孤獨、害怕、罪疚及與上主隔絕的整個分裂狀況中得到解脫。救恩關乎心靈，乃透過扭轉我們的思維而實現。救恩無關乎身體，不是藉由淨化身體或強迫作正確的行為來實現；也無關乎靈性，因為靈性從未迷失，所以不需要解救。</p><p class="mn st15">
+saved.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-40" id="glossary-40-zh" lang="zh-TW">
+從感到孤獨、害怕、罪疚及與上主隔絕的整個分裂狀況中得到解脫。救恩關乎心靈，乃透過扭轉我們的思維而實現。救恩無關乎身體，不是藉由淨化身體或強迫作正確的行為來實現；也無關乎靈性，因為靈性從未迷失，所以不需要解救。</p><p class="mn st15 acim-glossary-term">
 <b>savior</b><br/>
-<b>救主、拯救者</b></p><p class="mn st17">
+<b>救主、拯救者</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-41" id="glossary-41-en" lang="en">
 Primarily
 refers to our brothers, especially our holy relationship partner(s),
 who save us through the gratitude and love they give to us in return
@@ -16526,10 +16546,10 @@ that he
 may give salvation unto you”
 (T-21.II.3:8). Secondarily refers to our own role as savior of the
 world, which is our function as a miracle
-worker.<br/>
-主要是指弟兄，尤其是我們神聖關係的夥伴，他們以愛與感恩回報我們給他們的禮物，以此拯救我們。由於他們曾受益於你的神聖性，「他們在你內看見的，<span class="kf"><i><b>多過</b></i></span>你自己所見」（T-14.II.5:1），所以能幫助你覺醒於自己的真相。因此，雖然你已經「用自己的特殊性來束縛你的救主」（T-24.II.7:1），你的工作仍是「釋放你的救主…〔讓〕他也會把救恩回贈給你」（T-21.II.3:8）。其次，是指我們自己作為世界救主的角色，這是我們作為奇蹟行者的任務。</p><p class="mn st15">
+worker.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-41" id="glossary-41-zh" lang="zh-TW">
+主要是指弟兄，尤其是我們神聖關係的夥伴，他們以愛與感恩回報我們給他們的禮物，以此拯救我們。由於他們曾受益於你的神聖性，「他們在你內看見的，<span class="kf"><i><b>多過</b></i></span>你自己所見」（T-14.II.5:1），所以能幫助你覺醒於自己的真相。因此，雖然你已經「用自己的特殊性來束縛你的救主」（T-24.II.7:1），你的工作仍是「釋放你的救主…〔讓〕他也會把救恩回贈給你」（T-21.II.3:8）。其次，是指我們自己作為世界救主的角色，這是我們作為奇蹟行者的任務。</p><p class="mn st15 acim-glossary-term">
 <b>Self/self</b><br/>
-<b>真我∕自我</b></p><p class="mn st17">
+<b>真我∕自我</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-42" id="glossary-42-en" lang="en">
 When
 capitalized, refers to Christ, the true identity that we share with
 all our brothers and all living things. In lowercase, usually refers
@@ -16538,11 +16558,11 @@ that identity (in which case “the self” is a synonym for
 “oneself” or “yourself”). In lowercase, sometimes refers to
 the ego, “the self you made,” a false identity that opposes our
 true
-Self.<br/>
-英文首字母大寫時，指基督，也就是我們與所有弟兄及一切有生之物共有的真實身份。首字母小寫時，指我們的個人身份，通常並未指明該身份的性質（這種情況下，「自我」是「自己」的同義詞）。小寫時，有時指小我，也就是「你妄造的自我」――一種與真我對立的虛假身份。</p><p class="mn st15">
+Self.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-42" id="glossary-42-zh" lang="zh-TW">
+英文首字母大寫時，指基督，也就是我們與所有弟兄及一切有生之物共有的真實身份。首字母小寫時，指我們的個人身份，通常並未指明該身份的性質（這種情況下，「自我」是「自己」的同義詞）。小寫時，有時指小我，也就是「你妄造的自我」――一種與真我對立的虛假身份。</p><p class="mn st15 acim-glossary-term">
 <b>separation,
 the</b><br/>
-<b>原初的分裂</b></p><p class="mn st17">
+<b>原初的分裂</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-43" id="glossary-43-en" lang="en">
 The
 event in which we apparently separated from God, because of our
 desire to be above the other Sons of God (T-13.III.11:2) and even
@@ -16552,10 +16572,10 @@ in which we tore ourselves out of God’s Mind and shattered Heaven
 into countless separate forms. Yet it was merely a psychological
 event, in which we fell asleep to reality and dreamt of a separated
 existence in a separated universe.
-<br/>
-造成我們彷彿與上主分裂的事件，起因於我們渴望凌駕於其他上主之子（T-13.III.11:2），甚至凌駕於上主本身（T-11.I.2:3）；時空構成的宇宙由此而誕生。這原初的分裂彷彿是一個真實事件，我們因此而將自己從上主的心靈中撕裂出來，並將天堂粉碎成無數分裂的形式。然而，這其實只是一個心理事件，在其中，我們沉睡而昧於實相，夢見自己在一個獨立的宇宙中獨自存在。</p><p class="mn st15">
+</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-43" id="glossary-43-zh" lang="zh-TW">
+造成我們彷彿與上主分裂的事件，起因於我們渴望凌駕於其他上主之子（T-13.III.11:2），甚至凌駕於上主本身（T-11.I.2:3）；時空構成的宇宙由此而誕生。這原初的分裂彷彿是一個真實事件，我們因此而將自己從上主的心靈中撕裂出來，並將天堂粉碎成無數分裂的形式。然而，這其實只是一個心理事件，在其中，我們沉睡而昧於實相，夢見自己在一個獨立的宇宙中獨自存在。</p><p class="mn st15 acim-glossary-term">
 <b>sin</b><br/>
-<b>罪、罪咎</b></p><p class="mn st17">
+<b>罪、罪咎</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-44" id="glossary-44-en" lang="en">
 The
 violation of the laws of God or goodness. Specifically, an attack
 that attempts to do harm for the sake of selfish gain and that
@@ -16564,11 +16584,11 @@ illusion, for no one can really be harmed, since in truth we are all
 God’s changeless Son. What appears to be a sin is merely a mistake,
 which results in loss rather than gain, and which calls for help
 rather than
-punishment.<br/>
-違反上主之律或美善的法則。具體來說，是指為一己私利而企圖傷害他人、並且得逞了——因而導致真實的傷害與得利——的攻擊。罪（罪咎）是一種幻相，因為沒有人會真的受到傷害，因為我們都是不變的上主之子。那看似罪咎或罪行的，實際上只是一個錯誤，造成了損失而非得利，所以需要的是幫助而不是懲罰。</p><p class="mn st15">
+punishment.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-44" id="glossary-44-zh" lang="zh-TW">
+違反上主之律或美善的法則。具體來說，是指為一己私利而企圖傷害他人、並且得逞了——因而導致真實的傷害與得利——的攻擊。罪（罪咎）是一種幻相，因為沒有人會真的受到傷害，因為我們都是不變的上主之子。那看似罪咎或罪行的，實際上只是一個錯誤，造成了損失而非得利，所以需要的是幫助而不是懲罰。</p><p class="mn st15 acim-glossary-term">
 <b>Son
 of God</b><br/>
-<b>上主之子、聖子</b></p><p class="mn st17">
+<b>上主之子、聖子</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-45" id="glossary-45-en" lang="en">
 Our
 true identity, which is one with God. We are all God’s “beloved
 Son in whom He is well pleased” (T-4.II.18:1). The one Son of God
@@ -16578,11 +16598,11 @@ are dreaming that they are separate selves in this world. This term
 does not refer exclusively to Jesus; rather, the Course is taking a
 traditional term that has been used to exalt Jesus and using it to
 exalt all of
-us.<br/>
-我們真正的身份，是與上主合一的。我們都是上主「摯愛的聖子，為祂所喜悅」（T-4.II.18:1）。上主唯一的聖子是由無數個部分（即無數聖子）所組成的，每一部分同時也是整體的聖子。這些聖子睡著了，夢見他們是這個世界上的個體自我。「上主之子」並非專指耶穌，《課程》將此一傳統上顯揚耶穌的詞彙，用於高舉我們所有人。</p><p class="mn st15">
+us.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-45" id="glossary-45-zh" lang="zh-TW">
+我們真正的身份，是與上主合一的。我們都是上主「摯愛的聖子，為祂所喜悅」（T-4.II.18:1）。上主唯一的聖子是由無數個部分（即無數聖子）所組成的，每一部分同時也是整體的聖子。這些聖子睡著了，夢見他們是這個世界上的個體自我。「上主之子」並非專指耶穌，《課程》將此一傳統上顯揚耶穌的詞彙，用於高舉我們所有人。</p><p class="mn st15 acim-glossary-term">
 <b>Sonship,
 the</b><br/>
-<b>聖子奧體</b></p><p class="mn st17">
+<b>聖子奧體</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-46" id="glossary-46-en" lang="en">
 The
 totality made up of all of the Sons of God. The suffix <i>-ship</i>
 as used here denotes the body of persons taking part in some
@@ -16590,12 +16610,12 @@ specified activity or sharing a quality. So, just as “listenership”
 refers to all those who listen to a particular program, and
 “membership” refers to all those who are members of a particular
 group, so “Sonship” refers to all those who are Sons of
-God.<br/>
+God.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-46" id="glossary-46-zh" lang="zh-TW">
 由所有上主之子構成的整體。字尾
 -<i><b>ship</b></i>
-是指參與某種特定活動或共享某種特質的團體。因此，就像「聽眾」一詞是指所有收聽特定節目的人、「會員」是指某特定團體的所有成員一樣，「聖子奧體」是指所有上主之子。</p><p class="mn st15">
+是指參與某種特定活動或共享某種特質的團體。因此，就像「聽眾」一詞是指所有收聽特定節目的人、「會員」是指某特定團體的所有成員一樣，「聖子奧體」是指所有上主之子。</p><p class="mn st15 acim-glossary-term">
 <b>soul</b><br/>
-<b>靈魂</b></p><p class="mn st17">
+<b>靈魂</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-47" id="glossary-47-en" lang="en">
 A
 divine element in us that retains its heavenly purity. As the Course
 says, the term is often used as “an equivalent of ‘spirit,’
@@ -16605,11 +16625,11 @@ meaning in that, unlike “spirit,” it usually (though not always)
 has the connotation of being something individual (each of us has <i>a</i>
 soul), and in that, also unlike “spirit,” it is sometimes framed
 as imprisoned or starved by the mind’s attachment to
-separation.<br/>
-我們內在仍保持其天堂之純淨的神性元素。如《課程》所言，「若了解靈魂既屬於上主，所以是永恆而非誕生於人間的，則可將它視為『靈性』的同義詞」（C-1.3:5）。然而，此字還有其他義涵，即與「靈性」不同的是，它通常（雖非絕對）有「個體性」之意（我們每個人都有<span class="kf"><b>一個</b></span>靈魂）；而且――也是與「靈性」不同的――課文說它會因為心靈執著於分裂而被囚禁或剝奪食糧。</p><p class="mn st15">
+separation.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-47" id="glossary-47-zh" lang="zh-TW">
+我們內在仍保持其天堂之純淨的神性元素。如《課程》所言，「若了解靈魂既屬於上主，所以是永恆而非誕生於人間的，則可將它視為『靈性』的同義詞」（C-1.3:5）。然而，此字還有其他義涵，即與「靈性」不同的是，它通常（雖非絕對）有「個體性」之意（我們每個人都有<span class="kf"><b>一個</b></span>靈魂）；而且――也是與「靈性」不同的――課文說它會因為心靈執著於分裂而被囚禁或剝奪食糧。</p><p class="mn st15 acim-glossary-term">
 <b>special
 function</b><br/>
-<b>特殊任務</b></p><p class="mn st17">
+<b>特殊任務</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-48" id="glossary-48-en" lang="en">
 The
 unique part or role that we have each been assigned to play in God’s
 plan for the salvation of the world. Our special function is tailored
@@ -16619,10 +16639,10 @@ would be Helen Schucman’s function of scribing <i>A
 Course in Miracles</i>.
 Jesus “was the first to complete his own part [his own special
 function] perfectly” (C-5.2:2).
-<br/>
-我們每個人在上主拯救世界的計畫中被指派的獨特職責或角色。我們的特殊任務是根據我們（行奇蹟）的特定長處而量身訂做的，且與我們該要幫助的特定對象有關。舉例而言，海倫‧舒曼的特殊任務是筆錄<span class="kf"><b>《奇蹟課程》</b></span>。耶穌則是「圓滿完成自己那部分任務〔即他的特殊任務〕的第一人」（C-5.2:2）。</p><p class="mn st15">
+</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-48" id="glossary-48-zh" lang="zh-TW">
+我們每個人在上主拯救世界的計畫中被指派的獨特職責或角色。我們的特殊任務是根據我們（行奇蹟）的特定長處而量身訂做的，且與我們該要幫助的特定對象有關。舉例而言，海倫‧舒曼的特殊任務是筆錄<span class="kf"><b>《奇蹟課程》</b></span>。耶穌則是「圓滿完成自己那部分任務〔即他的特殊任務〕的第一人」（C-5.2:2）。</p><p class="mn st15 acim-glossary-term">
 <b>specialness</b><br/>
-<b>特殊性</b></p><p class="mn st17">
+<b>特殊性</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-49" id="glossary-49-en" lang="en">
 The
 idea of being set apart from and set above others. The belief that we
 are somehow better or greater than others. Specialness is at the root
@@ -16635,12 +16655,12 @@ is to <i>make
 alone</i>,
 and thus make<i>
 lonely</i>”
-(T-13.III.13:1).<br/>
-與他人區別並凌駕於他人的想法；相信我們以某種方式比他人更好或更偉大。特殊性是小我的根源，因為原初的分裂就是從我們向上主「要求特殊恩寵」開始的（T-13.III.11:2）。成為特殊者表面上看好像是終極的幸福，但其實是一種攻擊的形式，會帶來罪疚；而作為一種分裂的形式，則會帶來孤獨：「單獨<i><span class="kf">挑出</span></i>某人，等於把他<span class="kf"><b>孤立起來</b></span>，於是就把他變得<span class="kf"><b>孤獨</b></span>了」（T-13.III.13:1）。</p><p class="mn st15">
+(T-13.III.13:1).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-49" id="glossary-49-zh" lang="zh-TW">
+與他人區別並凌駕於他人的想法；相信我們以某種方式比他人更好或更偉大。特殊性是小我的根源，因為原初的分裂就是從我們向上主「要求特殊恩寵」開始的（T-13.III.11:2）。成為特殊者表面上看好像是終極的幸福，但其實是一種攻擊的形式，會帶來罪疚；而作為一種分裂的形式，則會帶來孤獨：「單獨<i><span class="kf">挑出</span></i>某人，等於把他<span class="kf"><b>孤立起來</b></span>，於是就把他變得<span class="kf"><b>孤獨</b></span>了」（T-13.III.13:1）。</p><p class="mn st15 acim-glossary-term">
 <b>special
 relationship, special love relationship, unholy
 relationship</b><b><br/>
-</b><b>特殊關係、特殊之愛的關係、不神聖的關係</b></p><p class="mn st17">
+</b><b>特殊關係、特殊之愛的關係、不神聖的關係</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-50" id="glossary-50-en" lang="en">
 A
 relationship in which we have a special arrangement (an exclusive
 relationship) with and receive special treatment from a very special
@@ -16650,20 +16670,20 @@ is even a covert attack on that one, for it seeks only to get
 something from him or her. “The Holy Spirit would not deprive
 you of your special relationships, but would transform
 them” into holy relationships
-(T-17.IV.2:2).<br/>
-在這種關係中，我們與一個對我們來說很特別的人有某種特別、專屬的關係，並從這人那裡得到特殊待遇，使我們覺得自己更為特別。這關係會被當作是愛，但其實是愛的假象；它排除了一個人之外的所有人，甚至是對那一個人的暗中攻擊，因為它只想從他（她）那裡得到一些東西。「聖靈不會奪走你的特殊關係，只會加以轉化」（T-17.IV.2:2）成為神聖關係。</p><p class="mn st15">
+(T-17.IV.2:2).</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-50" id="glossary-50-zh" lang="zh-TW">
+在這種關係中，我們與一個對我們來說很特別的人有某種特別、專屬的關係，並從這人那裡得到特殊待遇，使我們覺得自己更為特別。這關係會被當作是愛，但其實是愛的假象；它排除了一個人之外的所有人，甚至是對那一個人的暗中攻擊，因為它只想從他（她）那裡得到一些東西。「聖靈不會奪走你的特殊關係，只會加以轉化」（T-17.IV.2:2）成為神聖關係。</p><p class="mn st15 acim-glossary-term">
 <b>spirit</b><br/>
-<b>靈性</b></p><p class="mn st17">
+<b>靈性</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-51" id="glossary-51-en" lang="en">
 The
 immaterial substance of which God created us, the essence of our true
 nature. Spirit is nonphysical, without form, perfect, and eternal. It
 uses the mind to express itself in this world, so that the mind can
 be restored to the fullness of
-spirit.<br/>
-我們真實本性的要素，是非物質性的，上主以此創造我們的生命。靈性是非物質、無形無相、完美且永恆的。它運用心靈在世間表達它自己，從而使心靈恢復靈性的充實。</p><p class="mn st15">
+spirit.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-51" id="glossary-51-zh" lang="zh-TW">
+我們真實本性的要素，是非物質性的，上主以此創造我們的生命。靈性是非物質、無形無相、完美且永恆的。它運用心靈在世間表達它自己，從而使心靈恢復靈性的充實。</p><p class="mn st15 acim-glossary-term">
 <b>teacher
 of God</b><br/>
-<b>上主之師</b></p><p class="mn st17">
+<b>上主之師</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-52" id="glossary-52-en" lang="en">
 One
 whose function is to teach others on behalf of God; a bringer of
 salvation, a savior, a miracle worker. The teacher goes through a
@@ -16671,10 +16691,10 @@ lengthy developmental journey in which he first accepts his function,
 then joins in holy relationships with his pupils, then becomes an
 advanced teacher, and finally awakens from the dream of time and
 space, at which point he will be a teacher of
-teachers.<br/>
-他的任務是代表上主教人；他帶來救恩，是拯救者，是奇蹟行者。這教師會經歷漫長的養成歷程――先是接受自己的任務，接著與學生建立神聖關係，然後成為一位成熟的教師，最終從時空之夢中甦醒，此時他將成為一位眾師的聖師。</p><p class="mn st15">
+teachers.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-52" id="glossary-52-zh" lang="zh-TW">
+他的任務是代表上主教人；他帶來救恩，是拯救者，是奇蹟行者。這教師會經歷漫長的養成歷程――先是接受自己的任務，接著與學生建立神聖關係，然後成為一位成熟的教師，最終從時空之夢中甦醒，此時他將成為一位眾師的聖師。</p><p class="mn st15 acim-glossary-term">
 <b>universe</b><br/>
-<b>宇宙</b></p><p class="mn st17">
+<b>宇宙</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-53" id="glossary-53-en" lang="en">
 Usually
 refers not to the physical universe, but to the totality of true
 existence, which was created by God and is “far beyond the petty
@@ -16682,11 +16702,11 @@ sum of all the separate bodies you
 perceive” (T-15.VIII.8:5). The universe, then, is the sum total of
 the true reality of all things, which lies behind their physical
 forms and cannot be seen by our physical
-eyes.<br/>
-通常不是指物質宇宙，而是指真實存在物的整體，是由上主所創造的，而且「遠遠大於你眼前所有個別身體加起來的渺小總合」（T-15.VIII.8:5）。因此，宇宙是萬物的實相的總和，隱藏在物質形相背後，是我們肉眼無法看見的。</p><p class="mn st15">
+eyes.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-53" id="glossary-53-zh" lang="zh-TW">
+通常不是指物質宇宙，而是指真實存在物的整體，是由上主所創造的，而且「遠遠大於你眼前所有個別身體加起來的渺小總合」（T-15.VIII.8:5）。因此，宇宙是萬物的實相的總和，隱藏在物質形相背後，是我們肉眼無法看見的。</p><p class="mn st15 acim-glossary-term">
 <b>vision,
 Christ’s vision, true perception</b><b><br/>
-</b><b>慧見，基督的慧見，真實知見（正確的感知）</b></p><p class="mn st17">
+</b><b>慧見，基督的慧見，真實知見（正確的感知）</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-54" id="glossary-54-en" lang="en">
 An
 inward seeing of the holiness within all things, which overlooks
 bodies and their attacks. This perception comes not through our eyes
@@ -16696,11 +16716,11 @@ projections of the ego, vision sees everything as it truly is:
 perfect. Rather than seeing visual forms or color, vision “sees”
 pure meaning, the meaning of holiness. Vision is the goal of the
 Course; a kind of perception so holy that it transfers to
-knowledge.<br/>
-一種心靈之見――看見萬物內在的神聖性而忽略身體及其攻擊。這種知見不是透過肉眼而得，乃出自我們內在一種稱為「基督之眼」的靈性能力（〈正文〉早期稱為「靈性之眼」）。慧見看到的不是小我的投射，而是萬物完美的真相。慧見看到的不是視覺的形態或顏色，而是「看見」純粹的意義，即神聖性的意義。慧見是《課程》的目標，是一種能轉化為真知的神聖知見。</p><p class="mn st15">
+knowledge.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-54" id="glossary-54-zh" lang="zh-TW">
+一種心靈之見――看見萬物內在的神聖性而忽略身體及其攻擊。這種知見不是透過肉眼而得，乃出自我們內在一種稱為「基督之眼」的靈性能力（〈正文〉早期稱為「靈性之眼」）。慧見看到的不是小我的投射，而是萬物完美的真相。慧見看到的不是視覺的形態或顏色，而是「看見」純粹的意義，即神聖性的意義。慧見是《課程》的目標，是一種能轉化為真知的神聖知見。</p><p class="mn st15 acim-glossary-term">
 <b>Word
 of God</b><br/>
-<b>聖言、上主之言</b></p><p class="mn st17">
+<b>聖言、上主之言</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-55" id="glossary-55-en" lang="en">
 God’s
 message, promise, or declaration to His Son, especially as expressed
 in the Course’s teachings and lessons. Often verbally expressed in
@@ -16709,10 +16729,10 @@ created me” (see W-110.9:5 and W-162.2:1). We are asked to listen
 to God’s Word within our minds and then speak His Word to our
 brothers, through loving behavior. In contrast to traditional
 Christianity, it is not to be equated with Christ or
-Jesus.<br/>
-上主給聖子的訊息、許諾或宣告，尤其是如《課程》的內容所表達的。常是以言語表達出的關於我們的真實身份的重要聲明，例如「我仍是上主所創造的我」（見W-110.9:5和W-162.2:1）。《課程》要我們在心裡聆聽上主之言，然後透過愛的行為向弟兄說出祂的話。與傳統基督宗教不同的是，聖言並不等於基督或耶穌。</p><p class="mn st15">
+Jesus.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-55" id="glossary-55-zh" lang="zh-TW">
+上主給聖子的訊息、許諾或宣告，尤其是如《課程》的內容所表達的。常是以言語表達出的關於我們的真實身份的重要聲明，例如「我仍是上主所創造的我」（見W-110.9:5和W-162.2:1）。《課程》要我們在心裡聆聽上主之言，然後透過愛的行為向弟兄說出祂的話。與傳統基督宗教不同的是，聖言並不等於基督或耶穌。</p><p class="mn st15 acim-glossary-term">
 <b>world</b><br/>
-<b>世界</b></p><p class="mn st17">
+<b>世界</b></p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-56" id="glossary-56-en" lang="en">
 The
 realm of time and space, of separated existence. The physical world
 seen by our eyes is an illusion that was not created by God—since
@@ -16725,7 +16745,7 @@ God. Seeing the true holiness of those minds is seeing the <i>real</i>
 world. From this perspective, only “the world you see [with the
 physical eyes]” (a common phrase in the Course) is an illusion made
 by
-us.<br/>
+us.</p><p class="mn st17 acim-glossary-definition" data-glossary-id="glossary-56" id="glossary-56-zh" lang="zh-TW">
 時間與空間的範疇，分離個體存在的範疇。我們肉眼所見的物質世界是一個幻相，是我們自己集體瘋狂的投射，而不是上主所創造的――因為「只有瘋子才會造出這樣的世界」（W-152.6:7）。然而，此一詞通常同時包括物質形相的層次（我們妄造出的幻相），<span class="kf"><b>以及</b></span>與這些形相分不開的心靈（心靈則是真實的，是上主所創造）。看到這些心靈的神聖性，就是看見<span class="kf"><b>真實</b></span>世界。從這個角度來說，只有你「〔肉〕眼前的世界」（課文中常如此提及）才是我們所造的幻相。</p><p class="mn st15">
 <br/>
 </p></section><section class="csec" style="contain-intrinsic-size:auto 30000px"><div class="st377" id="acim-footnotes-container"><div id="ftn1"><p class="mft">
@@ -22504,10 +22524,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
             +'#toc-wrapper .toc-glossary a{display:block;font-size:12px;padding:3px 8px;'
             +'border-radius:6px;color:var(--c-muted);text-decoration:none;line-height:1.5;cursor:pointer;}'
             +'#toc-wrapper .toc-glossary a:hover,#toc-wrapper .toc-glossary a:focus-visible{'
-            +'color:var(--c-accent);background:rgba(107,47,160,.08);}'
-            +'#toc-wrapper .toc-glossary a:focus-visible{outline:2px solid var(--c-accent);outline-offset:-2px;}'
-            +'#toc-wrapper .toc-glossary a.toc-g-active{color:var(--c-accent);'
-            +'background:rgba(107,47,160,.1);font-weight:600;box-shadow:inset 3px 0 0 var(--c-accent);}'
+            +'color:var(--c-gold)!important;background:rgba(107,47,160,.08);}'
+            +'#toc-wrapper .toc-glossary a:focus-visible{outline:2px solid var(--c-gold);outline-offset:-2px;}'
+            +'#toc-wrapper .toc-glossary a.toc-g-active{color:var(--c-gold)!important;'
+            +'background:rgba(107,47,160,.1);font-weight:600;box-shadow:inset 3px 0 0 var(--c-gold);}'
             +'html.dark-mode #toc-wrapper .toc-glossary{color-scheme:dark;}'
             +'html.dark-mode #toc-wrapper .toc-glossary a{color:var(--c-muted)!important;}'
             +'html.dark-mode #toc-wrapper .toc-glossary a:hover,html.dark-mode #toc-wrapper .toc-glossary a:focus-visible{'
@@ -22549,8 +22569,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
             window.__acimCorrectScroll(t, 72);
             t.classList.remove('glossary-flash'); void t.offsetWidth; t.classList.add('glossary-flash');
             var self=this;
-            childWrap.querySelectorAll('a').forEach(function(x){ x.classList.remove('toc-g-active'); });
+            childWrap.querySelectorAll('a').forEach(function(x){ x.classList.remove('toc-g-active'); x.removeAttribute('aria-current'); });
             self.classList.add('toc-g-active');
+            self.setAttribute('aria-current','location');
             if(window.innerWidth<=768) closeSidebar();
           });
           childWrap.appendChild(a);
@@ -23794,8 +23815,13 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   });
 
   /* ── 文字過濾器 ── */
-  function cleanText(raw){
+  function cleanText(raw, language){
     var t = raw;
+    /* V27.1：英文定義保留數字、引文和英文標點，不套用中文朗讀改寫。 */
+    if(/^en(?:[-_]|$)/i.test(language || '')){
+      return t.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, '')
+        .replace(/\[\s*\d*\s*\]/g, '').replace(/\s+/g, ' ').trim();
+    }
     /* 移除上標句子編號（Unicode 上標數字）*/
     t = t.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, '');
     /* 腳注殘留 [N] */
@@ -23927,15 +23953,23 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     return 'u'; /* unknown — 交由語言代碼排序決定 */
   }
 
-  function pickZhVoice(){
+  function pickZhVoice(language){
     var voices = synth.getVoices();
     if(!voices.length) return null;
+    /* V27.1：保留舊呼叫介面；標明英文的詞彙定義只選英文聲音。
+       沒有英文聲音時不強制指定中文 voice，由引擎依 utterance.lang 選擇。 */
+    if(/^en(?:[-_]|$)/i.test(language || '')){
+      var english = voices.filter(function(v){ return /^en(?:[-_]|$)/i.test(v.lang || ''); });
+      var preferred = english.find(function(v){ return v.default; });
+      return preferred || english.find(function(v){ return /^en[-_]US$/i.test(v.lang); }) || english[0] || null;
+    }
 
     /* 過濾出中文語音（優先 zh-TW，接受所有 zh-* 及含 Chinese 的名稱）*/
     var zhVoices = voices.filter(function(v){
       return v.lang.indexOf('zh') === 0 || /Chinese/i.test(v.name);
     });
-    if(!zhVoices.length) zhVoices = voices.slice();
+    /* V27.1：缺少中文聲音時，不將英文聲音強制套用到中文。 */
+    if(!zhVoices.length) return null;
 
     var pref = ttsGenderPref; /* 'f' 或 'm' */
 
@@ -24005,9 +24039,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     _ttsStopped = true;
     if(_speakTimer){ clearTimeout(_speakTimer); _speakTimer=null; }
     synth.cancel();
+    /* V27.1：cancel 不保證解除 paused；切換語言前恢復空佇列，避免新段落停住。 */
+    if(synth.paused) synth.resume();
     _queue = []; _queueRunning = false; _hlQueue = [];
     clearTtsHighlight();
-    if(currentBtn){ currentBtn.classList.remove('tts-active'); currentBtn.title='朗讀此段'; }
+    if(currentBtn){ currentBtn.classList.remove('tts-active'); currentBtn.title=currentBtn.getAttribute('aria-label') || '朗讀此段'; }
     if(currentPara){ currentPara.classList.remove('tts-reading'); }
     currentBtn = null; currentPara = null;
     ttsBar.classList.remove('tts-bar-on');
@@ -24053,7 +24089,23 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   var _queueRunning = false;
   var _hlQueue = [];   /* 與 _queue 中「真正朗讀」的項目一一對應的 Range（供 highlight）*/
 
-  function splitSentences(text){
+  function splitSentences(text, language){
+    /* 英文以句末或分號分段；長句在空白處分塊，保留原文與數字。 */
+    if(/^en(?:[-_]|$)/i.test(language || '')){
+      var englishParts=[];
+      text.split(/(?<=[.!?;])\s+/u).forEach(function(sentence){
+        sentence=sentence.trim();
+        while(sentence.length>280){
+          var cut=sentence.lastIndexOf(' ',280);
+          if(cut<80) cut=280;
+          englishParts.push({text:sentence.slice(0,cut).trim(),pause:0});
+          sentence=sentence.slice(cut).trim();
+        }
+        if(sentence) englishParts.push({text:sentence,pause:0});
+        englishParts.push({text:'　　',pause:2});
+      });
+      return englishParts;
+    }
     /* 以句號、問號、驚嘆號為主要分句點（完整停頓）
        逗號、分號為次要分句點（短停頓，用空白字元模擬）*/
     var parts = [];
@@ -24082,7 +24134,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
      Highlight API 上色。與 splitSentences() 使用相同的標點切分邏輯，
      確保切出的「真正朗讀」分句數量盡量一致；若數量不符（cleanText 造成
      文字差異過大），則回傳空陣列，highlight 功能自動停用，但 TTS 仍正常。 */
-  function buildHighlightRanges(para, speakCount){
+  function buildHighlightRanges(para, speakCount, language){
     if (!ttsHighlight || !window.Range) return [];
 
     /* 走訪段落內所有文字節點，跳過朗讀按鈕、句子編號徽章等非正文節點 */
@@ -24107,6 +24159,42 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       fullText += node.nodeValue;
     }
     if(!fullText) return [];
+
+    /* V27.1：英文分塊與原 DOM 字元映射採同一份文字清理和分句規則。 */
+    if(/^en(?:[-_]|$)/i.test(language || '')){
+      var englishChars=[], englishMap=[];
+      for(var ei=0;ei<fullText.length;ei++){
+        var character=fullText[ei];
+        if(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/.test(character)) continue;
+        var note=character==='[' ? fullText.slice(ei).match(/^\[\s*\d*\s*\]/) : null;
+        if(note){ ei+=note[0].length-1; continue; }
+        if(/\s/.test(character)){
+          if(!englishChars.length || englishChars[englishChars.length-1]===' ') continue;
+          character=' ';
+        }
+        englishChars.push(character); englishMap.push(ei);
+      }
+      while(englishChars.length && englishChars[englishChars.length-1]===' '){ englishChars.pop(); englishMap.pop(); }
+      var englishText=englishChars.join('');
+      var spoken=splitSentences(englishText,language).filter(function(item){ return !item.pause; });
+      if(spoken.length!==speakCount) return [];
+      var englishCursor=0, englishRanges=[];
+      for(var es=0;es<spoken.length;es++){
+        var startAt=englishText.indexOf(spoken[es].text,englishCursor);
+        if(startAt<0) return [];
+        var endAt=startAt+spoken[es].text.length;
+        try{
+          var englishRange=document.createRange();
+          var englishStart=offsetToNodePos(englishMap[startAt]);
+          var englishEnd=offsetToNodePos(englishMap[endAt-1]+1);
+          englishRange.setStart(englishStart.node,englishStart.offset);
+          englishRange.setEnd(englishEnd.node,englishEnd.offset);
+          englishRanges.push(englishRange);
+        }catch(error){ return []; }
+        englishCursor=endAt;
+      }
+      return englishRanges;
+    }
 
     /* 移除上標句子編號，避免影響切分對齊（與 cleanText 行為一致）*/
     var SUPER_RE = /[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g;
@@ -24209,12 +24297,12 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     _queueRunning = true;
     var item = _queue.shift();
     var u = new SpeechSynthesisUtterance(item.text);
-    u.lang  = 'zh-TW';
+    u.lang  = item.lang || 'zh-TW';
     u.rate  = getCurrentRate();
     u.pitch = getCurrentPitch();
     /* 靜音段落用最慢語速，pitch 維持 0（靜音不需 pitch）*/
     if(item.pause){ u.rate = 0.1; u.volume = 0; u.pitch = 1; }
-    var v = pickZhVoice(); if(v) u.voice = v;
+    var v = pickZhVoice(u.lang); if(v) u.voice = v;
     /* 非靜音的「真正朗讀」分句：取出對應的 highlight Range 並上色 */
     if(!item.pause){
       var range = _hlQueue.length ? _hlQueue.shift() : null;
@@ -24234,7 +24322,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     stopTTS();
 
     var raw = para.innerText || para.textContent || '';
-    var text = cleanText(raw);
+    var language = /^en(?:[-_]|$)/i.test(para.getAttribute('lang') || '') ? 'en-US' : 'zh-TW';
+    var text = cleanText(raw, language);
     if(!text || text.length < 4) return;
 
     /* 設定 UI 狀態 */
@@ -24250,10 +24339,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     window.__acimCorrectScroll(para,margin);
 
     /* 建立分句佇列 */
-    _queue = splitSentences(text);
+    _queue = splitSentences(text, language);
+    _queue.forEach(function(item){ item.lang=language; });
     /* 計算「真正朗讀」（非靜音）分句數量，並嘗試建立對應的 highlight Range */
     var speakCount = _queue.filter(function(p){ return !p.pause; }).length;
-    _hlQueue = buildHighlightRanges(para, speakCount);
+    _hlQueue = buildHighlightRanges(para, speakCount, language);
     _ttsStopped=false;
     var job=_ttsGeneration; /* V26：此次段落朗讀的工作代碼 */
     synth.cancel();
@@ -24355,8 +24445,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(!para.querySelector('.tts-btn')){
       var btn=document.createElement('button');
       btn.className='tts-btn';
-      btn.title='朗讀此段';
-      btn.setAttribute('aria-label','朗讀此段');
+      var paragraphLang=para.getAttribute('lang') || '';
+      var readLabel=/^en(?:[-_]|$)/i.test(paragraphLang) ? '朗讀英文' : (/^zh(?:[-_]|$)/i.test(paragraphLang) ? '朗讀中文' : '朗讀此段');
+      btn.title=readLabel;
+      btn.setAttribute('aria-label',readLabel);
       btn.setAttribute('aria-hidden','false');
       btn.addEventListener('click',function(e){e.stopPropagation();speakPara(para,btn);});
       para.appendChild(btn);
@@ -24942,6 +25034,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
      英文 acimce.app URL 轉換
      ══════════════════════════════════════════════════ */
   function toAcimceUrl(acimId, sent, sentEnd) {
+    /* 英文站的短範圍解析要求段碼本身帶連字號；In.* 必須用兩端完整
+       引用的括號格式。只改外站 URL，顯示 CE 與繁中 hash 保持 :N-M。 */
+    if (/^In\.\d+$/.test(acimId) && sent > 0 && sentEnd > sent) {
+      return 'https://acimce.app/:[' + acimId + ':' + sent + ']-[' + acimId + ':' + sentEnd + ']';
+    }
     var url = 'https://acimce.app/:' + acimId;
     if (sent && sent > 0) {
       url += ':' + sent;
@@ -24955,22 +25052,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
      選取文字 → 分享工具列
      ══════════════════════════════════════════════════ */
   function getSelAcimId() {
-    var sel = window.getSelection();
-    if (!sel || sel.isCollapsed) return null;
-    var n = sel.getRangeAt(0).startContainer;
-    if (n.nodeType === 3) n = n.parentNode;
-    while (n && n !== document.body) {
-      if (n.nodeType === 1) {
-        /* 直接有 id：正常段落 */
-        var aid = n.getAttribute('data-acim-id');
-        if (aid) return aid;
-        /* 延伸段落：有 data-acim-parent，回傳父段落 id */
-        var parent = n.getAttribute('data-acim-parent');
-        if (parent) return parent;
-      }
-      n = n.parentNode;
-    }
-    return null;
+    var citation = getSelectionCitation(window.getSelection());
+    return citation && !citation.hint ? citation.id : null;
   }
 
   /* ── UI 建立 ── */
@@ -24984,7 +25067,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     shareBar.style.cssText = 'position:fixed;z-index:999996;display:none;'
       + 'background:linear-gradient(135deg,#2D1B4E,#1A0C30);'
       + 'border:1px solid rgba(201,162,39,.5);border-radius:20px;'
-      + 'padding:5px 12px;box-shadow:0 4px 18px rgba(40,0,80,.5);';
+      + 'padding:5px 12px;max-width:calc(100vw - 16px);box-sizing:border-box;'
+      + 'box-shadow:0 4px 18px rgba(40,0,80,.5);';
     document.body.appendChild(shareBar);
 
     /* 分享面板 */
@@ -25112,134 +25196,189 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     }
   }
 
-  /* 監聽選取文字 */
-  /* ── 句子號偵測工具函數 ──
-     原理：在段落中，上標字符（²³⁴⁵⁶⁷⁸⁹）標記句子分界。
-     第1句 = 段落開頭到第一個上標之前；第N句 = 第(N-1)個上標到第N個上標之間。
-     key insight：上標字符緊接在前一句結束、下一句開始之前，
-     所以「選取起點之前最後一個上標號碼 + 1」= 選取所在的句子號。
-     但若上標字符本身在選取起點之前（startOffset > 上標位置），需含入計數。 */
+  /* V27.1：以實際 Range 覆蓋的本文判定引用，不以「1 到最大句碼」推定整段。
+     一個 CE 段可包含主 <p> 和多個 data-acim-parent 延伸段（例如 In.2）。
+     句碼涵蓋選取碰到的首末本文；只碰到上標、註腳或標點不多算一句。
+     只有完整涵蓋同 CE 段的所有本文字元才省略 :N-M。外圍空白、標點、
+     段號與註腳不影響整段判定；首尾任何本文字詞缺少都仍保留句碼。
+     跨不同 CE 段或混入無法引用的正文時顯示提示，不製造單段連結。 */
+  var SHARE_SUP_DIGITS = {'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4',
+    '⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9'};
+  var SHARE_AUX_CHAR = /[\s\u200b\uFEFF.,!?;:，。！？；：、…‥—–\-「」『』“”‘’"'（）()〔〕［］【】{}<>〈〉《》«»‹›·・．／\/\\]/;
+  var SHARE_SCOPE_HINT = '請在同一段內選取文字以分享';
 
-  var SUP_RE = /[²³⁴⁵⁶⁷⁸⁹]/;
-  var SUP_VAL = {'²':2,'³':3,'⁴':4,'⁵':5,'⁶':6,'⁷':7,'⁸':8,'⁹':9,'¹':1};
-
-  /* 取得選取節點所在 <p> 段落 */
   function getParaOfNode(n) {
-    if (n.nodeType === 3) n = n.parentNode;
+    if (n && n.nodeType === 3) n = n.parentNode;
     while (n && n.tagName !== 'P') n = n.parentNode;
     return n;
   }
 
-  /* 掃描從段落開頭到 targetNode（不含）的上標，回傳最後一個上標值（即前一句號）
-     若 targetNode 是文字節點且含有上標，依 targetOffset 決定是否計入 */
-  function scanSentUpTo(para, targetNode, targetOffset) {
-    var lastSup = 0; /* 0 表示尚未見過上標（還在第1句） */
-    var walker = document.createTreeWalker(para, NodeFilter.SHOW_ALL);
-    var node;
-    while ((node = walker.nextNode())) {
-      if (node === targetNode) {
-        if (node.nodeType === 3) {
-          var txt2 = node.textContent;
-          /* 掃描用的字串：若 offset=0，掃到第一個字符（含）；否則掃到 offset 之前 */
-          var scanTo = (targetOffset === 0) ? 1 : targetOffset;
-          var k = 0;
-          while (k < scanTo && k < txt2.length) {
-            if (txt2[k] === '¹' && k+1 < scanTo && k+1 < txt2.length) {
-              if (txt2[k+1] === '⁰') { lastSup = 10; k += 2; continue; }
-              if (SUP_VAL[txt2[k+1]]) { lastSup = 10 + SUP_VAL[txt2[k+1]]; k += 2; continue; }
-            }
-            if (SUP_VAL[txt2[k]]) lastSup = SUP_VAL[txt2[k]];
-            k++;
-          }
-        }
-        break;
-      }
-      /* 文字節點：掃描所有上標字符（含雙字符 ¹⁰¹¹¹² 等）*/
+  function shareIgnoredElement(el) {
+    return el.nodeType === 1 && (/^(SCRIPT|STYLE|BUTTON|INPUT|SELECT|TEXTAREA)$/.test(el.tagName) ||
+      el.classList.contains('fn-badge') || el.classList.contains('tts-btn') ||
+      el.hidden || el.getAttribute('aria-hidden') === 'true');
+  }
+
+  function shareIgnoredNode(node, stop) {
+    for (var p = node.parentNode; p && p !== stop; p = p.parentNode) {
+      if (shareIgnoredElement(p)) return true;
+    }
+    return false;
+  }
+
+  /* DOM Range 的端點不論落在文字、inline 元素或父元素的 child offset，
+     都由瀏覽器的邊界比較處理。Selection 的正向／反向不改變 Range 順序。 */
+  function shareSelectedOffsets(node, range) {
+    var from = node === range.startContainer ? range.startOffset : 0;
+    var to = node === range.endContainer ? range.endOffset : node.length;
+    if (node !== range.startContainer && range.comparePoint(node, 0) < 0) return null;
+    if (node !== range.endContainer && range.comparePoint(node, node.length) > 0) return null;
+    return to > from ? { from: from, to: to } : null;
+  }
+
+  function shareHasBody(text) {
+    for (var i = 0; i < text.length; i++) {
+      if (!SHARE_AUX_CHAR.test(text[i]) && SHARE_SUP_DIGITS[text[i]] === undefined) return true;
+    }
+    return false;
+  }
+
+  /* 保留每個字元對原始 Text node 的位置；不包裝、不改寫 DOM，讓搜尋與
+     TTS 的 Range 繼續有效。先攤平文字再辨認上標，也支援 ¹<span>⁰</span>。 */
+  function buildSharePart(para, inheritedSent) {
+    var runs = [], markers = [], raw = '';
+    function visit(node) {
       if (node.nodeType === 3) {
-        var txt = node.textContent;
-        var j = 0;
-        while (j < txt.length) {
-          /* 嘗試雙字符組合（¹+數字）：¹⁰=10, ¹¹=11, ¹²=12, ¹³=13... */
-          if (txt[j] === '¹' && j+1 < txt.length && SUP_VAL[txt[j+1]]) {
-            lastSup = 10 + SUP_VAL[txt[j+1]] - 1;
-            /* ¹²=12: ¹+² → 10+(2-1)=11? 不對，直接用映射 */
-            /* ¹⁰=10, ¹¹=11, ¹²=12... → 10 + (SUP_VAL[txt[j+1]]-1) 不對 */
-            /* 正確：¹+² = 12, ¹+³ = 13, 但 ¹+¹ = 11, ¹+⁰? ⁰不在SUP_VAL */
-            /* 重新定義：¹ 後接 ¹=11, ²=12, ³=13... */
-            lastSup = 10 + SUP_VAL[txt[j+1]];
-            j += 2;
-          } else if (txt[j] === '¹' && j+1 < txt.length && txt[j+1] === '⁰') {
-            /* ¹⁰ = 10（⁰ = U+2070，不在SUP_VAL中，特殊處理）*/
-            lastSup = 10; j += 2;
-          } else if (SUP_VAL[txt[j]]) {
-            lastSup = SUP_VAL[txt[j]]; j++;
-          } else {
-            j++;
+        var start = raw.length;
+        raw += node.data;
+        runs.push({ node: node, start: start, end: raw.length });
+        return;
+      }
+      if (node.nodeType !== 1 || shareIgnoredElement(node)) return;
+      var begin = raw.length;
+      for (var child = node.firstChild; child; child = child.nextSibling) visit(child);
+      /* 一般數字 <sup> 是句碼；包住 fn-badge 的外層 <sup> 不是句碼。 */
+      if (node.tagName === 'SUP' && !node.querySelector('.fn-badge')) {
+        var digits = raw.slice(begin).trim().replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, function(ch) {
+          return SHARE_SUP_DIGITS[ch];
+        });
+        if (/^\d+$/.test(digits) && parseInt(digits, 10) > 0) {
+          markers.push({ start: begin, end: raw.length, sent: parseInt(digits, 10) });
+        }
+      }
+    }
+    visit(para);
+
+    var labelEnd = 0;
+    if (para.hasAttribute('data-acim-list-start')) {
+      var listLabel = raw.match(/^\s*\d{1,2}[.．]\s*/);
+      if (listLabel) labelEnd = listLabel[0].length;
+    } else if (para.hasAttribute('data-acim-id')) {
+      /* 排版段號可能是獨立 <b>1</b>，也可能與第一句共用 <b>一、…</b>。 */
+      var bold = para.querySelector('b');
+      if (bold) {
+        for (var bi = 0; bi < runs.length; bi++) {
+          if (!bold.contains(runs[bi].node)) continue;
+          if (!raw.slice(0, runs[bi].start).trim()) {
+            var label = bold.textContent.match(/^\s*(?:\d+\s*$|[一二三四五六七八九十百]+[、．]\s*)/);
+            if (label) labelEnd = runs[bi].start + label[0].length;
+          }
+          break;
+        }
+      }
+    }
+
+    var unicode = /[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, match;
+    while ((match = unicode.exec(raw))) {
+      var number = parseInt(match[0].replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, function(ch) {
+        return SHARE_SUP_DIGITS[ch];
+      }), 10);
+      if (number > 0) markers.push({ start: match.index, end: unicode.lastIndex, sent: number });
+    }
+    markers.sort(function(a, b) { return a.start - b.start || b.end - a.end; });
+    var units = [], ri = 0, mi = 0;
+    var sent = parseInt(para.getAttribute('data-acim-list-start') || '0', 10) || inheritedSent || 1;
+    for (var pos = 0; pos < raw.length; pos++) {
+      while (mi < markers.length && markers[mi].start < pos) mi++;
+      if (mi < markers.length && markers[mi].start === pos) {
+        sent = markers[mi].sent;
+        pos = markers[mi++].end - 1;
+        continue;
+      }
+      if (pos < labelEnd || SHARE_AUX_CHAR.test(raw[pos])) continue;
+      while (ri < runs.length && runs[ri].end <= pos) ri++;
+      if (ri < runs.length) units.push({ node: runs[ri].node, offset: pos - runs[ri].start, sent: sent });
+    }
+    return { units: units, lastSent: sent };
+  }
+
+  function getSelectionCitation(sel) {
+    if (!sel || !sel.rangeCount || sel.isCollapsed) return null;
+    if (sel.rangeCount !== 1) return { hint: SHARE_SCOPE_HINT };
+    var range = sel.getRangeAt(0), area = document.getElementById('content-area');
+    if (!area) return null;
+    var ids = [], seen = Object.create(null), outside = false;
+    function inspect(node) {
+      if (shareIgnoredNode(node, document.body)) return;
+      var offsets = shareSelectedOffsets(node, range);
+      if (!offsets || !shareHasBody(node.data.slice(offsets.from, offsets.to))) return;
+      var para = getParaOfNode(node);
+      var id = para && area.contains(para) &&
+        (para.getAttribute('data-acim-id') || para.getAttribute('data-acim-parent'));
+      if (!id) { outside = true; return; }
+      if (!seen[id]) { seen[id] = true; ids.push(id); }
+    }
+    var common = range.commonAncestorContainer;
+    if (common.nodeType === 3) inspect(common);
+    else {
+      var walker = document.createTreeWalker(common, NodeFilter.SHOW_TEXT), text;
+      while ((text = walker.nextNode())) inspect(text);
+    }
+
+    var matches = [];
+    for (var gi = 0; gi < ids.length; gi++) {
+      var id = ids[gi], quoted = id.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      var parts = area.querySelectorAll('p[data-acim-id="' + quoted + '"],p[data-acim-parent="' + quoted + '"]');
+      var total = 0, selected = 0, first = 0, last = 0, inherited = 1;
+      for (var pi = 0; pi < parts.length; pi++) {
+        var model = buildSharePart(parts[pi], inherited);
+        inherited = model.lastSent;
+        total += model.units.length;
+        var lastNode = null, bounds = null;
+        for (var ui = 0; ui < model.units.length; ui++) {
+          var unit = model.units[ui];
+          if (unit.node !== lastNode) {
+            lastNode = unit.node;
+            bounds = shareSelectedOffsets(lastNode, range);
+          }
+          if (bounds && unit.offset >= bounds.from && unit.offset < bounds.to) {
+            if (!selected) first = unit.sent;
+            last = unit.sent;
+            selected++;
           }
         }
       }
-      /* 非 fn-badge 的 <sup> element（數字形式的上標）*/
-      if (node.nodeType === 1 && node.tagName === 'SUP' &&
-          !node.classList.contains('fn-badge')) {
-        var num = parseInt(node.textContent.trim(), 10);
-        if (!isNaN(num) && num > 1) lastSup = num;
-      }
+      if (selected) matches.push({ id: id, sent: first, sentEnd: last > first ? last : 0,
+        whole: selected === total });
+      /* 兩個不同 CE 段已有本文被選到，不必繼續掃描其他段。 */
+      if (matches.length > 1) return { hint: SHARE_SCOPE_HINT };
     }
-    /* lastSup = 選取點前最後見到的上標值
-       上標 N 是第 N 句的「起始標記」，見到上標 N 表示現在在第 N 句
-       lastSup=0 → 在第1句（還未見上標）；lastSup=3 → 在第3句 */
-    return lastSup === 0 ? 1 : lastSup;
+    if (!matches.length) return null;
+    if (outside) return { hint: SHARE_SCOPE_HINT };
+    var citation = matches[0];
+    /* T-1:2 本身已是題記的單句引用，不再接第二個 :1。 */
+    if (citation.whole || citation.id === 'T-1:2') citation.sent = citation.sentEnd = 0;
+    return citation;
   }
 
-  /* 取得選取起始句號 */
+  /* 保留既有私有 helper 的回傳形式；UI 每次只解析一次 Selection。 */
   function getSelSentNum() {
-    var sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return 1;
-    var range = sel.getRangeAt(0);
-    var para  = getParaOfNode(range.startContainer);
-    if (!para) return 1;
-    var startNode = range.startContainer;
-    var startOffset = range.startOffset;
-    if (startNode === para && startOffset < para.childNodes.length) {
-      startNode = para.childNodes[startOffset];
-      startOffset = 0;
-    }
-    var sent = scanSentUpTo(para, startNode, startOffset);
-    /* 列點開頭的 1. / 2. 是排版序號，不是英文原典的 :1 / :2。 */
-    var base = parseInt(para.getAttribute('data-acim-list-start') || '0', 10);
-    return base ? Math.max(base, sent) : sent;
+    var citation = getSelectionCitation(window.getSelection());
+    return citation && !citation.hint ? citation.sent : 1;
   }
-
-  /* 取得選取結束句號（用於多句選取） */
   function getSelEndSentNum() {
-    var sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return 0;
-    var range = sel.getRangeAt(0);
-    if (range.collapsed) return 0;
-    /* 若 endContainer 和 startContainer 在同一個 <p> */
-    var startPara = getParaOfNode(range.startContainer);
-    var endPara   = getParaOfNode(range.endContainer);
-    if (!endPara) return 0;
-    if (startPara !== endPara) {
-      /* 允許同一英文段落的主段與延伸列點跨行選取，產生 :N-M。 */
-      var startID = startPara && (startPara.getAttribute('data-acim-id') || startPara.getAttribute('data-acim-parent'));
-      var endID = endPara.getAttribute('data-acim-id') || endPara.getAttribute('data-acim-parent');
-      if (!startID || startID !== endID) return 0;
-    }
-    /* endOffset：選取結束位置；若 endOffset=0 表示游標在節點開頭，往前退一 */
-    var endNode   = range.endContainer;
-    var endOffset = range.endOffset;
-    if (endNode === endPara && endOffset < endPara.childNodes.length) {
-      endNode = endPara.childNodes[endOffset];
-      endOffset = 0;
-    }
-    if (endOffset === 0 && endNode.previousSibling) {
-      endNode   = endNode.previousSibling;
-      endOffset = endNode.textContent ? endNode.textContent.length : 0;
-    }
-    var lastSent = scanSentUpTo(endPara, endNode, endOffset);
-    var lastBase = parseInt(endPara.getAttribute('data-acim-list-start') || '0', 10);
-    return lastBase ? Math.max(lastBase, lastSent) : lastSent;
+    var citation = getSelectionCitation(window.getSelection());
+    return citation && !citation.hint ? (citation.sentEnd || citation.sent) : 0;
   }
 
   function onSel() {
@@ -25253,16 +25392,31 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if (!sel || sel.isCollapsed || sel.toString().trim().length < 2) {
       shareBar.style.display = 'none'; return;
     }
-    var id = getSelAcimId();
-    if (!id) { shareBar.style.display = 'none'; return; }
+    if (!sel.rangeCount) { shareBar.style.display = 'none'; return; }
+    var selectionRoot = sel.getRangeAt(0).commonAncestorContainer;
+    /* 面板內的連結文字仍可選取與複製，不重新解讀成書稿引用。 */
+    if (sharePanel.contains(selectionRoot) || shareBar.contains(selectionRoot)) return;
+    var citation = getSelectionCitation(sel);
+    /* 新的書稿選取使舊面板失效；避免鍵盤改選後仍複製上一個引用。 */
+    sharePanel.style.display = 'none';
+    if (!citation) { shareBar.style.display = 'none'; return; }
 
-    shareBar.dataset.id      = id;
-    var sStart = getSelSentNum();
-    var sEnd   = getSelEndSentNum();
-    /* 若結束句 > 起始句，記錄範圍（如 5-6）；否則只記錄起始句 */
-    /* T-1:2 已是單句的完整引用，不能再附加 :1。 */
-    shareBar.dataset.sent    = (id === 'T-1:2') ? '0' : String(sStart);
-    shareBar.dataset.sentEnd = (id === 'T-1:2') ? '' : ((sEnd > sStart) ? String(sEnd) : '');
+    var button = document.getElementById('acim-sbar-btn');
+    button.disabled = !!citation.hint;
+    button.textContent = citation.hint || '🔗 分享';
+    shareBar.setAttribute('role', citation.hint ? 'status' : 'group');
+    shareBar.dataset.id = citation.id || '';
+    shareBar.dataset.sent = String(citation.sent || 0);
+    shareBar.dataset.sentEnd = citation.sentEnd ? String(citation.sentEnd) : '';
+    if (citation.hint) {
+      sharePanel.style.display = 'none';
+      ['acim-sp-ref','acim-sp-zh','acim-sp-en'].forEach(function(key) {
+        document.getElementById(key).textContent = '';
+      });
+      document.getElementById('acim-sp-open-en').removeAttribute('href');
+    }
+    /* 跨段提示比分享按鈕寬，先顯示再測量以免桌面右緣溢出。 */
+    shareBar.style.display = 'block';
 
     /* 定位工具列：選取文字正上方，限制不超出視窗左右邊界 */
     var r = sel.getRangeAt(0).getBoundingClientRect();
@@ -25301,6 +25455,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       '#acim-sbar button{background:none;border:none;color:#EDE6F8;cursor:pointer;',
       '  font-size:12.5px;padding:1px 2px;font-family:inherit;letter-spacing:.02em}',
       '#acim-sbar button:hover{color:#C9A227}',
+      '#acim-sbar button:disabled{cursor:default;opacity:1}',
       '.acim-hl{',
       '  background:rgba(201,162,39,.13)!important;',
       '  border-left:3px solid #C9A227!important;',

@@ -1,18 +1,18 @@
-/* ACIM CE PWA v27 — release-bound offline book.
+/* ACIM CE PWA v27.1 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v27';
-const RELEASE_ID = 'a12301848f24093316c8ac5a2f8a80510646d9f33c63310af349abc6459d83b3';
+const CACHE_VERSION = 'v27.1';
+const RELEASE_ID = 'a36f73e699414f8c5e6dd0a64fee8a17461a0c1d0cd1ca15d277496cc13d3aeb';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = '552a94af3cffb39ee1d6f24b39208e36bb29a5b535e030f65438db6b66fb0950';
+const BOOK_SHA256 = 'fdc5a4fb6927fe1641cc61aca577c63958907c5312e1eac4f83ca0f3dd39cb42';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
@@ -228,16 +228,26 @@ async function trimRuntime(cache) {
   const overflow = keys.length - RUNTIME_MAX_ENTRIES;
   for (let i = 0; i < overflow; i++) await cache.delete(keys[i]);
 }
-function olderProjectCache(name) {
-  const match = name.match(OWN_RE);
-  if (!match) return false;
-  const candidate = match[1].split('.').map(Number);
-  const current = CACHE_VERSION.slice(1).split('.').map(Number);
-  for (let i = 0; i < Math.max(candidate.length, current.length); i++) {
-    const difference = (candidate[i] || 0) - (current[i] || 0);
-    if (difference) return difference < 0;
+function compareNumericVersions(left, right) {
+  // Compare decimal components, never floats or whole-version strings:
+  // v27 < v27.1 < v27.2 < v27.10. Missing components equal zero.
+  // Decimal strings also avoid precision loss on unusually large components.
+  const parse = value => {
+    const match = typeof value === 'string' && /^v(\d+(?:\.\d+)*)$/.exec(value);
+    return match ? match[1].split('.').map(part => part.replace(/^0+(?=\d)/, '')) : null;
+  };
+  const a = parse(left), b = parse(right);
+  if (!a || !b) return null; // Unknown labels must never authorize deletion.
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const x = a[i] || '0', y = b[i] || '0';
+    if (x.length !== y.length) return x.length < y.length ? -1 : 1;
+    if (x !== y) return x < y ? -1 : 1;
   }
-  return false;
+  return 0;
+}
+function olderProjectCache(name) {
+  const match = typeof name === 'string' && name.match(OWN_RE);
+  return !!match && compareNumericVersions('v' + match[1], CACHE_VERSION) === -1;
 }
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
