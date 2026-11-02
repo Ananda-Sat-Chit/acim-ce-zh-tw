@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="acim-version" content="v27.4">
-<meta name="acim-release-id" content="d327505b93c67fb0bbb18db240e8ff7bfdf795e180c30ec7214064e7d8240a62">
+<meta name="acim-version" content="v27.5">
+<meta name="acim-release-id" content="084d0795ef31c79d5b08860bb2e7b40b58219f5b522f28f359401692d0db57f3">
 <meta name="acim-build" content="2026-11-02">
-<meta name="acim-build-time" content="11:30">
+<meta name="acim-build-time" content="12:38">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -136,7 +136,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v27.4';
+var ACIM_VERSION = 'v27.5';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -1921,7 +1921,7 @@ html body #sidebar-toc.mobile-open{z-index:2100;}
         <button id="sidebar-settings-back" type="button"><svg class="reader-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m10 5-7 7 7 7M3 12h18"/></svg><span>返回目錄</span></button>
       </div>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 11:30</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-02 12:38</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -22484,6 +22484,60 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       try{node.focus({preventScroll:true});}catch(e){node.focus();}
     }
   }
+  /* V27.5: only a matched, direct Android touch activation defers opening
+     focus. Two animation callbacks offer a rendering opportunity; they do
+     not prove a native paint or a shorter total operation. Unknown input
+     retains synchronous focus. This is scheduling, not a security boundary. */
+  var readerAndroid=false;
+  try{readerAndroid=!!(navigator.userAgentData&&navigator.userAgentData.platform==='Android')||/\bAndroid\b/i.test(navigator.userAgent||'');}catch(e){}
+  var readerTouchActivation=null,readerOpeningFocusToken=0,readerOpeningFocusFrame=0;
+  function cancelReaderOpeningFocus(){
+    readerOpeningFocusToken++;
+    if(readerOpeningFocusFrame){cancelAnimationFrame(readerOpeningFocusFrame);readerOpeningFocusFrame=0;}
+  }
+  function cancelReaderOpeningActivity(){readerTouchActivation=null;cancelReaderOpeningFocus();}
+  function readerOpeningTrigger(target){
+    if(target&&tocButton.contains(target))return tocButton;
+    if(target&&crumbButton.contains(target))return crumbButton;
+    return null;
+  }
+  function rememberReaderTouchActivation(event){
+    readerTouchActivation=null;
+    var trigger=readerOpeningTrigger(readerTarget(event));
+    if(readerAndroid&&trigger&&event.pointerType==='touch'&&event.isPrimary!==false
+      &&typeof event.pointerId==='number'&&isFinite(event.pointerId)&&event.pointerId>=0){
+      readerTouchActivation={trigger:trigger,pointerId:event.pointerId,time:Date.now()};
+    }
+  }
+  function consumeReaderTouchActivation(trigger,event){
+    var touch=readerTouchActivation;readerTouchActivation=null;
+    if(!readerAndroid||!touch||!event||event.pointerType!=='touch'||!(event.detail>0)
+      ||event.pointerId!==touch.pointerId||trigger!==touch.trigger)return false;
+    var elapsed=Date.now()-touch.time;
+    return elapsed>=0&&elapsed<=1000;
+  }
+  function readerOpeningFocusValid(token){
+    return token===readerOpeningFocusToken&&readerModal()&&(!compactMedia||compactMedia.matches)
+      &&!document.hidden&&sidebar.isConnected&&!sidebar.inert
+      &&sidebar.getAttribute('aria-hidden')!=='true'&&!sidebar.contains(document.activeElement);
+  }
+  function deferReaderOpeningFocus(){
+    var token=readerOpeningFocusToken;
+    readerOpeningFocusFrame=requestAnimationFrame(function readerOpeningFocusOpportunity(){
+      readerOpeningFocusFrame=0;
+      if(!readerOpeningFocusValid(token))return;
+      readerOpeningFocusFrame=requestAnimationFrame(function readerOpeningFocusAfterOpportunity(){
+        readerOpeningFocusFrame=0;
+        if(readerOpeningFocusValid(token))safeFocus(sidebarClose);
+      });
+    });
+  }
+  document.addEventListener('pointerdown',rememberReaderTouchActivation,{capture:true,passive:true});
+  document.addEventListener('pointercancel',cancelReaderOpeningActivity,{capture:true,passive:true});
+  document.addEventListener('visibilitychange',function(){if(document.hidden)cancelReaderOpeningActivity();});
+  document.addEventListener('freeze',cancelReaderOpeningActivity);
+  window.addEventListener('pagehide',cancelReaderOpeningActivity);
+  window.addEventListener('pageshow',cancelReaderOpeningActivity);
   function uiInert(node,value){
     if(!node)return;
     if(node.inert!==value)node.inert=value;
@@ -22554,6 +22608,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     syncExternalUI();notifyReaderUI();
   }
   function setSidebarSettings(open,restoreFocus,quiet){
+    cancelReaderOpeningActivity();
     var changed=settingsPanel.hidden===open;
     /* The persistent disclosure button remains the keyboard anchor. Move
        focus before hiding a page; do not focus a newly laid-out subtree. */
@@ -22582,24 +22637,29 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
        afterwards so showFn's immediate focus is never blocked by inert. */
     if(kind==='footnote')uiHidden(document.getElementById('footnote-bar'),false);
   }
-  function openSidebar(trigger){
+  function openSidebar(trigger,event){
+    var deferFocus=consumeReaderTouchActivation(trigger,event);
+    cancelReaderOpeningFocus();
     lastSidebarTrigger=trigger&&trigger.nodeType===1?trigger:document.activeElement;
     closeOtherReaderPanels('sidebar');
     if(compactUI())drawerOpen=true;else desktopSidebarHidden=false;
     applySidebarState();
-    if(compactUI())safeFocus(sidebarClose);
+    if(compactUI()){
+      if(deferFocus)deferReaderOpeningFocus();else safeFocus(sidebarClose);
+    }
   }
   function closeSidebar(restoreFocus){
+    cancelReaderOpeningActivity();
     var wasOpen=compactUI()&&drawerOpen;
     drawerOpen=false;
     var settingsChanged=setSidebarSettings(false,false,true);
     if(wasOpen||settingsChanged)applySidebarState();
     if(wasOpen&&restoreFocus!==false)safeFocus(lastSidebarTrigger&&lastSidebarTrigger.isConnected?lastSidebarTrigger:tocButton);
   }
-  function toggleSidebar(trigger){
+  function toggleSidebar(trigger,event){
     if(compactUI()){
-      if(drawerOpen)closeSidebar(true);else openSidebar(trigger);
-    }else if(desktopSidebarHidden){openSidebar(trigger);}
+      if(drawerOpen)closeSidebar(true);else openSidebar(trigger,event);
+    }else if(desktopSidebarHidden){openSidebar(trigger,event);}
     else{
       setSidebarSettings(false,false,true);desktopSidebarHidden=true;applySidebarState();safeFocus(tocButton);
     }
@@ -22610,8 +22670,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(compactUI())closeSidebar(true);
     else{setSidebarSettings(false,false,true);desktopSidebarHidden=true;applySidebarState();safeFocus(tocButton);}
   });
-  crumbButton.addEventListener('click',function(){toggleSidebar(crumbButton);});
-  tocButton.addEventListener('click',function(){toggleSidebar(tocButton);});
+  crumbButton.addEventListener('click',function(event){toggleSidebar(crumbButton,event);});
+  tocButton.addEventListener('click',function(event){toggleSidebar(tocButton,event);});
   overlay.addEventListener('click',function(){closeSidebar(true);});
   document.getElementById('toc-search-input').addEventListener('focus',function(){setSidebarSettings(false,false);});
   function availableFocusTargets(){
@@ -22645,7 +22705,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   function guardReaderPointer(event){
     if(!readerModal())return;
     var target=readerTarget(event);
-    if(target&&(sidebar.contains(target)||overlay.contains(target)))return;
+    if(target&&sidebar.contains(target)){cancelReaderOpeningActivity();return;}
+    if(target&&overlay.contains(target))return;
     blockReaderEvent(event);
   }
   ['pointerdown','click','auxclick','contextmenu','selectstart'].forEach(function(type){
@@ -22653,7 +22714,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   });
   var redirectingReaderFocus=false;
   document.addEventListener('focusin',function(event){
-    if(!readerModal()||sidebar.contains(event.target)||redirectingReaderFocus)return;
+    if(sidebar.contains(event.target)){cancelReaderOpeningActivity();return;}
+    if(!readerModal()||redirectingReaderFocus)return;
+    cancelReaderOpeningActivity();
     event.stopImmediatePropagation();redirectingReaderFocus=true;
     try{safeFocus(sidebarClose);}finally{redirectingReaderFocus=false;}
   },true);
@@ -22672,6 +22735,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     return max>1&&(delta<0?top>0:top<max-1);
   }
   document.addEventListener('keydown',function(event){
+    cancelReaderOpeningActivity();
     if(!readerModal())return;
     var target=readerTarget(event);
     if(!target||!sidebar.contains(target)){
@@ -22696,11 +22760,16 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   },true);
   function guardReaderWheel(event){
     if(!readerModal()||event.ctrlKey)return;
-    if(!canReaderScroll(readerTarget(event),event.deltaY))blockReaderEvent(event);
+    var target=readerTarget(event);
+    if(target&&sidebar.contains(target))cancelReaderOpeningActivity();
+    if(!event.cancelable)return;
+    if(!canReaderScroll(target,event.deltaY))blockReaderEvent(event);
   }
   var readerTouchId=null,readerTouchY=0;
   function startReaderTouch(event){
     if(!readerModal()||event.touches.length!==1){readerTouchId=null;return;}
+    var target=readerTarget(event);
+    if(target&&sidebar.contains(target))cancelReaderOpeningActivity();
     readerTouchId=event.touches[0].identifier;readerTouchY=event.touches[0].clientY;
   }
   function moveReaderTouch(event){
@@ -22709,6 +22778,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(event.touches.length!==1){readerTouchId=null;return;}
     var touch=event.touches[0],delta=readerTouchId===touch.identifier?readerTouchY-touch.clientY:0;
     readerTouchId=touch.identifier;readerTouchY=touch.clientY;
+    /* Keep the latest finger/delta baseline even when native scrolling can
+       no longer be canceled; no geometry or propagation intervention then. */
+    if(!event.cancelable)return;
     if(!canReaderScroll(readerTarget(event),delta))blockReaderEvent(event);
   }
   function finishReaderTouch(event){if(!event.touches.length)readerTouchId=null;}
@@ -22745,6 +22817,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     }
     syncReaderLocalStyles();
     if(compact!==lastCompact){
+      cancelReaderOpeningActivity();
       var focusInside=sidebar.contains(document.activeElement);
       if(compact){drawerOpen=focusInside&&!desktopSidebarHidden;}
       else drawerOpen=false;
@@ -22753,14 +22826,15 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     }
   }
   function scheduleReaderViewport(){if(!viewportFrame)viewportFrame=requestAnimationFrame(syncReaderViewport);}
+  function readerBreakpointChanged(){cancelReaderOpeningActivity();scheduleReaderViewport();}
   window.addEventListener('resize',scheduleReaderViewport,{passive:true});
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize',scheduleReaderViewport,{passive:true});
     window.visualViewport.addEventListener('scroll',scheduleReaderViewport,{passive:true});
   }
   if(compactMedia){
-    if(compactMedia.addEventListener)compactMedia.addEventListener('change',scheduleReaderViewport);
-    else if(compactMedia.addListener)compactMedia.addListener(scheduleReaderViewport);
+    if(compactMedia.addEventListener)compactMedia.addEventListener('change',readerBreakpointChanged);
+    else if(compactMedia.addListener)compactMedia.addListener(readerBreakpointChanged);
   }
   window.__acimReaderUI={compact:compactUI,beforePanel:closeOtherReaderPanels};
   applySidebarState();syncReaderViewport();
@@ -24661,10 +24735,112 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   var _ttsStopped = true;
   var _ttsGeneration = 0;
   var _speakTimer = null;
+  /* V27.5: Chromium's Android backend stops on pause and cannot resume the
+     native utterance. Keep an app-owned paused state and replay only the
+     current existing unit, never an estimated charIndex suffix. */
+  var _ttsAndroid = false;
+  try{
+    _ttsAndroid = /Android/i.test(navigator.userAgent || '') ||
+      !!(navigator.userAgentData && navigator.userAgentData.platform === 'Android');
+  }catch(e){}
+  var _ttsAppPaused = false;
+  var _ttsAttempt = 0;
+  var _ttsCurrentUnit = null;
+  var _ttsPendingStart = null;
+  var _ttsSilenceTimer = null;
+
+  function updatePauseControl(){
+    var paused = _ttsAndroid ? _ttsAppPaused : !!synth.paused;
+    pauseBtn.textContent = paused ? '▶ 繼續' : '⏸ 暫停';
+    if(_ttsAndroid){
+      pauseBtn.title = paused ? '繼續會重讀目前分句' : '暫停；繼續時會重讀目前分句';
+      pauseBtn.setAttribute('aria-label', paused ? '繼續朗讀，會重讀目前分句' : '暫停朗讀，繼續時會重讀目前分句');
+    }
+  }
+  function clearTtsTimers(clearPending){
+    if(_speakTimer!==null){ clearTimeout(_speakTimer); _speakTimer=null; }
+    if(_ttsSilenceTimer!==null){ clearTimeout(_ttsSilenceTimer); _ttsSilenceTimer=null; }
+    if(clearPending) _ttsPendingStart=null;
+  }
+  function scheduleTtsStart(action,job){
+    if(_speakTimer!==null) clearTimeout(_speakTimer);
+    _ttsPendingStart=action;
+    var attempt=_ttsAttempt;
+    _speakTimer=setTimeout(function(){
+      if(_ttsStopped || job!==_ttsGeneration || attempt!==_ttsAttempt ||
+         _ttsAppPaused || _ttsPendingStart!==action) return;
+      _speakTimer=null;
+      if(_ttsAndroid && document.hidden){ suspendAndroidTTS(); return; }
+      _ttsPendingStart=null;
+      action();
+    },60);
+  }
+  function pauseAndroidTTS(){
+    if(_ttsStopped || _ttsAppPaused) return;
+    /* Retire callbacks BEFORE cancel(): cancellation may call back immediately
+       or much later. The unit/range and unstarted action stay available. */
+    _ttsAppPaused=true; _ttsAttempt++;
+    clearTtsTimers(false);
+    synth.cancel();
+    updatePauseControl();
+  }
+  function resumeAndroidTTS(){
+    if(_ttsStopped || !_ttsAppPaused || document.hidden) return;
+    var job=_ttsGeneration, unit=_ttsCurrentUnit;
+    var action=unit ? function(){ speakTtsUnit(unit,job); } : _ttsPendingStart;
+    if(!action){ stopTTS(); return; }
+    _ttsAppPaused=false;
+    updatePauseControl();
+    scheduleTtsStart(action,job);
+  }
+  function suspendAndroidTTS(){
+    if(!_ttsAndroid || _ttsStopped) return;
+    /* Footnotes have no visible resume control. Reset their original toggle
+       so the next deliberate press can replay them instead of stranding it. */
+    if(!currentPara){ stopTTS(); return; }
+    pauseAndroidTTS();
+  }
+  function speakTtsUnit(unit,job){
+    if(_ttsStopped || job!==_ttsGeneration || _ttsAppPaused) return;
+    _ttsCurrentUnit=unit;
+    if(_ttsAndroid && document.hidden){ suspendAndroidTTS(); return; }
+    var attempt=++_ttsAttempt, finished=false;
+    function valid(){
+      return !_ttsStopped && !_ttsAppPaused && job===_ttsGeneration &&
+        attempt===_ttsAttempt && unit===_ttsCurrentUnit;
+    }
+    function finish(error){
+      if(!valid() || finished) return;
+      finished=true; _ttsCurrentUnit=null;
+      if(_ttsSilenceTimer!==null){ clearTimeout(_ttsSilenceTimer); _ttsSilenceTimer=null; }
+      /* Android failures reset the controls for an explicit retry; never
+         recursively replay the failed unit. Desktop keeps its existing
+         completion/error progression policy and native pause/resume. */
+      if(error && _ttsAndroid){ stopTTS(); return; }
+      if(unit.onDone) unit.onDone();
+    }
+    if(_ttsAndroid && unit.item.pause){
+      /* Keep splitSentences unchanged. Its silent markers use the existing
+         intended 120/250 ms gaps without depending on blank-text engine events. */
+      _ttsSilenceTimer=setTimeout(function(){ finish(false); },unit.item.pause===1?120:250);
+      return;
+    }
+    var u=new SpeechSynthesisUtterance(unit.item.text);
+    u.lang=unit.item.lang || 'zh-TW';
+    u.rate=getCurrentRate(); u.pitch=getCurrentPitch();
+    if(unit.item.pause){ u.rate=0.1; u.volume=0; u.pitch=1; }
+    var voice=pickZhVoice(u.lang); if(voice) u.voice=voice;
+    if(!unit.item.pause) setTtsHighlightRange(unit.range);
+    u.onstart=function(){ if(!valid() || finished) return; if(_ttsAndroid) updatePauseControl(); };
+    u.onend=function(){ finish(false); };
+    u.onerror=function(){ finish(true); };
+    try{ synth.speak(u); }catch(e){ finish(true); }
+  }
   function stopTTS(){
     _ttsGeneration++;
-    _ttsStopped = true;
-    if(_speakTimer){ clearTimeout(_speakTimer); _speakTimer=null; }
+    _ttsAttempt++;
+    _ttsStopped = true; _ttsAppPaused=false; _ttsCurrentUnit=null;
+    clearTtsTimers(true);
     synth.cancel();
     /* V27.1：cancel 不保證解除 paused；切換語言前恢復空佇列，避免新段落停住。 */
     if(synth.paused) synth.resume();
@@ -24675,6 +24851,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     currentBtn = null; currentPara = null;
     ttsBar.classList.remove('tts-bar-on');
     pauseBtn.textContent = '⏸ 暫停';
+    if(_ttsAndroid) updatePauseControl();
     /* 腳注朗讀按鈕也一併重置 */
     var fb = document.getElementById('fn-tts-btn');
     if(fb) fb.classList.remove('fn-tts-active');
@@ -24686,28 +24863,17 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     stopTTS();
     if(!text || text.length < 2) return;
     _ttsStopped=false;
-    var job=_ttsGeneration, finished=false;
-    var utter = new SpeechSynthesisUtterance(text);
-    utter.lang  = 'zh-TW';
-    utter.rate  = getCurrentRate();
-    utter.pitch = getCurrentPitch();
-    function applyVoice(){ if(job!==_ttsGeneration||_ttsStopped||finished)return; var v=pickZhVoice(); if(v) utter.voice=v; }
-    applyVoice();
-    if(!synth.getVoices().length) speechSynthesis.addEventListener('voiceschanged', applyVoice, {once:true});
-    utter.onend = utter.onerror = function(){
-      if(_ttsStopped||job!==_ttsGeneration||finished) return;
-      finished=true; _ttsStopped=true;
+    var job=_ttsGeneration;
+    var unit={item:{text:text,lang:'zh-TW',pause:0},range:null,onDone:function(){
+      if(_ttsStopped || job!==_ttsGeneration) return;
+      _ttsStopped=true;
       var fb = document.getElementById('fn-tts-btn');
       if(fb) fb.classList.remove('fn-tts-active');
       window.__fnTtsSpeaking = false; /* V24 */
       if(onEndCb) onEndCb();
-    };
+    }};
     synth.cancel();
-    _speakTimer = setTimeout(function(){
-      if(_ttsStopped||job!==_ttsGeneration) return;
-      _speakTimer = null;
-      synth.speak(utter);
-    }, 60);
+    scheduleTtsStart(function(){ speakTtsUnit(unit,job); },job);
     if(opts && opts.fnTts) window.__fnTtsSpeaking = true; /* V24 修復：註腳朗讀來源登記 */
   }
 
@@ -24919,28 +25085,17 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   }
 
   function runQueue(onDone,job){
-    if(_ttsStopped||job!==_ttsGeneration) return;
+    if(_ttsStopped||job!==_ttsGeneration||_ttsAppPaused) return;
+    if(_ttsAndroid && document.hidden){
+      _ttsPendingStart=function(){ runQueue(onDone,job); };
+      suspendAndroidTTS(); return;
+    }
     if(!_queue.length){ _queueRunning=false; clearTtsHighlight(); if(onDone) onDone(); return; }
     _queueRunning = true;
     var item = _queue.shift();
-    var u = new SpeechSynthesisUtterance(item.text);
-    u.lang  = item.lang || 'zh-TW';
-    u.rate  = getCurrentRate();
-    u.pitch = getCurrentPitch();
-    /* 靜音段落用最慢語速，pitch 維持 0（靜音不需 pitch）*/
-    if(item.pause){ u.rate = 0.1; u.volume = 0; u.pitch = 1; }
-    var v = pickZhVoice(u.lang); if(v) u.voice = v;
     /* 非靜音的「真正朗讀」分句：取出對應的 highlight Range 並上色 */
-    if(!item.pause){
-      var range = _hlQueue.length ? _hlQueue.shift() : null;
-      setTtsHighlightRange(range);
-    }
-    var finished=false;
-    u.onend=u.onerror=function(){
-      if(_ttsStopped||job!==_ttsGeneration||finished) return;
-      finished=true; runQueue(onDone,job);
-    };
-    synth.speak(u);
+    var range = !item.pause && _hlQueue.length ? _hlQueue.shift() : null;
+    speakTtsUnit({item:item,range:range,onDone:function(){ runQueue(onDone,job); }},job);
   }
 
   /* ── 朗讀單一段落 ── */
@@ -24974,15 +25129,18 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     _ttsStopped=false;
     var job=_ttsGeneration; /* V26：此次段落朗讀的工作代碼 */
     synth.cancel();
-    _speakTimer = setTimeout(function(){
-      if(_ttsStopped||job!==_ttsGeneration) return;
-      _speakTimer = null;
+    scheduleTtsStart(function(){
       runQueue(function(){ if(job===_ttsGeneration) stopTTS(); },job);
-    }, 60);
+    },job);
   }
 
   /* ── 控制列事件 ── */
   pauseBtn.addEventListener('click', function(){
+    if(_ttsStopped) return;
+    if(_ttsAndroid){
+      if(_ttsAppPaused) resumeAndroidTTS(); else pauseAndroidTTS();
+      return;
+    }
     if(synth.paused){
       synth.resume();
       pauseBtn.textContent = '⏸ 暫停';
@@ -24992,6 +25150,13 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     }
   });
   stopBtn.addEventListener('click', stopTTS);
+  if(_ttsAndroid){
+    updatePauseControl();
+    document.addEventListener('visibilitychange',function(){ if(document.hidden) suspendAndroidTTS(); });
+    document.addEventListener('freeze',suspendAndroidTTS);
+    window.addEventListener('pagehide',suspendAndroidTTS);
+    /* Foreground/resume does not start speech without another reader action. */
+  }
 
   /* ── 腳注朗讀按鈕 ── */
   var fnTtsBtn = document.getElementById('fn-tts-btn');
