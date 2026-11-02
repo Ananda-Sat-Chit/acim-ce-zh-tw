@@ -6,13 +6,13 @@
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
 const CACHE_VERSION = 'v27';
-const RELEASE_ID = '7f17f932e7d7efff103826efb8d591169dbe3463c0bb3d01cbf622187046cff9';
+const RELEASE_ID = 'f7241c763cc7139d8dce482f33a38f8aac018390e5445fdaf1a837154ff1ce74';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = 'aa85ed06693e2d71094a3780e4ccff26b8aa021c4cb084bdbea5382ccb124beb';
+const BOOK_SHA256 = '4d6713641dc711fdd3589d39ed3488388f75a1a94c0a0858d562c522868ee547';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
