@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v29.1">
+<meta name="acim-version" content="v29.2">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="88eeee2329555e7195699e1ecb45c9f0982db7a5b66aefa163ef812587dbe6c2">
+<meta name="acim-release-id" content="2c4b2cb29ce04ba5197c10b8bbc65c41535267044a6fb438117c4a4bb0d628de">
 <meta name="acim-build" content="2026-11-03">
 <meta name="acim-build-time" content="11:38">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
@@ -137,7 +137,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v29.1';
+var ACIM_VERSION = 'v29.2';
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
 if ('serviceWorker' in navigator) {
@@ -25706,7 +25706,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       &&count(d.fontsCached,3)&&d.fontsTotal===3&&count(d.imagesCached,4)&&d.imagesTotal===4
       &&typeof d.warming==='boolean'&&typeof d.complete==='boolean';
   }
-  function complete(d){return !!(sameRelease(d)&&d.complete&&d.bookReady&&d.shellReady&&d.fontsCached===8&&d.imagesCached===4);}
+  function complete(d){return !!(sameRelease(d)&&d.complete&&d.bookReady&&d.shellReady&&d.fontsCached===3&&d.imagesCached===4);}
   function updateBanner(){
     var bar=document.getElementById('acim-offline-bar');
     if(navigator.onLine!==false){if(bar)bar.remove();return;}
@@ -25724,7 +25724,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     else if(latest.warming)status.textContent='正在保存離線資料；目前頁面可繼續閱讀。';
     else if(latest.storageError)status.textContent='離線保存未完成，請確認瀏覽器的儲存空間與權限後重試。';
     else if(!latest.bookReady||!latest.shellReady)status.textContent='離線書籍尚未完整保存，請連線後補齊。';
-    else status.textContent='全書已驗證保存；字型 '+latest.fontsCached+'/8，書內圖片 '+latest.imagesCached+'/4。';
+    else status.textContent='全書已驗證保存；字型 '+latest.fontsCached+'/'+latest.fontsTotal+'，書內圖片 '+latest.imagesCached+'/'+latest.imagesTotal+'。';
     button.disabled=busy||!!(sameRelease(latest)&&latest.warming);
     panel.setAttribute('aria-busy',button.disabled?'true':'false');
     button.textContent=button.disabled?'處理中…':!sameRelease(latest)?'檢查保存狀態':complete(latest)?'重新檢查':'補齊離線資料';
@@ -25767,7 +25767,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(checking)return checking;
     if(!sw||!sw.controller){paint('離線保存尚未就緒；請連線載入，等待安裝完成。');return Promise.resolve(null);}
     checking=request('GET_OFFLINE_STATUS').then(function(d){
-      if(autoWarm&&sameRelease(d)&&!d.warming&&d.fontsCached<8&&navigator.onLine!==false&&autoWarmedController!==sw.controller){
+      if(autoWarm&&sameRelease(d)&&!d.warming&&d.fontsCached<3&&navigator.onLine!==false&&autoWarmedController!==sw.controller){
         autoWarmedController=sw.controller;
         latest=Object.assign({},d,{warming:true});statusRevision++;paint();
         sw.controller.postMessage({type:'WARM_FONTS'});
