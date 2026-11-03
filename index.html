@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v30">
+<meta name="acim-version" content="v30.1">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="2fdec56da1b7cbf7bc83deba9bb8e674e611243c18c8847a497ebf219c2d532b">
+<meta name="acim-release-id" content="7be67cdc934c9ba9bc114b1dec5182fa08b971b3d7954c88048f04c0ccdcf81f">
 <meta name="acim-build" content="2026-11-03">
 <meta name="acim-build-time" content="11:38">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
@@ -147,7 +147,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v30';
+var ACIM_VERSION = 'v30.1';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -1882,7 +1882,7 @@ html.dark-mode #acim-quick-sheet{box-shadow:0 8px 28px rgba(0,0,0,0.5);}
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-03 21:30</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-03 22:40</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -23037,7 +23037,16 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   function clearHighlight(done){
     if(_hlAbort){_hlAbort.abort();_hlAbort=null;}
     _searchRanges=Object.create(null);
-    if(_nativeSearchHighlight){CSS.highlights.delete('acim-search');if(done)done();return;}
+    if(_nativeSearchHighlight){
+      CSS.highlights.delete('acim-search');
+      /* V30.1：註文條目為 mark 路徑，native 清除時須一併還原 */
+      var _nm=Array.prototype.slice.call(content.querySelectorAll('#acim-footnotes-container mark.search-hl'));
+      if(!_nm.length){if(done)done();return;}
+      _hlAbort=runChunks(_nm,300,function(mk){
+        if(mk.parentNode) mk.parentNode.replaceChild(document.createTextNode(mk.textContent),mk);
+      },done);
+      return;
+    }
     var marks=Array.from(content.querySelectorAll('mark.search-hl'));
     if(!marks.length){if(done)done();return;}
     _hlAbort=runChunks(marks,300,function(mk){
@@ -23062,6 +23071,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     function process(en){
       var root=en.node;
       if(!root || !root.isConnected)return;
+      /* V30.1：註文條目一律走 mark 路徑——CSS Custom Highlight 的 Range 不會
+         隨 showFn() 的 cloneNode 進入註文彈窗；mark 會隨 clone 複製，彈窗與
+         書末原文都有高亮。 */
+      var _useNative=_nativeSearchHighlight&&!(root.closest&&root.closest('#acim-footnotes-container'));
       var nodes=[],ends=[],pieces=[],length=0,walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),nd;
       while((nd=walker.nextNode())){
         if(nd.parentElement && nd.parentElement.closest('script,style,.tts-btn'))continue;
@@ -23070,14 +23083,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       }
       if(!nodes.length)return;
       var text=pieces.join(''),expr=new RegExp(source,rx.flags),m,startNode=0,endNode=0;
-      var segments=_nativeSearchHighlight?null:new Map();
+      var segments=_useNative?null:new Map();
       while((m=expr.exec(text))!==null){
         if(!m[0].length){expr.lastIndex++;continue;}
         var start=m.index,end=start+m[0].length;
         while(startNode<ends.length-1 && ends[startNode]<=start)startNode++;
         if(endNode<startNode)endNode=startNode;
         while(endNode<ends.length-1 && ends[endNode]<end)endNode++;
-        if(_nativeSearchHighlight){
+        if(_useNative){
           var range=document.createRange();
           range.setStart(nodes[startNode],start-(startNode?ends[startNode-1]:0));
           range.setEnd(nodes[endNode],end-(endNode?ends[endNode-1]:0));
@@ -26261,12 +26274,14 @@ function buildSecNav(){
     if(!t) return;
     items.push({sec:sec,h:h,t:t});
   });
-  function mkPill(item,dir){
+  function mkPill(item,dir,skip,pfx){
     var b=document.createElement('button');
     b.type='button';
     b.className='acim-sec-pill '+(dir<0?'acim-prev':'acim-next');
-    b.setAttribute('aria-label',(dir<0?'上一節：':'下一節：')+item.t);
-    b.title=(dir<0?'上一節：':'下一節：')+item.t;
+    /* V30.1：skip=true 代表右鈕實為「下下節」（下一節緊接在眼前，跳它無意義） */
+    var _pfx=pfx||(dir<0?'上一節':(skip?'下下節':'下一節'));
+    b.setAttribute('aria-label',_pfx+'：'+item.t);
+    b.title=_pfx+'：'+item.t;
     var arrow=document.createElement('span');
     arrow.className='acim-sec-arrow';
     arrow.textContent=dir<0?'← ':'→ ';
@@ -26282,16 +26297,65 @@ function buildSecNav(){
     var nav=document.createElement('nav');
     nav.className='acim-sec-nav';
     nav.setAttribute('aria-label','章節導覽');
-    var prev=items[i-1], next=items[i+1];
-    if(prev) nav.appendChild(mkPill(prev,-1));
+    /* V30.1：右鈕改跳下下節（倒數第二節 fallback 跳最後一節） */
+    var prev=items[i-1], next=items[i+2]||items[i+1], _skip=!!items[i+2];
+    if(prev) nav.appendChild(mkPill(prev,-1,false));
     else { var sp=document.createElement('span'); sp.className='acim-sec-spacer'; nav.appendChild(sp); }
     var cur=document.createElement('span');
     cur.className='acim-sec-cur';
     cur.textContent=it.t.length>26?it.t.slice(0,25)+'…':it.t;
     nav.appendChild(cur);
-    if(next) nav.appendChild(mkPill(next,1));
+    if(next) nav.appendChild(mkPill(next,1,_skip));
     else { var sp2=document.createElement('span'); sp2.className='acim-sec-spacer'; nav.appendChild(sp2); }
     it.sec.appendChild(nav);
+  });
+}
+
+
+/* ═══ 1b) 附錄三「課程術語詞彙表」詞條導覽（V30.1）═══
+   每個詞條（p.mn.st15.acim-glossary-term）區塊尾端加
+   「← 上一詞彙｜當前詞彙｜→ 下下詞彙」。規則與章末 pill 一致：
+   下一詞彙緊接在眼前，右鈕跳下下詞彙；末條 fallback 下一詞彙，
+   無下一詞彙則留白。 */
+function buildGlossaryNav(){
+  if(document.querySelector('.acim-glos-nav')) return;
+  var sec=null,secs=document.querySelectorAll('#content-area section.csec');
+  for(var si=0;si<secs.length;si++){
+    var h0=secs[si].querySelector('h1,h2,h3,h4');
+    if(h0&&/課程術語詞彙表/.test(h0.textContent||'')){ sec=secs[si]; break; }
+  }
+  if(!sec) return;
+  var ents=Array.prototype.slice.call(sec.querySelectorAll('p.mn.st15.acim-glossary-term'));
+  if(ents.length<2) return;
+  var secNav=sec.querySelector('.acim-sec-nav'); /* 節級 pill（附錄二／附錄四） */
+  function gpill(item,dir,skip){
+    var b=document.createElement('button');
+    b.type='button';
+    b.className='acim-sec-pill '+(dir<0?'acim-prev':'acim-next');
+    var pfx=dir<0?'上一詞彙':(skip?'下下詞彙':'下一詞彙');
+    var t=cleanTitle(item.textContent); if(t.length>12) t=t.slice(0,11)+'…';
+    b.setAttribute('aria-label',pfx+'：'+t);
+    b.title=pfx+'：'+t;
+    var ar=document.createElement('span'); ar.className='acim-sec-arrow'; ar.textContent=dir<0?'← ':'→ ';
+    var lb=document.createElement('span'); lb.className='acim-sec-label'; lb.textContent=t;
+    b.appendChild(ar); b.appendChild(lb);
+    b.addEventListener('click',function(){ jumpToHeading(item); });
+    return b;
+  }
+  ents.forEach(function(p,i){
+    var nav=document.createElement('nav');
+    nav.className='acim-sec-nav acim-glos-nav';
+    nav.setAttribute('aria-label','詞彙導覽');
+    var prev=ents[i-1], next=ents[i+2]||ents[i+1], skip=!!ents[i+2];
+    if(prev) nav.appendChild(gpill(prev,-1,false));
+    else { var sp=document.createElement('span'); sp.className='acim-sec-spacer'; nav.appendChild(sp); }
+    var cur=document.createElement('span'); cur.className='acim-sec-cur';
+    var ct=cleanTitle(p.textContent); cur.textContent=ct.length>26?ct.slice(0,25)+'…':ct;
+    nav.appendChild(cur);
+    if(next) nav.appendChild(gpill(next,1,skip));
+    else { var sp2=document.createElement('span'); sp2.className='acim-sec-spacer'; nav.appendChild(sp2); }
+    var at=ents[i+1]||secNav, par=at?at.parentNode:sec;
+    if(par) par.insertBefore(nav,at); else sec.appendChild(nav);
   });
 }
 
@@ -26620,6 +26684,7 @@ function secTtsInit(){
 /* ═══ 初始化 ═══ */
 function init(){
   try{ buildSecNav(); }catch(e){ console.warn('[V30] sec-nav:',e); }
+  try{ buildGlossaryNav(); }catch(e){ console.warn('[V30] glossary-nav:',e); }
   try{ buildBottomNav(); }catch(e){ console.warn('[V30] bottom-nav:',e); }
   try{ rtabsInit(); }catch(e){ console.warn('[V30] rtabs:',e); }
   try{ locateInit(); }catch(e){ console.warn('[V30] locate:',e); }
