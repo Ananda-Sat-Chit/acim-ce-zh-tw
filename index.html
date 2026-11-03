@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v30.1">
+<meta name="acim-version" content="v30.2">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="7be67cdc934c9ba9bc114b1dec5182fa08b971b3d7954c88048f04c0ccdcf81f">
-<meta name="acim-build" content="2026-11-03">
-<meta name="acim-build-time" content="11:38">
+<meta name="acim-release-id" content="07fd7a2f85e580f7ea9cc25cd5841e3aeac905a53fb72e14823d1ad2197ac547">
+<meta name="acim-build" content="2026-11-04">
+<meta name="acim-build-time" content="00:00">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -147,7 +147,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v30.1';
+var ACIM_VERSION = 'v30.2';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -1851,6 +1851,51 @@ html.dark-mode #acim-quick-sheet{box-shadow:0 8px 28px rgba(0,0,0,0.5);}
 @media(max-width:768px){#acim-v30-toast{bottom:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px) + 16px);}}
 
 </style>
+<style id="acim-v302-fnlocate">
+/* ══ V30.2：註文搜尋命中 → 內文註標定位高亮 ══
+   淡金底＋左側金線標出所在段落範圍；註標本身實心金底＋脈衝光圈。
+   類別由搜尋模組加上，隨註文彈窗關閉／搜尋清除移除。 */
+p.acim-fn-locate,li.acim-fn-locate,td.acim-fn-locate,blockquote.acim-fn-locate,
+h1.acim-fn-locate,h2.acim-fn-locate,h3.acim-fn-locate,h4.acim-fn-locate{
+  background:rgba(193,115,36,0.10) !important;
+  box-shadow:inset 3px 0 0 var(--c-gold) !important;
+  border-radius:6px !important;
+  transition:background 0.35s ease,box-shadow 0.35s ease !important;
+}
+html.dark-mode p.acim-fn-locate,html.dark-mode li.acim-fn-locate,
+html.dark-mode td.acim-fn-locate,html.dark-mode blockquote.acim-fn-locate,
+html.dark-mode h1.acim-fn-locate,html.dark-mode h2.acim-fn-locate,
+html.dark-mode h3.acim-fn-locate,html.dark-mode h4.acim-fn-locate{
+  background:rgba(243,169,98,0.10) !important;
+}
+sup.fn-badge.acim-fn-locate{
+  background:#C17324 !important;
+  color:#FFFFFF !important;
+  font-size:9px !important;
+  padding:2px 5px !important;
+  box-shadow:0 0 0 3px rgba(193,115,36,0.30) !important;
+  animation:acim-fn-pulse 0.9s ease-out 2;
+}
+html.dark-mode sup.fn-badge.acim-fn-locate{
+  background:#F3A962 !important;
+  color:#241708 !important;
+  box-shadow:0 0 0 3px rgba(243,169,98,0.35) !important;
+  animation-name:acim-fn-pulse-dark;
+}
+@keyframes acim-fn-pulse{
+  0%{box-shadow:0 0 0 3px rgba(193,115,36,0.30);}
+  60%{box-shadow:0 0 0 9px rgba(193,115,36,0.12);}
+  100%{box-shadow:0 0 0 3px rgba(193,115,36,0.30);}
+}
+@keyframes acim-fn-pulse-dark{
+  0%{box-shadow:0 0 0 3px rgba(243,169,98,0.35);}
+  60%{box-shadow:0 0 0 9px rgba(243,169,98,0.14);}
+  100%{box-shadow:0 0 0 3px rgba(243,169,98,0.35);}
+}
+@media (prefers-reduced-motion: reduce){
+  sup.fn-badge.acim-fn-locate{animation:none !important;}
+}
+</style>
 </head>
 
 <body>
@@ -1882,7 +1927,7 @@ html.dark-mode #acim-quick-sheet{box-shadow:0 8px 28px rgba(0,0,0,0.5);}
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-03 22:40</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 00:00</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -23127,6 +23172,38 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     });
   }
 
+  /* ══ V30.2：註文搜尋命中 → 主畫面定位到內文註標位置 ══
+     點擊註文命中時，除了開啟底部註文彈窗，也把主畫面捲到該註標
+     （sup.fn-badge）所在的內文位置，並高亮註標與所在段落，讓讀者
+     直接看到周圍內文在討論什麼。
+     高亮的生命週期：隨註文彈窗關閉（body.fn-open 移除）、
+     搜尋清除（acim:search-cleared）、或點擊下一個註文結果時清除。 */
+  function clearFnLocate(){
+    var old=content.querySelectorAll('.acim-fn-locate');
+    for(var i=0;i<old.length;i++) old[i].classList.remove('acim-fn-locate');
+  }
+  function locateFnRef(ref){
+    clearFnLocate();
+    if(!ref || !ref.isConnected) return;
+    /* 註標本身：實心金底（醒目）；所在段落：淡金底＋左側金線（顯示脈絡範圍） */
+    ref.classList.add('acim-fn-locate');
+    var par=ref.closest('p,li,td,blockquote,h1,h2,h3,h4,h5,h6');
+    if(par && par!==content) par.classList.add('acim-fn-locate');
+    /* 跳轉錨定在註標本身：註標多位於段落尾端，若錨定段落頭，
+       長段落會把註標擠到視窗外；content-visibility 懶渲染誤差由
+       __acimCorrectScroll 於 90/260/700ms 校正（與內文命中同一機制）。 */
+    var rect=ref.getBoundingClientRect();
+    window.__acimJump(window.scrollY+rect.top-Math.round(window.innerHeight/3));
+    window.__acimCorrectScroll(ref, Math.round(window.innerHeight/3));
+  }
+  /* 註文彈窗關閉（body.fn-open 移除）→ 清除定位高亮 */
+  if(window.MutationObserver){
+    new MutationObserver(function(){
+      if(!document.body.classList.contains('fn-open')) clearFnLocate();
+    }).observe(document.body,{attributes:true,attributeFilter:['class']});
+  }
+  document.addEventListener('acim:search-cleared',clearFnLocate);
+
   function makeItem(en,rx){
     /* V30：摘要片段以第一個命中處為中心（原為固定取前 100 字） */
     rx.lastIndex=0;var _fm=rx.exec(en.text);rx.lastIndex=0;
@@ -23146,7 +23223,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var noteDef=inNote?en.node.closest('[id^="ftn"]'):null;
     var noteId=noteDef?(noteDef.id||'').replace(/^ftn/,''):'';
     var noteLabel=noteId&&window.__acimFootnoteLabel?window.__acimFootnoteLabel(noteId):'';
-    hint.textContent=inNote?(noteLabel||'註 '+noteId)+' · 點擊開啟註文':'點擊跳至';
+    hint.textContent=inNote?(noteLabel||'註 '+noteId)+' · 開啟註文並跳至內文':'點擊跳至';
     item.appendChild(hint);
     item.addEventListener('click',function(){
       var el=en.node;if(!el || !el.isConnected)return;
@@ -23163,6 +23240,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         if(ref){
           if(fnHideTimer)clearTimeout(fnHideTimer);
           window.__fnSkip=true;window.__fnClickOpen=true;showFn(ref);
+          /* V30.2：主畫面同步跳到內文註標位置並高亮（彈窗未開成功則不定位） */
+          if(document.body.classList.contains('fn-open')) locateFnRef(ref);
           if(window.innerWidth<=768)closeSidebar();return;
         }
       }
