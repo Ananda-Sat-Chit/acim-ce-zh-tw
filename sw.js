@@ -1,36 +1,94 @@
-/* ACIM CE PWA v29.2 — release-bound offline book.
+/* ACIM CE PWA v30 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v29.2';
-const RELEASE_ID = '2c4b2cb29ce04ba5197c10b8bbc65c41535267044a6fb438117c4a4bb0d628de';
+const CACHE_VERSION = 'v30';
+const RELEASE_ID = '2fdec56da1b7cbf7bc83deba9bb8e674e611243c18c8847a497ebf219c2d532b';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = '45e0a1876952da7f53731b584e1e299e6f3015a6fbc70f95b955b690d9b069c7';
+const BOOK_SHA256 = '6af90e6236d2400a117d117494480ba7e6dba47962baedb5be9334dacf3148f6';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
 const OLD_FONT_CACHES = ['acim-fonts-v22', 'acim-fonts-v23', 'acim-fonts'];
 const CORE_FILES = ['index.htm', 'offline.html', 'manifest.json', 'favicon.ico'];
-const FONT_FILES = ['fonts/ntc-regular.woff2', 'fonts/ntc-bold.woff2', 'fonts/wenkai-full.woff2'];
+const FONT_FILES = [
+  'fonts/ntc-regular-00.woff2',
+  'fonts/ntc-regular-01.woff2',
+  'fonts/ntc-regular-02.woff2',
+  'fonts/ntc-regular-03.woff2',
+  'fonts/ntc-regular-04.woff2',
+  'fonts/ntc-regular-05.woff2',
+  'fonts/ntc-regular-06.woff2',
+  'fonts/ntc-regular-07.woff2',
+  'fonts/ntc-regular-08.woff2',
+  'fonts/ntc-regular-09.woff2',
+  'fonts/ntc-bold-00.woff2',
+  'fonts/ntc-bold-01.woff2',
+  'fonts/ntc-bold-02.woff2',
+  'fonts/ntc-bold-03.woff2',
+  'fonts/ntc-bold-04.woff2',
+  'fonts/ntc-bold-05.woff2',
+  'fonts/ntc-bold-06.woff2',
+  'fonts/ntc-bold-07.woff2',
+  'fonts/ntc-bold-08.woff2',
+  'fonts/ntc-bold-09.woff2',
+  'fonts/wenkai-00.woff2',
+  'fonts/wenkai-01.woff2',
+  'fonts/wenkai-02.woff2',
+  'fonts/wenkai-03.woff2',
+  'fonts/wenkai-04.woff2',
+  'fonts/wenkai-05.woff2',
+  'fonts/wenkai-06.woff2',
+  'fonts/wenkai-07.woff2',
+  'fonts/wenkai-08.woff2',
+  'fonts/wenkai-09.woff2'
+];
 const IMAGE_FILES = ['index.files/image001.webp', 'index.files/image002.webp', 'index.files/image003.jpg', 'index.files/ce-manuscript.webp'];
 const RUNTIME_FILES = IMAGE_FILES.concat(['icon-512.png', 'pwa-192x192.png', 'screenshot-og.png']);
 const RUNTIME_MAX_ENTRIES = 24;
 const NETWORK_TIMEOUT_MS = 8000;
-const WARMUP_BUDGET_MS = 25000;
+const WARMUP_BUDGET_MS = 60000; /* V30：30 個切片，3 並行下載 */
 const ASSET_SHA256 = {
   'index.htm': '60241fbe8694050be271bc1cd8d18b49eff0f530018acfc8e8ab50c936bd42d0',
   'offline.html': 'f102e49019429b6884091b8f96b32ef23ad2bfb1bed16953156decbf0d0c34ff',
   'manifest.json': '3a209276dff02d2493d528e81fadb28dc73d941eceb36e3e0c7ff1dc9403c9e3',
-  'fonts/ntc-regular.woff2': '8e59977df55e6d8d656d34dcad8cbf46785db4999b0e4127f5fc9e346f2626bb',
-  'fonts/ntc-bold.woff2': '21946e675ea5f82793ad6bcfebab1d8a41175565d296c48510e8768722d37625',
-  'fonts/wenkai-full.woff2': '063dbaf57f0554a74301c637fa9099f2c622efbb4f44b2c1f3c380424c58649f',
+  'fonts/ntc-regular-00.woff2': 'c830483a03e982db87fc7b5faa361cbac7b0c0265b3bf51959994cfc839e7fcd',
+  'fonts/ntc-regular-01.woff2': 'ae80842c86375a91f2a3d0a7ff4835f2c39667b45a9a141f734efdc7c245cb0a',
+  'fonts/ntc-regular-02.woff2': '9c55164062f33e520c84bf3aac7bad90c3c7a7f5c83dc45b82ef581463236c76',
+  'fonts/ntc-regular-03.woff2': 'e2be90fac5bab11408de5d86f0897291648cbefd9e0ca86c5b344beb02c31b29',
+  'fonts/ntc-regular-04.woff2': 'fce65ed9c1d6584dc2cb56b7e78b5ab99985f8681ee5eb5d774a309db1d6752d',
+  'fonts/ntc-regular-05.woff2': 'f20fb8e040e4a12a876c6a3192ac063bdf6e1edce5cc28789f79124f3a0fb993',
+  'fonts/ntc-regular-06.woff2': '0b6ff73029b121ff5b9bbfe3bd8f5b7b81b62b9e18d9929c1b509137132fc1a7',
+  'fonts/ntc-regular-07.woff2': 'a372ffaec24c002b57dcf01424e74358a37546b518c0b7ae9cefbf9ec93a10f9',
+  'fonts/ntc-regular-08.woff2': '1172b23d74ce2e325418ae2c0bb15c3586689b7edae30b905d36cea0c7ba0315',
+  'fonts/ntc-regular-09.woff2': '4d78b9c058360ab378fe28865d763146139b3ca2b5c1c4d154291fd3252fac7d',
+  'fonts/ntc-bold-00.woff2': 'aae41578f6715501d15fadf9456f7077bbe8ea5cdc35aba7499baaf865b2d9d2',
+  'fonts/ntc-bold-01.woff2': '496b958c3e1e1407edcc086b9270d838c414dbed86800e5d6ad9fee0589e6283',
+  'fonts/ntc-bold-02.woff2': '9143b7fcdcb8d4af89f77bc7668166b6f385c0e680e40da1a25937be6588193f',
+  'fonts/ntc-bold-03.woff2': '85041df1aeafea96d77b69f8a45996c16258637e34cff976daf7699e51bab6ea',
+  'fonts/ntc-bold-04.woff2': '8e629c514c4e497011e3ff45672abcdee06f26747de509a105f14fb80ff63c62',
+  'fonts/ntc-bold-05.woff2': 'e0c1ebe7b882fde6336ba12baa6cc87cc0b5cf9654c9fff598481e68c644a563',
+  'fonts/ntc-bold-06.woff2': '85bd0fbe6011e05077ea0674a42e45c469b1a53d2920eb678e6b631bf79a3d4e',
+  'fonts/ntc-bold-07.woff2': 'b9bf24460df9c5f6f149cec078f99a0e4c821e861d4a6def0d7b9ce0b12fb1ab',
+  'fonts/ntc-bold-08.woff2': 'f895cab9bb9efd4ee7e9f42ecd3bd2d96edfcdd3c61a61739e18ed1977ff4128',
+  'fonts/ntc-bold-09.woff2': 'b1e8ec6e69748eb3aa3ea1b5badae0e1a2e947f45dc62e8f6d1b31917a864a3a',
+  'fonts/wenkai-00.woff2': '8ef68e35904ce576f25cc9f6aa5e2417d033acb2913669fb94514cc4b92df492',
+  'fonts/wenkai-01.woff2': '454b51ad666c3e471526bf4e6d0685b08a67304a422751d98ac5ffff7ccfc883',
+  'fonts/wenkai-02.woff2': 'b0c6bb5ad62b4e02bcdedba8c6769edf2d3279e7c7203e1df50ccc0accb0c252',
+  'fonts/wenkai-03.woff2': '40a17f94b19a21ac979df46bc9554f19cd98f948f1e6b8240b8d93f6067870be',
+  'fonts/wenkai-04.woff2': '29fc7634a5d7a3b406b0a615cc81f3c4b9d1a67fec9490091eac725c1ae688a1',
+  'fonts/wenkai-05.woff2': '9580776326f96ff7a1fd5c0294bf93be6ebb7dc965d8157385924f243b34d15c',
+  'fonts/wenkai-06.woff2': 'e92ceb70c8fe435a250f1c139436b8fd63fd8cf58b62b4ab711a2af140b13bd7',
+  'fonts/wenkai-07.woff2': '7e1ab188e6e71e7eff7ba16e3f38b072f5cd04e8b32ca3d77fdef948a7b7e5c9',
+  'fonts/wenkai-08.woff2': 'f91c42d82bd1fccd5d986797fa1283c9f28ed85e23f810c43745bbe4c3fdd195',
+  'fonts/wenkai-09.woff2': '8df48aaaa3a348d2244813440a3974bd6388d877b9d83c95f3f99546f38ef589',
   'favicon.ico': '0c3efbc9e430c0acef49275c9f6e4a5dbd8bc4ae9baf3432212cf59c87351fa4',
   'index.files/image001.webp': '9a4295437a5cf3a57cdd3dfa73a6b1db65baf9016781643e8592b19a39fde374',
   'index.files/image002.webp': 'c4bfe8793c7811d8a0d6f9cc7ed152c8a38da36f69ffb410aa944c9554928395',
@@ -198,12 +256,14 @@ async function migrateLegacyFonts() {
   catch (e) { storageError = 'cache-read'; return new Set(OLD_FONT_CACHES); }
   for (const oldName of OLD_FONT_CACHES.filter(name => names.includes(name))) {
     let complete = true;
+    let anyOwned = false;
     try {
       const old = await caches.open(oldName);
       const dest = await caches.open(FONT_CACHE);
       for (const request of await old.keys()) {
         const file = ownedFontPath(request);
         if (!file) { complete = false; continue; } // Never discard unrelated contents.
+        anyOwned = true;
         const key = BASE + file;
         if (await verifyAsset(await dest.match(key), file)) continue;
         const response = await old.match(request);
@@ -214,7 +274,11 @@ async function migrateLegacyFonts() {
         } catch (e) { complete = false; storageError = 'cache-write'; }
       }
     } catch (e) { complete = false; storageError = 'cache-migration'; }
-    if (!complete) retained.add(oldName);
+    if (!anyOwned) {
+      // A legacy font cache holding nothing usable for this release is dead
+      // weight (e.g. the V28 lxgw slices); reclaim it instead of retaining.
+      try { await caches.delete(oldName); } catch (e) { retained.add(oldName); }
+    } else if (!complete) retained.add(oldName);
   }
   return retained;
 }
@@ -246,6 +310,16 @@ self.addEventListener('activate', event => {
         if (!keep.has(name) && (LEGACY_RE.test(name) || olderProjectCache(name))) await caches.delete(name);
       }
       await trimRuntime(await caches.open(RUNTIME_CACHE));
+      // V30: drop font entries that no longer belong to this release's slice
+      // set (e.g. the pre-V30 full-file fonts left in returning readers' storage).
+      try {
+        const fontCache = await caches.open(FONT_CACHE);
+        for (const req of await fontCache.keys()) {
+          const path = new URL(req.url).pathname;
+          const rel = path.startsWith(BASE) ? path.slice(BASE.length) : '';
+          if (rel && !FONT_FILES.includes(rel)) await fontCache.delete(req);
+        }
+      } catch (e) { storageError = 'cache-cleanup'; }
     } catch (e) { storageError = 'cache-cleanup'; }
     await self.clients.claim();
     // Fonts/images are prepared by separate messages, after activation finishes.
@@ -476,7 +550,7 @@ self.addEventListener('message', event => {
       reply(event, await offlineStatus());
     } catch (e) {
       reply(event, {type: 'ACIM_OFFLINE_STATUS', version: CACHE_VERSION, releaseId: RELEASE_ID, bookReady: false,
-        shellReady: false, fontsCached: 0, fontsTotal: 3, imagesCached: 0, imagesTotal: 4,
+        shellReady: false, fontsCached: 0, fontsTotal: FONT_FILES.length, imagesCached: 0, imagesTotal: 4,
         complete: false, warming: !!warmingTask, lastWarmError: 'status-unavailable', storageError: 'cache-unavailable'});
     }
   })());
