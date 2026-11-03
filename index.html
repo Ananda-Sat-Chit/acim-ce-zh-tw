@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v30.3">
+<meta name="acim-version" content="v30.4">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="3d1142146358723847789b6cf2cd1301a29485de15f421708c9322e4f1915c11">
+<meta name="acim-release-id" content="f96b941a0408b3a4f40f1f3c863cc0d4d9ed016105b25c86e839df40650da430">
 <meta name="acim-build" content="2026-11-04">
-<meta name="acim-build-time" content="00:41">
+<meta name="acim-build-time" content="01:37">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -147,7 +147,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v30.3';
+var ACIM_VERSION = 'v30.4';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -1817,7 +1817,10 @@ html.dark-mode #acim-quick-sheet{box-shadow:0 8px 28px rgba(0,0,0,0.5);}
 #toc-locate-btn:hover{border-color:var(--c-accent);}
 #toc-locate-btn:focus-visible{outline:2px solid var(--c-accent);outline-offset:1px;}
 @keyframes acimLocatePulse{0%{background:rgba(193,115,36,.5);}100%{background:transparent;}}
+@keyframes acimLocatePulseAgain{0%{background:rgba(193,115,36,.5);}100%{background:transparent;}}
 .toc-locate-flash{animation:acimLocatePulse 1.6s ease-out;}
+.toc-locate-flash-alt{animation:acimLocatePulseAgain 1.6s ease-out;}
+@media(prefers-reduced-motion:reduce){.toc-locate-flash,.toc-locate-flash-alt{animation:none;}}
 
 /* ── V30 P1：資料備份列（設定與資訊面板）── */
 .acim-backup-row{
@@ -1922,7 +1925,7 @@ html.dark-mode sup.fn-badge.acim-fn-locate{
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 00:41</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 01:37</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -22421,7 +22424,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   window.__acimJump = function(y,token){
     var nav=window.__acimNav;
     if(token===undefined||token===null) token=nav.begin('jump');
-    nav.jump(y,token);
+    var moved=nav.jump(y,token);
+    if(moved&&Number(y)<=0&&window.__acimReadingHeading)window.__acimReadingHeading.start();
     return token;
   };
   window.__acimCorrectScroll = function(el,margin,token){
@@ -22429,6 +22433,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(token===undefined||token===null) token=nav.current();
     if(!nav.valid(token)) return;
     nav.remember(token,el,margin);
+    if(window.__acimReadingHeading)window.__acimReadingHeading.remember(el);
     [90,260,700].forEach(function(ms){
       setTimeout(function(){
         if(!nav.valid(token)||!el||!el.isConnected) return;
@@ -22455,11 +22460,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   var settingsPanel=document.getElementById('sidebar-settings-panel');
   function setSidebarSettings(open,restoreFocus){
     if(!settingsToggle||!settingsPanel)return;
-    settingsPanel.hidden=!open;
-    settingsToggle.setAttribute('aria-expanded',open?'true':'false');
-    document.getElementById('toc-search-results').hidden=open;
-    document.getElementById('search-count-badge').hidden=open;
-    if(!open&&restoreFocus)settingsToggle.focus();
+    /* V30.4: identical state needs no writes; native/keyboard focus is retained. */
+    if(settingsPanel.hidden!==!open)settingsPanel.hidden=!open;
+    var expanded=open?'true':'false';
+    if(settingsToggle.getAttribute('aria-expanded')!==expanded)settingsToggle.setAttribute('aria-expanded',expanded);
+    var results=document.getElementById('toc-search-results'),badge=document.getElementById('search-count-badge');
+    if(results.hidden!==open)results.hidden=open;
+    if(badge.hidden!==open)badge.hidden=open;
+    if(!open&&restoreFocus&&document.activeElement!==settingsToggle)settingsToggle.focus({preventScroll:true});
   }
   if(settingsToggle&&settingsPanel){
     settingsToggle.addEventListener('click',function(event){
@@ -22480,16 +22488,28 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     });
   }
 
+  var sidebarHideTimer=null,sidebarOpenFrame=null;
   function openSidebar(){
+    if(sidebarHideTimer!==null){clearTimeout(sidebarHideTimer);sidebarHideTimer=null;}
+    if(sidebar.classList.contains('mobile-open')&&overlay.style.display==='block')return;
     sidebar.classList.add('mobile-open');
     overlay.style.display='block';
-    requestAnimationFrame(function(){ overlay.style.opacity='1'; });
+    sidebarOpenFrame=requestAnimationFrame(function(){
+      sidebarOpenFrame=null;
+      if(sidebar.classList.contains('mobile-open'))overlay.style.opacity='1';
+    });
   }
   function closeSidebar(){
     setSidebarSettings(false,false);
+    if(sidebarOpenFrame!==null){cancelAnimationFrame(sidebarOpenFrame);sidebarOpenFrame=null;}
+    if(!sidebar.classList.contains('mobile-open')&&overlay.style.display==='none')return;
     sidebar.classList.remove('mobile-open');
     overlay.style.opacity='0';
-    setTimeout(function(){ overlay.style.display='none'; }, 280);
+    if(sidebarHideTimer!==null)clearTimeout(sidebarHideTimer);
+    sidebarHideTimer=setTimeout(function(){
+      sidebarHideTimer=null;
+      if(!sidebar.classList.contains('mobile-open'))overlay.style.display='none';
+    },280);
   }
   /* V30：供底部導覽列使用 */
   window.__acimOpenSidebar=openSidebar;
@@ -22643,6 +22663,52 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   var savedAnchor = window.__acimStorage.get('acim-anchor');
   var progressRestored = false; /* 旗標：防止 buildTOC 多次呼叫重複跳位 */
   var progressHeadings = null;
+  /* V30.4: cache known reading headings using existing work; never measure here. */
+  window.__acimReadingHeading=(function(){
+    var known=Object.create(null),aliases=Object.create(null),first=null,current=null;
+    var stamp=-Infinity,source='init';
+    function now(){return performance.now();}
+    function resolve(id){return typeof id==='string'?(known[id]?id:aliases[id]||null):null;}
+    function record(id,kind,time){
+      id=resolve(id);if(!id)return false;
+      current=id;stamp=Math.max(stamp,time);source=kind;return true;
+    }
+    return {
+      init:function(headings){
+        known=Object.create(null);aliases=Object.create(null);first=null;
+        var parent=null;
+        Array.prototype.forEach.call(headings||[],function(h){
+          if(!h||!h.id)return;
+          if(/^H[1-4]$/.test(h.tagName)){known[h.id]=true;parent=h.id;if(!first)first=h.id;}
+          else if(/^H[56]$/.test(h.tagName)&&parent)aliases[h.id]=parent;
+        });
+        if(!resolve(current)){current=first;stamp=now();source='init';}
+      },
+      remember:function(target){
+        if(!target||!target.isConnected)return;
+        var main=document.getElementById('content-area');
+        if(!main||!main.contains(target))return;
+        var id=resolve(target.id);
+        if(!id){
+          var section=target.closest&&target.closest('section.csec');
+          if(!section)return;
+          var h=section.querySelector('h1,h2,h3,h4,h5,h6');
+          id=h?resolve(h.id):(section===main.querySelector('section.csec')?first:null);
+        }
+        if(id)record(id,'navigation',now());
+      },
+      observe:function(id,time){
+        var at=typeof time==='number'&&isFinite(time)?time:now();
+        /* A queued observer entry cannot overwrite a newer explicit jump/save.
+           Equal-time entries from one observer delivery retain their order. */
+        if(at<stamp||(at===stamp&&source!=='observer'))return false;
+        return record(id,'observer',at);
+      },
+      saved:function(id){return record(resolve(id)||first,'saved',now());},
+      start:function(){return record(first,'top',now());},
+      get:function(){return current;}
+    };
+  })();
   function saveProgress(){
     try{ window.__acimStorage.set('acim-scroll', Math.round(window.scrollY)); }catch(e){} /* V25（I19）*/
     if(!progressHeadings) progressHeadings=Array.from(content.querySelectorAll('h1,h2,h3,h4'));
@@ -22654,6 +22720,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       else hi=mid-1;
     }
     if(best){ try{ window.__acimStorage.set('acim-anchor',best); }catch(e){} } /* V25（I19）*/
+    if(window.__acimReadingHeading)window.__acimReadingHeading.saved(best);
   }
   var saveT;
   window.addEventListener('scroll', function(){
@@ -22673,6 +22740,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   function buildTOC() {
     var headings = Array.from(content.querySelectorAll('h1,h2,h3,h4,h5,h6'));
     headings.forEach(function(h,i){ if(!h.id) h.id='h'+i; });
+    if(window.__acimReadingHeading)window.__acimReadingHeading.init(headings);
 
     /* ── 建立 heading → 祖先對照表，用於 breadcrumb ── */
     var headingAncestors = {}; // id -> {h1text, h2text, h3text}
@@ -22913,14 +22981,16 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         entries.forEach(function(e){
           if(!e.isIntersecting) return;
           var al=links[e.target.id]; if(!al) return;
+          if(window.__acimReadingHeading)window.__acimReadingHeading.observe(e.target.id,e.time);
           if(previousActive && previousActive!==al) previousActive.classList.remove('toc-active');
           al.classList.add('toc-active');
           previousActive=al;
-          /* ── IntersectionObserver 只負責高亮 + breadcrumb + 捲動 TOC ──
+          /* ── IntersectionObserver 只負責高亮 + breadcrumb；目前位置按鈕負責捲動 TOC ──
              不自動展開任何 toc-children：展開/收合由使用者點箭頭決定，
              避免捲動時多個 heading 同時進入視窗造成多群組被意外展開。 */
-          var wr=tocWrapper.getBoundingClientRect(), lr=al.getBoundingClientRect();
-          if(lr.top<wr.top||lr.bottom>wr.bottom) al.scrollIntoView({block:'nearest',behavior:'smooth'});
+          /* V30.4: the observer tracks position without measuring or scrolling
+             the sidebar. The explicit Currently reading button locates it.
+             Hidden drawers and theme/font changes must not force this layout. */
           /* breadcrumb：組合 h1 › h2 › h3 路徑 */
           var anc=headingAncestors[e.target.id];
           var ct=document.getElementById('crumb-text');
@@ -22993,7 +23063,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       sc=document.getElementById('toc-search-clear'),
       sr=document.getElementById('toc-search-results'),
       sb=document.getElementById('search-count-badge'), st;
-  var _indexJob=null, _searchToken=0, _hlAbort=null, _paintJob=null;
+  var _indexJob=null, _searchToken=0, _hlAbort=null, _paintJob=null, _matchJob=null, _focusIndexJob=null;
   var _composing=false, _lastResults=[], _lastRx=null, _shownCount=0;
   var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight);
   var _searchRanges=Object.create(null);
@@ -23024,7 +23094,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           if(!t) continue;
           /* Keep legacy siN anchors and bookmark compatibility unchanged. */
           if(!n.id) n.id='si'+i;
-          job.entries.push({id:n.id,node:n,text:t,lower:t.toLowerCase()});
+          job.entries.push({id:n.id,node:n,text:t,lower:t.toLowerCase(),inNote:!!n.closest('#acim-footnotes-container')});
         }
         stats.indexCount=job.entries.length;
         if(job.cursor<job.nodes.length){stats.indexYieldCount++;schedule();}
@@ -23071,6 +23141,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   }
   function cancelPending(){
     _searchToken++;clearTimeout(st);
+    if(_matchJob){_matchJob.abort();_matchJob=null;}
     if(_paintJob){_paintJob.abort();_paintJob=null;}
     if(_hlAbort){_hlAbort.abort();_hlAbort=null;}
   }
@@ -23276,16 +23347,20 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       clearHighlight(function(){if(token===_searchToken)document.dispatchEvent(new Event('acim:search-cleared'));});
       return;
     }
-    stats.searchState='searching';sr.setAttribute('aria-busy','true');
+    stats.searchState='searching';sb.dataset.searchState='searching';sr.setAttribute('aria-busy','true');
     sb.style.display='block';sb.textContent='\u6b63\u5728\u641c\u5c0b\u2026';
     function execute(){
       if(token!==_searchToken)return;
       var needle=k.toLowerCase(),results=[];
-      searchIndex.forEach(function(en){if(en.lower.includes(needle))results.push(en);});
-      /* V30：範圍篩選（全部／內文／註文），由 #acim-search-scope 設定 */
-      var _scope=document.body.getAttribute('data-acim-search-scope')||'all';
-      if(_scope&&_scope!=='all'){var _wantNote=(_scope==='note');results=results.filter(function(en){
-        return !!(en.node&&en.node.closest&&en.node.closest('#acim-footnotes-container'))===_wantNote;});}
+      var scopeBox=document.getElementById('acim-search-scope');
+      var scope=scopeBox?scopeBox.getAttribute('data-active-scope')||'all':'all';
+      /* V30.4: bounded, cancellable matching; note ancestry is cached in the index.
+         A new query/scope cancels this job before it can publish stale results. */
+      _matchJob=runChunks(searchIndex,600,function(en){
+        if(en.lower.includes(needle)&&(scope==='all'||en.inNote===(scope==='note')))results.push(en);
+      },function(){
+      if(token!==_searchToken)return;
+      _matchJob=null;
       _lastResults=results;_lastRx=new RegExp(esc(k),'gi');stats.resultCount=results.length;
       if(results.length){
         renderBatch(results,new RegExp(esc(k),'gi'),0,false);
@@ -23311,6 +23386,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           else complete();
         });
       });
+      });
     }
     if(searchIndex)execute();
     else{sb.textContent='\u6b63\u5728\u5efa\u7acb\u5168\u6587\u7d22\u5f15\u2026';buildIndex(execute,true);}
@@ -23322,7 +23398,17 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(si.value.trim().length<2){doSearch(si.value);return;}
     st=setTimeout(function(){doSearch(si.value);},SEARCH_DELAY);
   }
-  si.addEventListener('focus',function(){if(!searchIndex)buildIndex(null,true);});
+  /* V30.4: let native input focus/keyboard presentation precede optional indexing.
+     Typing and Enter still request the same shared index immediately when needed. */
+  si.addEventListener('focus',function(){
+    if(!searchIndex&&!_focusIndexJob)_focusIndexJob=afterPresentation(function(){
+      _focusIndexJob=null;
+      if(document.activeElement===si&&!searchIndex)buildIndex(null,true);
+    });
+  });
+  si.addEventListener('blur',function(){
+    if(_focusIndexJob){_focusIndexJob.abort();_focusIndexJob=null;}
+  });
   si.addEventListener('compositionstart',function(){_composing=true;cancelPending();});
   si.addEventListener('compositionend',function(){_composing=false;scheduleSearch();});
   si.addEventListener('input',function(e){
@@ -23333,7 +23419,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(e.key==='Enter'&&!_composing&&!e.isComposing&&e.keyCode!==229){e.preventDefault();doSearch(si.value);}
   });
   sc.addEventListener('click',function(){
-    _composing=false;si.value='';sc.style.display='none';doSearch('');si.focus();
+    _composing=false;si.value='';sc.style.display='none';doSearch('');
+    if(document.activeElement!==si)si.focus({preventScroll:true});
   });
 
   /* sidebar-block-placeholder */
@@ -26146,7 +26233,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       if(d.warming){paint();return;}
       if(navigator.onLine===false){paint('目前離線，請恢復連線後再補齊資料。');return;}
       paint('正在保存離線資料；目前頁面可繼續閱讀。');
-      return request('PREPARE_OFFLINE',35000);
+      /* Worker allows 60 s for saving; include response/verification margin. */
+      return request('PREPARE_OFFLINE',75000);
     }).catch(function(){
       if(currentEpoch===epoch){latest=null;paint('尚未確認保存結果，請確認連線後重新檢查。');}
     }).finally(function(){
@@ -26174,6 +26262,130 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   sw.ready.then(function(){if(!latest)check(true);}).catch(function(){paint('離線保存尚未就緒，請稍後重新檢查。');});
 })();
 </script>
+<script id="acim-v304-touch-actions">
+(function(){
+  'use strict';
+  /* V30.4 extends the S3 touch policy to sidebar actions. Native editors,
+     selects, sliders and file pickers keep their browser behavior. No focus,
+     layout read, timer, synthetic click or book mutation is made on touch. */
+  var sidebar=document.getElementById('sidebar-toc');
+  var panel=document.getElementById('sidebar-settings-panel');
+  var navigation=document.getElementById('sidebar-navigation');
+  var toggle=document.getElementById('sidebar-settings-toggle');
+  var search=document.getElementById('toc-search-input');
+  var tools=document.getElementById('pwa-tools');
+  if(!sidebar||!panel||!toggle)return;
+  var nativeSelector='input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="combobox"],[role="slider"]';
+  var actionSelector='button,a[href],[role="button"]';
+  var floatIds=['btn-fup','btn-fdn','btn-dark','btn-toc','btn-top'];
+  var pending=null,handoff=null,composing=false;
+  function nativeControl(node){return !!(node&&node.closest&&node.closest(nativeSelector));}
+  function safeOrigin(node){
+    if(!node||!node.isConnected||nativeControl(node))return false;
+    if(node===document.body||node===document.documentElement||node===toggle)return true;
+    return !!((sidebar.contains(node)&&node.matches&&node.matches(actionSelector))||
+      (tools&&tools.contains(node)&&node.tagName==='BUTTON'));
+  }
+  /* Used by S3 as well: a new sidebar button must not invalidate its guard. */
+  window.__acimSidebarTouchOrigin=safeOrigin;
+  if(!window.PointerEvent)return;
+  function clear(){pending=null;handoff=null;}
+  function otherPanelOpen(){
+    var bm=document.getElementById('bm-panel'),fn=document.getElementById('footnote-bar');
+    var share=document.getElementById('acim-spanel');
+    return !!((bm&&bm.classList.contains('bm-open'))||
+      (fn&&(fn.classList.contains('open')||fn.classList.contains('fn-visible')))||
+      (share&&share.style.display!=='none'));
+  }
+  function sidebarVisible(){return sidebar.style.display!=='none'&&
+    (window.innerWidth>768||sidebar.classList.contains('mobile-open'));}
+  function actionTarget(node){
+    if(!node||!node.closest||nativeControl(node))return null;
+    var target=node.closest(actionSelector);
+    if(target&&target!==toggle&&!target.disabled&&target.getAttribute('aria-disabled')!=='true'){
+      if(sidebar.contains(target)){
+        if(!sidebarVisible()||target.closest('[hidden]')||
+          (navigation&&navigation.contains(target)&&!panel.hidden))return null;
+        return target;
+      }
+      if(floatIds.indexOf(target.id)>=0)return target;
+    }
+    return node.closest('#chapter-crumb');
+  }
+  function hidesOrigin(target,origin){
+    if(!sidebar.contains(origin))return false;
+    if(target.id==='btn-toc'||target.id==='chapter-crumb')return sidebarVisible();
+    return window.innerWidth<=768&&!!target.closest('#toc-wrapper a');
+  }
+  function keepSearchFocus(target){
+    return !!(target.closest('#acim-search-scope')||
+      (target.id==='toc-search-clear'&&!composing));
+  }
+  document.addEventListener('compositionstart',function(e){if(e.target===search)composing=true;},true);
+  document.addEventListener('compositionend',function(e){if(e.target===search)composing=false;},true);
+  document.addEventListener('pointerdown',function(event){
+    clear();
+    if(event.defaultPrevented||!event.cancelable||event.isPrimary!==true||event.button!==0||
+      (event.pointerType!=='touch'&&event.pointerType!=='pen')||
+      event.ctrlKey||event.altKey||event.metaKey||event.shiftKey||otherPanelOpen())return;
+    var target=actionTarget(event.target),origin=document.activeElement;
+    if(!target||hidesOrigin(target,origin)||
+      !(safeOrigin(origin)||(origin===search&&keepSearchFocus(target))))return;
+    event.preventDefault();
+    if(event.defaultPrevented)pending={target:target,origin:origin,
+      pointerId:event.pointerId,pointerType:event.pointerType};
+  },{capture:true,passive:false});
+  document.addEventListener('pointercancel',clear,{capture:true,passive:true});
+  /* Capture also observes TOC arrows whose existing click handler stops bubbling. */
+  document.addEventListener('click',function(event){
+    var record=pending;pending=null;handoff=null;
+    if(!record||event.defaultPrevented||event.button!==0||!(event.detail>0)||
+      event.ctrlKey||event.altKey||event.metaKey||event.shiftKey||
+      (typeof event.pointerId==='number'&&event.pointerId!==record.pointerId)||
+      (event.pointerType&&event.pointerType!==record.pointerType)||
+      actionTarget(event.target)!==record.target||document.activeElement!==record.origin||
+      otherPanelOpen())return;
+    handoff=record;
+  },true);
+  document.addEventListener('focusin',function(event){
+    var record=pending||handoff;if(record&&event.target!==record.origin)clear();
+  },{passive:true});
+  window.addEventListener('blur',clear,{passive:true});
+  document.addEventListener('visibilitychange',function(){if(document.hidden)clear();},{passive:true});
+  function keyboardTarget(target){
+    if(target.id==='chapter-crumb')return document.getElementById('btn-toc');
+    if(sidebar.contains(target)){
+      if(!sidebarVisible())return document.getElementById('btn-toc');
+      if((panel.contains(target)&&panel.hidden)||
+        (navigation&&navigation.contains(target)&&!panel.hidden)||target.disabled)return toggle;
+      if(target.id==='toc-search-clear'&&target.style.display==='none')return search;
+    }
+    return target;
+  }
+  document.addEventListener('keydown',function(event){
+    pending=null;
+    var record=handoff;
+    if(!record)return;
+    if(!record.origin.isConnected||document.activeElement!==record.origin||
+      event.target!==record.origin||otherPanelOpen()){clear();return;}
+    if(event.defaultPrevented||event.isComposing||event.keyCode===229||
+      event.ctrlKey||event.altKey||event.metaKey)return;
+    if(event.key!=='Tab'&&event.key!=='Escape'){
+      if(!/^(Shift|Control|Alt|Meta)$/.test(event.key))clear();
+      return;
+    }
+    if(event.key==='Escape'&&event.shiftKey)return;
+    clear();
+    if(event.key==='Escape'){
+      if(!panel.hidden){event.preventDefault();event.stopPropagation();toggle.click();}
+      return;
+    }
+    var target=keyboardTarget(record.target);
+    if(target&&target.isConnected&&!target.disabled&&target!==document.activeElement)
+      target.focus({preventScroll:true});
+  },true);
+})();
+</script>
 <script id="acim-settings-s3">
 (function(){
   'use strict';
@@ -26188,6 +26400,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     document.getElementById('btn-fup'),document.getElementById('btn-fdn'),
     document.getElementById('btn-dark'),document.getElementById('btn-toc')];
   function clearState(){pending=null;handoff=null;}
+  function safeOrigin(origin){
+    return typeof window.__acimSidebarTouchOrigin==='function'
+      ?window.__acimSidebarTouchOrigin(origin):origins.indexOf(origin)>=0;
+  }
   function otherPanelOpen(){
     var bookmarks=document.getElementById('bm-panel');
     var footnotes=document.getElementById('footnote-bar');
@@ -26205,7 +26421,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   }
   function sameSafeOrigin(record){
     return !!(record&&record.origin&&record.origin.isConnected&&
-      origins.indexOf(record.origin)>=0&&document.activeElement===record.origin&&
+      safeOrigin(record.origin)&&document.activeElement===record.origin&&
       !panel.contains(record.origin));
   }
   // A local bridge, read only by the existing settings click handler before
@@ -26226,7 +26442,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
        event.button!==0||(event.pointerType!=='touch'&&event.pointerType!=='pen')||
        event.ctrlKey||event.altKey||event.metaKey||event.shiftKey)return;
     var origin=document.activeElement;
-    if(origins.indexOf(origin)<0||panel.contains(origin)||otherPanelOpen())return;
+    var navigation=document.getElementById('sidebar-navigation');
+    /* Native focus leaves a navigation control before its page is hidden. */
+    if(!safeOrigin(origin)||panel.contains(origin)||
+       (panel.hidden&&navigation&&navigation.contains(origin))||otherPanelOpen())return;
     event.preventDefault();
     if(event.defaultPrevented){
       pending={origin:origin,pointerId:event.pointerId,pointerType:event.pointerType,
@@ -26630,23 +26849,60 @@ function render(){
 /* ═══ 4) 目錄「目前位置」定位鈕 ═══ */
 function locateInit(){
   var btn=document.getElementById('toc-locate-btn');
-  if(!btn) return;
+  var wrap=document.getElementById('toc-wrapper');
+  if(!btn||!wrap)return;
+  var flashLink=null,flashTimer=null,flashAlternate=false,scrollFrame=null;
+  function clearFlash(){
+    if(flashTimer!==null){clearTimeout(flashTimer);flashTimer=null;}
+    if(flashLink){flashLink.classList.remove('toc-locate-flash','toc-locate-flash-alt');flashLink=null;}
+  }
   btn.addEventListener('click',function(){
-    var h=currentHeading();
-    var link=null;
-    if(h&&h.id) link=document.querySelector('#toc-wrapper .toc-link[data-id="'+h.id+'"]');
-    if(!link) link=document.querySelector('#toc-wrapper .toc-link.toc-active');
-    if(!link){ v30toast('找不到目錄項目'); return; }
-    var wrap=document.getElementById('toc-wrapper');
-    if(wrap&&wrap.scrollTo){
-      var top=link.offsetTop-Math.max(40,(wrap.clientHeight-link.clientHeight)/2);
-      try{ wrap.scrollTo({top:Math.max(0,top),behavior:'smooth'}); }
-      catch(e){ wrap.scrollTop=Math.max(0,top); }
+    /* V30.4: use cached explicit navigation/progress before observer highlighting.
+       An instant jump into a long paragraph need not intersect its heading. */
+    var link=null,position=window.__acimReadingHeading&&window.__acimReadingHeading.get();
+    if(position){
+      var cachedLinks=wrap.querySelectorAll('.toc-link');
+      for(var ci=0;ci<cachedLinks.length;ci++)if(cachedLinks[ci].getAttribute('data-id')===position){link=cachedLinks[ci];break;}
     }
-    link.classList.remove('toc-locate-flash');
-    void link.offsetWidth;
-    link.classList.add('toc-locate-flash');
-    setTimeout(function(){ link.classList.remove('toc-locate-flash'); },1700);
+    if(!link)link=wrap.querySelector('.toc-link.toc-active');
+    if(!link){
+      var anchor=get('acim-anchor');
+      if(anchor){
+        var links=wrap.querySelectorAll('.toc-link');
+        for(var i=0;i<links.length;i++)if(links[i].getAttribute('data-id')===anchor){link=links[i];break;}
+      }
+    }
+    if(!link)link=wrap.querySelector('.toc-link');
+    if(!link){v30toast('目錄尚未就緒，請稍後再試');return;}
+    var p=link.parentElement;
+    while(p&&p!==wrap){
+      if(p.classList.contains('toc-children')&&!p.classList.contains('open')){
+        p.classList.add('open');
+        var row=p.previousElementSibling,arrow=row&&row.querySelector('.toc-arrow');
+        if(arrow){arrow.textContent='▼';arrow.setAttribute('aria-expanded','true');arrow.setAttribute('aria-label','收合章節');}
+        var parentLink=row&&row.querySelector('.toc-link');
+        if(parentLink&&parentLink.getAttribute('data-id'))set('toc-open:'+parentLink.getAttribute('data-id'),'1');
+      }
+      p=p.parentElement;
+    }
+    clearFlash();flashLink=link;flashAlternate=!flashAlternate;
+    link.classList.add(flashAlternate?'toc-locate-flash':'toc-locate-flash-alt');
+    flashTimer=setTimeout(clearFlash,1700);
+    if(scrollFrame!==null)cancelAnimationFrame(scrollFrame);
+    scrollFrame=requestAnimationFrame(function(){
+      scrollFrame=null;
+      if(!link.isConnected||!wrap.contains(link))return;
+      var panel=document.getElementById('sidebar-settings-panel');
+      var sidebar=document.getElementById('sidebar-toc');
+      if(panel&&!panel.hidden)return;
+      if(sidebar&&(sidebar.style.display==='none'||(window.innerWidth<=768&&!sidebar.classList.contains('mobile-open'))))return;
+      /* One read phase, inside the TOC only. scrollTo cannot move book ancestors. */
+      var wr=wrap.getBoundingClientRect(),lr=link.getBoundingClientRect();
+      var top=Math.max(0,wrap.scrollTop+lr.top-wr.top-(wr.height-lr.height)/2);
+      var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      try{wrap.scrollTo({top:top,behavior:reduced?'auto':'smooth'});}
+      catch(e){wrap.scrollTop=top;}
+    });
   });
 }
 
@@ -26735,13 +26991,23 @@ function iosGuide(){
 function searchScopeInit(){
   var box=document.getElementById('acim-search-scope');
   if(!box) return;
+  var scope='all',active=box.querySelector('button[data-scope="all"]');
+  box.setAttribute('data-active-scope',scope);
+  box.querySelectorAll('button[data-scope]').forEach(function(b){
+    b.setAttribute('aria-pressed',b===active?'true':'false');
+  });
   box.addEventListener('click',function(e){
     var b=e.target.closest?e.target.closest('button[data-scope]'):null;
-    if(!b) return;
-    box.querySelectorAll('button').forEach(function(x){ x.classList.toggle('acim-scope-on',x===b); });
-    document.body.setAttribute('data-acim-search-scope',b.getAttribute('data-scope'));
+    if(!b||!box.contains(b))return;
+    var next=b.getAttribute('data-scope');
+    if((next!=='all'&&next!=='body'&&next!=='note')||next===scope)return;
+    if(active){active.classList.remove('acim-scope-on');active.setAttribute('aria-pressed','false');}
+    b.classList.add('acim-scope-on');b.setAttribute('aria-pressed','true');
+    active=b;scope=next;
+    /* Keep the scope state inside the sidebar, away from the book's ancestors. */
+    box.setAttribute('data-active-scope',scope);
     var inp=document.getElementById('toc-search-input');
-    if(inp&&inp.value.trim().length>=2) inp.dispatchEvent(new Event('input')); /* 重跑搜尋 */
+    if(inp&&inp.value.trim().length>=2)inp.dispatchEvent(new Event('input'));
   });
 }
 function secTtsInit(){
