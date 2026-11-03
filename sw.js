@@ -1,18 +1,18 @@
-/* ACIM CE PWA v30.4 — release-bound offline book.
+/* ACIM CE PWA v30.5 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v30.4';
-const RELEASE_ID = 'f96b941a0408b3a4f40f1f3c863cc0d4d9ed016105b25c86e839df40650da430';
+const CACHE_VERSION = 'v30.5';
+const RELEASE_ID = '5fdce08ce0e90481b064ff9bc01efe8942e88b01527e2412d262526d98ee577a';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = '6939e571fe56933b03e0b66136298689f607c17454ed603c24fa82b8f391581c';
+const BOOK_SHA256 = '00614085e56c9c23010475cb51d949bdc3dd66c67af87899594ecc8d13e561f2';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
@@ -101,6 +101,9 @@ const ASSET_SHA256 = {
 let bookVerifiedInWorker = false;
 let bookVerificationGeneration = 0;
 let warmingTask = null;
+let warmingIncludesImages = false;
+let warmingDownloads = false;
+let offlineStatusTask = null;
 let lastWarmError = '';
 let storageError = '';
 let runtimeWriteQueue = Promise.resolve();
@@ -438,7 +441,7 @@ async function countVerifiedAssets(files) {
   }
   return count;
 }
-async function offlineStatus() {
+async function inspectOfflineStatus() {
   const bookReady = !!await cachedBook(true);
   let shellCount = bookReady ? 1 : 0;
   for (const file of CORE_FILES) {
@@ -454,8 +457,27 @@ async function offlineStatus() {
     shellCached: shellCount, shellTotal: CORE_FILES.length + 1,
     fontsCached, fontsTotal: FONT_FILES.length, imagesCached, imagesTotal: IMAGE_FILES.length,
     complete,
-    warming: !!warmingTask, lastWarmError, storageError};
+    warming: warmingDownloads, lastWarmError, storageError};
 }
+
+function offlineStatus() {
+  // Share only an unfinished inspection, never a timed or persisted snapshot.
+  // A later manual check reads and hashes the actual cache again.
+  if (offlineStatusTask) return offlineStatusTask;
+  const task = inspectOfflineStatus();
+  offlineStatusTask = task;
+  const clear = () => { if (offlineStatusTask === task) offlineStatusTask = null; };
+  task.then(clear, clear);
+  return task;
+}
+async function statusAfterSave() {
+  // A check may have started before the save wrote its last resource. Finish
+  // that check, then obtain a new pass so it cannot become our final save result.
+  const earlier = offlineStatusTask;
+  if (earlier) { try { await earlier; } catch (e) {} }
+  return offlineStatus();
+}
+
 async function broadcast(message) {
   try {
     const clients = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
@@ -465,6 +487,9 @@ async function broadcast(message) {
   } catch (e) { /* A closed client does not fail the save job. */ }
 }
 function reply(event, message) {
+  // Concurrent callers and the completion broadcast may share one snapshot.
+  // A request ID belongs to this reply, never to that shared verified result.
+  message = {...message};
   const id = event.data && event.data.requestId;
   if (typeof id === 'number' || (typeof id === 'string' && id.length <= 120)) message.requestId = id;
   try {
@@ -494,51 +519,69 @@ async function repairShell(deadline) {
 }
 async function warmResources(includeImages) {
   if (warmingTask) {
-    await warmingTask;
-    if (!includeImages) return;
-    return warmResources(true); // Recheck: another full-save request may have won.
+    const includesImages = warmingIncludesImages;
+    const status = await warmingTask;
+    if (!includeImages || includesImages) return status;
+    // A full-save request following fonts-only work must still save images.
+    // Concurrent full-save waiters join that one successor, not duplicate it.
+    return warmResources(true);
   }
   const files = includeImages ? FONT_FILES.concat(IMAGE_FILES) : FONT_FILES.slice();
   lastWarmError = '';
   storageError = '';
-  warmingTask = (async () => {
-    const deadline = Date.now() + WARMUP_BUDGET_MS;
-    if (includeImages) {
-      try { await repairShell(deadline); }
-      catch (e) { lastWarmError = e && e.message ? e.message : 'shell-repair'; return; }
-    }
-    let cursor = 0, completed = 0, stop = false;
-    async function worker() {
-      while (cursor < files.length && !stop) {
-        const file = files[cursor++];
-        let error = '';
-        try {
-          const cacheName = FONT_FILES.includes(file) ? FONT_CACHE : RUNTIME_CACHE;
-          if (!await verifyAsset(await readCache(cacheName, BASE + file), file)) {
-            let response = FONT_FILES.includes(file) ? await legacyFont(file) : undefined;
-            if (!response) {
-              const remaining = deadline - Date.now();
-              if (remaining <= 0) throw new Error('warmup-timeout');
-              response = await fetchBounded(BASE + file, Math.min(NETWORK_TIMEOUT_MS, remaining), {cache: 'reload'});
-              if (!response || response.status !== 200) throw new Error('asset-http:' + file);
-              if (!await verifyAsset(response, file)) throw new Error('asset-integrity:' + file);
-            }
-            if (!await storeAsset(file, response)) throw new Error('cache-write');
-          }
-        } catch (e) {
-          error = e && e.message ? e.message : 'asset-download';
-          lastWarmError = error;
-          if (/timeout|Failed to fetch|NetworkError|network|offline/i.test(error) || (e && e.name === 'TypeError')) stop = true;
+  warmingIncludesImages = !!includeImages;
+  warmingDownloads = true;
+  const task = (async () => {
+    try {
+      await (async () => {
+        const deadline = Date.now() + WARMUP_BUDGET_MS;
+        if (includeImages) {
+          try { await repairShell(deadline); }
+          catch (e) { lastWarmError = e && e.message ? e.message : 'shell-repair'; return; }
         }
-        completed++;
-        await broadcast({type: 'ACIM_OFFLINE_PROGRESS', version: CACHE_VERSION, releaseId: RELEASE_ID, completed, total: files.length, resource: file, error, warming: true});
-      }
+        let cursor = 0, completed = 0, stop = false;
+        async function worker() {
+          while (cursor < files.length && !stop) {
+            const file = files[cursor++];
+            let error = '';
+            try {
+              const cacheName = FONT_FILES.includes(file) ? FONT_CACHE : RUNTIME_CACHE;
+              if (!await verifyAsset(await readCache(cacheName, BASE + file), file)) {
+                let response = FONT_FILES.includes(file) ? await legacyFont(file) : undefined;
+                if (!response) {
+                  const remaining = deadline - Date.now();
+                  if (remaining <= 0) throw new Error('warmup-timeout');
+                  response = await fetchBounded(BASE + file, Math.min(NETWORK_TIMEOUT_MS, remaining), {cache: 'reload'});
+                  if (!response || response.status !== 200) throw new Error('asset-http:' + file);
+                  if (!await verifyAsset(response, file)) throw new Error('asset-integrity:' + file);
+                }
+                if (!await storeAsset(file, response)) throw new Error('cache-write');
+              }
+            } catch (e) {
+              error = e && e.message ? e.message : 'asset-download';
+              lastWarmError = error;
+              if (/timeout|Failed to fetch|NetworkError|network|offline/i.test(error) || (e && e.name === 'TypeError')) stop = true;
+            }
+            completed++;
+            await broadcast({type: 'ACIM_OFFLINE_PROGRESS', version: CACHE_VERSION, releaseId: RELEASE_ID, completed, total: files.length, resource: file, error, warming: true});
+          }
+        }
+        await Promise.all(Array.from({length: Math.min(3, files.length)}, worker));
+      })();
+    } finally {
+      // Keep the complete job shareable through its final inspection, while
+      // the returned state accurately says that download work has finished.
+      warmingDownloads = false;
     }
-    await Promise.all(Array.from({length: Math.min(3, files.length)}, worker));
+    const status = await statusAfterSave();
+    await broadcast(status);
+    return status;
   })();
-  try { await warmingTask; }
-  finally { warmingTask = null; }
-  await broadcast(await offlineStatus());
+  warmingTask = task;
+  try { return await task; }
+  finally {
+    if (warmingTask === task) { warmingTask = null; warmingIncludesImages = false; }
+  }
 }
 self.addEventListener('message', event => {
   const type = event.data && event.data.type;
@@ -546,12 +589,13 @@ self.addEventListener('message', event => {
   if (!['GET_OFFLINE_STATUS', 'WARM_FONTS', 'PREPARE_OFFLINE'].includes(type)) return;
   event.waitUntil((async () => {
     try {
-      if (type !== 'GET_OFFLINE_STATUS') await warmResources(type === 'PREPARE_OFFLINE');
-      reply(event, await offlineStatus());
+      const status = type === 'GET_OFFLINE_STATUS'
+        ? await offlineStatus() : await warmResources(type === 'PREPARE_OFFLINE');
+      reply(event, status);
     } catch (e) {
       reply(event, {type: 'ACIM_OFFLINE_STATUS', version: CACHE_VERSION, releaseId: RELEASE_ID, bookReady: false,
         shellReady: false, fontsCached: 0, fontsTotal: FONT_FILES.length, imagesCached: 0, imagesTotal: 4,
-        complete: false, warming: !!warmingTask, lastWarmError: 'status-unavailable', storageError: 'cache-unavailable'});
+        complete: false, warming: warmingDownloads, lastWarmError: 'status-unavailable', storageError: 'cache-unavailable'});
     }
   })());
 });
