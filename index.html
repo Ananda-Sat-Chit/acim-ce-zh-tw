@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v30.2">
+<meta name="acim-version" content="v30.3">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="07fd7a2f85e580f7ea9cc25cd5841e3aeac905a53fb72e14823d1ad2197ac547">
+<meta name="acim-release-id" content="3d1142146358723847789b6cf2cd1301a29485de15f421708c9322e4f1915c11">
 <meta name="acim-build" content="2026-11-04">
-<meta name="acim-build-time" content="00:00">
+<meta name="acim-build-time" content="00:41">
 <meta name="description" content="完整加註版奇蹟課程（CE）繁體中文電子書，含逐章詳細加註，支援離線閱讀。本書為奇蹟課程完整加註版，提供深入的靈性指引。">
 <meta property="og:title"       content="完整加註版奇蹟課程">
 <meta property="og:description" content="奇蹟課程完整加註版（CE）繁體中文，含逐章詳細加註，支援離線閱讀。">
@@ -147,7 +147,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v30.2';
+var ACIM_VERSION = 'v30.3';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -1716,9 +1716,11 @@ ul{margin-bottom:0;}
 }
 @media print{.acim-sec-nav{display:none !important;}}
 
-/* ── V30 P0：手機底部導覽列（五頁籤，浮動按鈕退場）── */
+/* ── V30 P0→V30.3：手機底部導覽列已退場（讀者回饋：底列拖慢側欄開闔
+   與面板切換），手機功能鈕回歸 V29.2 右側浮球 #pwa-tools（同電腦）。
+   以下規則保留但不作用（display:none＋JS 不建構）。── */
 #acim-bottomnav{
-  display:none;position:fixed;left:0;right:0;bottom:0;z-index:10002;
+  display:none !important;position:fixed;left:0;right:0;bottom:0;z-index:10002;
   height:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px));
   padding-bottom:env(safe-area-inset-bottom,0px);
   background:var(--c-sidebar);border-top:1px solid var(--c-border);
@@ -1736,15 +1738,12 @@ ul{margin-bottom:0;}
 #acim-bottomnav button:active{color:var(--c-accent);}
 #acim-bottomnav button.acim-bn-on{color:var(--c-accent);}
 @media(max-width:768px){
-  #acim-bottomnav{display:flex;}
-  #pwa-tools{display:none !important;}
-  #content-area{padding-bottom:calc(130px + env(safe-area-inset-bottom,0px));}
-  #tts-bar{right:10px;bottom:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px) + 10px);}
-  body.fn-open #tts-bar{bottom:calc(42vh + var(--acim-nav-h) + 10px);}
-  #pwa-install-bar{bottom:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px));}
-  #acim-update-toast{bottom:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px) + 12px) !important;}
-  #bm-panel{bottom:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px) + 12px);}
-  #rtabs-bar{top:calc(var(--acim-crumb-h,36px) + 4px);max-width:calc(100vw - 20px);}
+  /* V30.3：bottomnav 手機覆蓋規則全數退場——#pwa-tools 浮球恢復顯示，
+     content-area／tts-bar／bm-panel／install-bar／update-toast 的手機位置
+     自動回退到本檔上方原封保留的 V29.2 手機規則。
+     閱讀分頁的手機錨定規則移至 #rtabs-bar 基底宣告之後（原寫在這裡，
+     被後方基底規則覆蓋，自 V30.2 起即未生效，本版一併修正）。 */
+  #acim-bottomnav{display:none !important;}
 }
 
 /* ── V30：字級／外觀快選單（底部導覽列「字級」頁籤）── */
@@ -1793,6 +1792,11 @@ html.dark-mode #acim-quick-sheet{box-shadow:0 8px 28px rgba(0,0,0,0.5);}
 }
 #rtabs-bar .rtab-add:hover{border-color:var(--c-accent);background:var(--c-bg);}
 #rtabs-bar .rtab:focus-visible,#rtabs-bar .rtab-add:focus-visible{outline:2px solid var(--c-accent);outline-offset:1px;}
+/* V30.3：手機閱讀分頁列錨定麵包屑（36px）下方——原規則在 bottomnav 區塊內，
+   被本基底規則覆蓋（V30.2 起失效、分頁列被麵包屑蓋住），移至基底之後生效 */
+@media(max-width:768px){
+  #rtabs-bar{top:40px;max-width:calc(100vw - 20px);}
+}
 
 /* ── V30 P1：搜尋範圍篩選（全部／內文／註文）── */
 #acim-search-scope{display:flex;gap:4px;padding:7px 2px 2px;}
@@ -1827,16 +1831,8 @@ html.dark-mode #acim-quick-sheet{box-shadow:0 8px 28px rgba(0,0,0,0.5);}
 }
 .acim-backup-row button:focus-visible{outline:2px solid var(--c-accent);outline-offset:1px;}
 
-/* ── V30：手機麵包屑上的「朗讀本節」鈕 ── */
-#crumb-tts{
-  flex-shrink:0;width:26px;height:26px;border-radius:50%;border:none;
-  background:rgba(75,64,122,0.10);color:var(--c-accent);
-  font-size:11px;line-height:1;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  -webkit-tap-highlight-color:transparent;
-}
-#crumb-tts.acim-tts-on{background:var(--c-accent);color:#fff;}
-
+/* ── V30.3：麵包屑「朗讀本節」鈕已隨底部導覽列退場——
+   手機朗讀入口回歸右側浮球 #btn-sec-tts（與電腦同一顆）。── */
 /* ── V30：桌面浮動「朗讀本節」啟動態 ── */
 #btn-sec-tts.pwa-btn-on{background:#C17324 !important;}
 
@@ -1910,7 +1906,6 @@ html.dark-mode sup.fn-badge.acim-fn-locate{
 <div id="chapter-crumb">
   <span style="font-size:14px;color:#4B407A;flex-shrink:0;">☰</span>
   <span id="crumb-text">目錄</span>
-  <button id="crumb-tts" type="button" title="朗讀本節" aria-label="朗讀本節">▶</button>
 </div>
 
 <div id="book-container">
@@ -1927,7 +1922,7 @@ html.dark-mode sup.fn-badge.acim-fn-locate{
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 00:00</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 00:41</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -26764,7 +26759,7 @@ function secTtsInit(){
 function init(){
   try{ buildSecNav(); }catch(e){ console.warn('[V30] sec-nav:',e); }
   try{ buildGlossaryNav(); }catch(e){ console.warn('[V30] glossary-nav:',e); }
-  try{ buildBottomNav(); }catch(e){ console.warn('[V30] bottom-nav:',e); }
+  /* V30.3：buildBottomNav 不再呼叫——手機回歸 V29.2 右側浮球（卡頓修復） */
   try{ rtabsInit(); }catch(e){ console.warn('[V30] rtabs:',e); }
   try{ locateInit(); }catch(e){ console.warn('[V30] locate:',e); }
   try{ backupInit(); }catch(e){ console.warn('[V30] backup:',e); }
