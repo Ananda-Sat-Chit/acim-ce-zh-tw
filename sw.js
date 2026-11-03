@@ -1,24 +1,24 @@
-/* ACIM CE PWA v28 — release-bound offline book.
+/* ACIM CE PWA v29.1 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v28';
-const RELEASE_ID = '75e812f4b710a48120d07294aff82859a3a8e1c035d31e1c1417e298c78affba';
+const CACHE_VERSION = 'v29.1';
+const RELEASE_ID = '88eeee2329555e7195699e1ecb45c9f0982db7a5b66aefa163ef812587dbe6c2';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = 'da7b30d11b46ed3c99b0ce41b74d667026e10fc6df8139e0e15da61f3791fec1';
+const BOOK_SHA256 = 'aae7ff77a512afa8634c9137229755dd81d227186ae76079fd798f0ce5d20491';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
 const OLD_FONT_CACHES = ['acim-fonts-v22', 'acim-fonts-v23', 'acim-fonts'];
 const CORE_FILES = ['index.htm', 'offline.html', 'manifest.json', 'favicon.ico'];
-const FONT_FILES = Array.from({length: 8}, (_, i) => 'fonts/lxgw-slice' + i + '.woff2');
+const FONT_FILES = ['fonts/ntc-regular.woff2', 'fonts/ntc-bold.woff2', 'fonts/wenkai-full.woff2'];
 const IMAGE_FILES = ['index.files/image001.webp', 'index.files/image002.webp', 'index.files/image003.jpg', 'index.files/ce-manuscript.webp'];
 const RUNTIME_FILES = IMAGE_FILES.concat(['icon-512.png', 'pwa-192x192.png', 'screenshot-og.png']);
 const RUNTIME_MAX_ENTRIES = 24;
@@ -27,16 +27,11 @@ const WARMUP_BUDGET_MS = 25000;
 const ASSET_SHA256 = {
   'index.htm': '60241fbe8694050be271bc1cd8d18b49eff0f530018acfc8e8ab50c936bd42d0',
   'offline.html': 'f102e49019429b6884091b8f96b32ef23ad2bfb1bed16953156decbf0d0c34ff',
-  'manifest.json': '5759df0802261d01c159d03dbf9fb7a078370cd2e9751c5f9f861d178b288caf',
+  'manifest.json': '3a209276dff02d2493d528e81fadb28dc73d941eceb36e3e0c7ff1dc9403c9e3',
+  'fonts/ntc-regular.woff2': '8e59977df55e6d8d656d34dcad8cbf46785db4999b0e4127f5fc9e346f2626bb',
+  'fonts/ntc-bold.woff2': '21946e675ea5f82793ad6bcfebab1d8a41175565d296c48510e8768722d37625',
+  'fonts/wenkai-full.woff2': '063dbaf57f0554a74301c637fa9099f2c622efbb4f44b2c1f3c380424c58649f',
   'favicon.ico': '0c3efbc9e430c0acef49275c9f6e4a5dbd8bc4ae9baf3432212cf59c87351fa4',
-  'fonts/lxgw-slice0.woff2': 'f9a66ac4804aee452b472434b74e31a3acb61f602b705dc4ef497931c8c45742',
-  'fonts/lxgw-slice1.woff2': '54ec244c37be1b213d080d4ddb1a1b9fe47094854e1d2cf228ff4b7e137e0cb9',
-  'fonts/lxgw-slice2.woff2': 'b6edd6cc5b04920e22994c6f2cb9b1d6f8dcec995f8deb229d0b26af2784de4d',
-  'fonts/lxgw-slice3.woff2': '6f9cb4f61ca805364aaee7cee0d09c084045f6e850db7c6d367e457daeb04ff9',
-  'fonts/lxgw-slice4.woff2': 'd03a9d378fc34aa8dd8dfe327a241a4f3df891a8cb287c8ce6647dd82151a58c',
-  'fonts/lxgw-slice5.woff2': '98e9bcaa43888e4752d19deb75bbd14cd287bb98314fe94564afe273a5efb881',
-  'fonts/lxgw-slice6.woff2': 'bc9a42b889da557c7ab33d83169cc66bc51fd3ad0067fb6d2aabb61dc142d2c0',
-  'fonts/lxgw-slice7.woff2': 'a61224e9e375c127ed3f0d744c30eca038a08c0bd1542497fbed99621fb5a584',
   'index.files/image001.webp': '9a4295437a5cf3a57cdd3dfa73a6b1db65baf9016781643e8592b19a39fde374',
   'index.files/image002.webp': 'c4bfe8793c7811d8a0d6f9cc7ed152c8a38da36f69ffb410aa944c9554928395',
   'index.files/image003.jpg': 'c3189d69a3c2df5250db3575e15374c72e5c8e957d8d272eab0765a50e228675',
@@ -481,7 +476,7 @@ self.addEventListener('message', event => {
       reply(event, await offlineStatus());
     } catch (e) {
       reply(event, {type: 'ACIM_OFFLINE_STATUS', version: CACHE_VERSION, releaseId: RELEASE_ID, bookReady: false,
-        shellReady: false, fontsCached: 0, fontsTotal: 8, imagesCached: 0, imagesTotal: 4,
+        shellReady: false, fontsCached: 0, fontsTotal: 3, imagesCached: 0, imagesTotal: 4,
         complete: false, warming: !!warmingTask, lastWarmError: 'status-unavailable', storageError: 'cache-unavailable'});
     }
   })());
