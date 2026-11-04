@@ -7,7 +7,7 @@
 <meta name="acim-ui-baseline" content="V29-S1">
 <meta name="acim-release-id" content="4f875d7673d863e069d063dc71f03efecda66388a1a9e1f9e8f4ddfe01c4cd0d">
 <meta name="acim-build" content="2026-11-04">
-<meta name="acim-build-time" content="17:03">
+<meta name="acim-build-time" content="17:14">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -932,9 +932,12 @@ html.dark-mode #footnote-bar{background:#423A66;border-top:2px solid #B4AED6;}
 #fn-num{flex-shrink:0;font-size:13px;font-weight:bold;color:#fff;min-width:28px;padding-top:2px;}
 #fn-text{flex-grow:1;line-height:1.75;font-size:14px;}
 #fn-text *{color:#F1EDE4!important;background:transparent!important;}
-/* V30.8: footnote highlight must override the popup reset (which uses !important). */
-#fn-text mark.search-hl{background:#ffe066!important;color:#1F1A2E!important;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
-html.dark-mode #fn-text mark.search-hl{background:#b18a22!important;color:#fff!important;}
+/* V30.8：彈窗內的搜尋命中 mark 需保持高亮可見——上一行的去底色規則
+   （!important）自 V30.1 起一直蓋掉 mark.search-hl，命中字串在彈窗內
+   完全隱形（電腦版與手機皆然，讀者回報「註文框內找到的字串不會Highlight」）。
+   以更高專一性（ID+class）+ !important 奪回，亮／暗雙配色與脈衝動畫對齊。 */
+#fn-text mark.search-hl{color:#1F1A2E!important;background:#ffe066!important;animation:hl-pulse 1.2s ease-out;}
+html.dark-mode #fn-text mark.search-hl{color:#fff!important;background:#b18a22!important;animation-name:hl-pulse-dark;}
 /* 保留標楷體等明確設定的 font-family，不強制覆蓋 */
 #fn-text [style*="標楷體"],
 #fn-text [style*="DFKai-SB"],
@@ -2098,7 +2101,7 @@ html.dark-mode sup.fn-badge.acim-fn-locate{
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 17:03</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 17:14</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -22692,9 +22695,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     settingsToggle.addEventListener('keydown',closeSettingsOnEscape);
     settingsPanel.addEventListener('keydown',closeSettingsOnEscape);
     document.getElementById('toc-search-input').addEventListener('focus',function(){
-      /* V30.8: leave the search results and badge intact on normal focus.
-         Closing an actually open settings panel remains supported. */
-      if(!settingsPanel.hidden)setSidebarSettings(false,false);
+      setSidebarSettings(false,false);
+      /* V30.8：聚焦搜尋欄＝鍵盤即將彈出，先退休全文高亮讓重算變輕
+         （pin 保留；新搜尋會重新標示）。 */
+      retireSearchHighlights();
     });
   }
 
@@ -22713,6 +22717,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     setSidebarSettings(false,false);
     if(sidebarOpenFrame!==null){cancelAnimationFrame(sidebarOpenFrame);sidebarOpenFrame=null;}
     if(!sidebar.classList.contains('mobile-open')&&overlay.style.display==='none')return;
+    /* V30.8：手機收起抽屜＝進入閱讀模式，退休全文高亮（pin 保留），
+       下次點搜尋欄／鍵盤彈出不再背負高亮重算。 */
+    retireSearchHighlights();
     sidebar.classList.remove('mobile-open');
     overlay.style.opacity='0';
     if(sidebarHideTimer!==null)clearTimeout(sidebarHideTimer);
@@ -23313,10 +23320,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
      style invalidation（聚焦搜尋欄、字級、明暗切換）都需全書調解高亮繪製，
      造成讀者回報的「點搜尋欄卡頓 6~8 秒」。上限 300 處已涵蓋一般查詢；
      超出部分結果列表仍完整、點擊跳轉仍精準（實體 mark 保證點擊命中可見）。 */
-  /* V30.8: mobile keyboards and font-size buttons can invalidate every registered
-     Custom Highlight Range. Keep the full list of search results but restrict
-     background ranges on narrow screens; an opened result is always marked on demand. */
-  var ACIM_HL_MAX=(window.matchMedia&&window.matchMedia('(max-width:768px)').matches)?72:300,_hlCapped=false;
+  /* V30.8：_hlMarks 統計 mark 路徑（無 CSS Custom Highlight 的手機）在位量，
+     與 native 同受上限；上限檢查見 highlightAll 的 mark 分支。 */
+  var ACIM_HL_MAX=300,_hlCapped=false,_hlMarks=0;
   var stats=window.__acimV20Stats={indexState:'pending',indexCount:0,
     indexYieldCount:0,ttsButtons:0,searchState:'idle',query:'',resultCount:0};
   /* Retain the previous diagnostics hook used by the lazy TTS module. */
@@ -23514,14 +23520,6 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   function clearHighlight(done){
     if(_hlAbort){_hlAbort.abort();_hlAbort=null;}
     _searchRanges=Object.create(null);
-    /* V30.8: the open popup is cloned and is not inside #content-area. */
-    var popup=document.getElementById('fn-text');
-    if(popup){
-      var oldPopup=popup.querySelectorAll('mark.search-hl');
-      for(var i=oldPopup.length-1;i>=0;i--){
-        var m=oldPopup[i];if(m.parentNode)m.parentNode.replaceChild(document.createTextNode(m.textContent),m);
-      }
-    }
     if(_nativeSearchHighlight){
       CSS.highlights.delete('acim-search');
       /* V30.1：註文條目為 mark 路徑，native 清除時須一併還原 */
@@ -23540,11 +23538,34 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     },done);
   }
 
+  /* ══ V30.8：搜尋高亮退休（手機專用省力閥） ══
+     無 CSS Custom Highlight API 的手機走實體 mark 路徑；高亮在位時，鍵盤
+     彈出／任何 style invalidation 都要為全書高亮重算繪製（回報 6~8 秒）。
+     除上限 300 外，於「搜尋欄聚焦」與「手機抽屜收起」時退休全文高亮：
+     native 註冊即時刪除、實體 mark 分批還原（不阻塞輸入）；最後一次點擊
+     命中的 .search-hl-pin 保留，落點仍可見。新搜尋會重新標示。 */
+  function retireSearchHighlights(){
+    if(window.innerWidth>768)return;
+    if(_nativeSearchHighlight)CSS.highlights.delete('acim-search');
+    _searchRanges=Object.create(null);
+    if(_hlAbort){_hlAbort.abort();_hlAbort=null;}
+    var _rm=Array.prototype.slice.call(content.querySelectorAll('mark.search-hl:not(.search-hl-pin)'));
+    if(_rm.length){
+      _hlAbort=runChunks(_rm,300,function(mk){
+        if(mk.parentNode) mk.parentNode.replaceChild(document.createTextNode(mk.textContent),mk);
+      },null);
+    }
+    if(sb&&sb.hidden===false&&sb.dataset.searchState==='searching'){
+      sb.textContent='\u5171\u627e\u5230 '+stats.resultCount+' \u500b\u6bb5\u843d\uff08\u6a19\u793a\u5df2\u66ab\u6642\u6536\u8d77\uff09';
+      sb.dataset.searchState='complete';sb.setAttribute('aria-busy','false');
+    }
+  }
+
   /* Build ranges across inline bold/underline boundaries without changing
      the original text. Fallback marks preserve each inline parent. */
   function highlightAll(rx,results,done){
     if(_hlAbort){_hlAbort.abort();_hlAbort=null;}
-    _hlCapped=false;
+    _hlCapped=false;_hlMarks=0;
     var candidates=new Set(results.map(function(en){return en.node;}));
     var roots=results.filter(function(en){
       var p=en.node.parentElement;
@@ -23591,11 +23612,16 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
             if(owner===root)break;owner=owner.parentElement;
           }
         }else{
+          /* V30.8：mark 路徑同受 ACIM_HL_MAX 上限——讀者實機（無 native API）
+             原本無上限，912 個 mark 令鍵盤彈出等任何一次 style invalidation
+             都需為全書高亮重算繪製，點搜尋欄卡頓 6~8 秒。 */
+          if(_hlMarks+(endNode-startNode+1)>ACIM_HL_MAX){_hlCapped=true;break;}
           for(var j=startNode;j<=endNode;j++){
             var offset=j?ends[j-1]:0,list=segments.get(nodes[j])||[];
             list.push([Math.max(start,offset)-offset,Math.min(end,ends[j])-offset]);
             segments.set(nodes[j],list);
           }
+          _hlMarks+=endNode-startNode+1;
         }
       }
       if(segments)segments.forEach(function(list,node){
@@ -23641,118 +23667,122 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     return {nodes:nodes,pieces:pieces};
   }
   function materializeFirstHit(root,rx){
-    if(!root||!root.isConnected)return null;
-    var existing=root.querySelector('mark.search-hl');
-    if(existing)return existing;
+    if(!root||!root.isConnected)return;
+    if(root.querySelector('mark.search-hl'))return;
     var parts=acimHlTextNodes(root);
-    if(!parts.nodes.length)return null;
+    if(!parts.nodes.length)return;
     var expr=new RegExp(rx.source.replace(/ /g,'\\s+'),'gi');
     var text=parts.pieces.join(''),m=expr.exec(text);
-    if(!m||!m[0].length)return null;
+    if(!m||!m[0].length)return;
     var start=m.index,end=start+m[0].length,i=0,acc=0,seg=[];
     while(i<parts.nodes.length&&acc<end){
       var len=parts.pieces[i].length,s=Math.max(start,acc)-acc,e=Math.min(end,acc+len)-acc;
       if(e>s)seg.push([parts.nodes[i],s,e]);
       acc+=len;i++;
     }
-    var first=null;
     for(i=seg.length-1;i>=0;i--){
       var node=seg[i][0],val=node.nodeValue,s2=seg[i][1],e2=seg[i][2];
       if(e2<=s2)continue;
       var frag=document.createDocumentFragment();
       if(s2>0)frag.appendChild(document.createTextNode(val.slice(0,s2)));
-      var mk=document.createElement('mark');mk.className='search-hl';
+      var mk=document.createElement('mark');mk.className='search-hl search-hl-pin';
       mk.textContent=val.slice(s2,e2);frag.appendChild(mk);
       if(e2<val.length)frag.appendChild(document.createTextNode(val.slice(e2)));
       node.parentNode.replaceChild(frag,node);
-      first=mk; /* reversed insertion means the first segment is assigned last */
     }
-    return first;
   }
   function highlightPopupNow(rx){
     var box=document.getElementById('fn-text');
     if(!box||!rx||!rx.source)return;
-    /* Work on the popup clone only. Unwrap inherited marks before painting,
-       otherwise a single inherited mark prevents the rest from highlighting. */
-    var old=Array.prototype.slice.call(box.querySelectorAll('mark.search-hl'));
-    old.forEach(function(m){
-      if(m.parentNode)m.parentNode.replaceChild(document.createTextNode(m.textContent),m);
-    });
-    box.normalize();
-    var parts=acimHlTextNodes(box),nodes=parts.nodes,pieces=parts.pieces;
-    if(!nodes.length)return;
+    if(box.querySelector('mark.search-hl'))return;
     var expr=new RegExp(rx.source.replace(/ /g,'\\s+'),'gi');
-    var text=pieces.join(''),endPositions=[],total=0,segments=new Map(),match,startNode=0,endNode=0;
-    pieces.forEach(function(piece){total+=piece.length;endPositions.push(total);});
-    while((match=expr.exec(text))!==null){
-      if(!match[0].length){expr.lastIndex++;continue;}
-      var start=match.index,end=start+match[0].length;
-      while(startNode<endPositions.length-1&&endPositions[startNode]<=start)startNode++;
-      if(endNode<startNode)endNode=startNode;
-      while(endNode<endPositions.length-1&&endPositions[endNode]<end)endNode++;
-      for(var i=startNode;i<=endNode;i++){
-        var at=i?endPositions[i-1]:0,lo=Math.max(start,at)-at,hi=Math.min(end,endPositions[i])-at;
-        if(hi<=lo)continue;
-        var list=segments.get(nodes[i])||[];list.push([lo,hi]);segments.set(nodes[i],list);
-      }
+    var walker=document.createTreeWalker(box,NodeFilter.SHOW_TEXT),nd;
+    var todo=[];
+    while((nd=walker.nextNode())){
+      if(nd.parentElement&&nd.parentElement.closest('script,style,.tts-btn,.sent-num,sup.fn-badge,mark.search-hl'))continue;
+      var v=nd.nodeValue||'';
+      if(v)todo.push(nd);
     }
-    segments.forEach(function(ranges,node){
-      if(!node.parentNode)return;
-      var value=node.nodeValue||'',frag=document.createDocumentFragment(),last=0;
-      ranges.forEach(function(range){
-        var begin=Math.max(last,range[0]),end=range[1];
-        if(end<=begin)return;
-        if(begin>last)frag.appendChild(document.createTextNode(value.slice(last,begin)));
+    todo.forEach(function(node){
+      var val=node.nodeValue;if(!val)return;
+      expr.lastIndex=0;
+      if(!expr.test(val))return;
+      expr.lastIndex=0;
+      var frag=document.createDocumentFragment(),last=0,m2;
+      while((m2=expr.exec(val))!==null){
+        if(!m2[0].length){expr.lastIndex++;continue;}
+        if(m2.index>last)frag.appendChild(document.createTextNode(val.slice(last,m2.index)));
         var mk=document.createElement('mark');mk.className='search-hl';
-        mk.textContent=value.slice(begin,end);frag.appendChild(mk);last=end;
-      });
-      if(last<value.length)frag.appendChild(document.createTextNode(value.slice(last)));
+        mk.textContent=m2[0];frag.appendChild(mk);
+        last=m2.index+m2[0].length;
+      }
+      if(!last)return;
+      if(last<val.length)frag.appendChild(document.createTextNode(val.slice(last)));
       node.parentNode.replaceChild(frag,node);
     });
   }
-  /* V30.7：搜尋命中跳轉的獨立校正器。
-     __acimNav 的 scroll 取消在 content-visibility 懶渲染下會被「渲染位移」
-     觸發的捲動事件誤殺（跳轉後目標 section 首次渲染改變上方高度，瀏覽器
-     自動調整 scrollY → scroll 事件 → token 取消），90/260/700ms 的校正
-     pass 全部失效，落點停在離命中數百~千 px 處（高亮也一併落在視窗外）。
-     此校正器不依賴 nav token：各 pass 重新量測目標即時位置收斂；
-     任一真實使用者手勢（滾輪／觸控／按鍵）立即停止。 */
-  function acimSearchCorrect(target,margin,fallback){
-    if(!target)return;
-    var stops=['wheel','touchstart','touchmove','pointerdown','keydown'];
-    var timers=[],stopped=false;
-    function stop(){
-      if(stopped)return;
-      stopped=true;
-      timers.forEach(clearTimeout);timers.length=0;
-      stops.forEach(function(n){window.removeEventListener(n,stop,true);});
+  /* ══ V30.8：跳轉量測與校正 ══
+     acimRevealSection：content-visibility 懶渲染下，未渲染子樹的
+     getBoundingClientRect 回報佔位位置（含 32,000px 級誤差，實測「天國加速」
+     註 167 命中），是「部分命中點了不跳轉／跳錯位置」的主因。量測前把目標
+     section.csec 強制渲染（inline content-visibility:visible），位置立即精準；
+     校正結束後還原 auto，懶渲染照常運作。
+     acimSearchCorrect：各 pass 重新量測目標即時位置收斂，並帶代次——
+     1) 新跳轉立即作廢前一個校正（含還原其強制渲染）：V30.7 觀測到忙碌主
+        執行緒上延遲的舊 pass 會在點擊下一筆後把落點拉走；
+     2) 任一真實使用者手勢（滾輪／觸控／按鍵）作廢所有 pass——舊版 pass
+        會在使用者捲動後把畫面拉回，與讀者搶捲軸；
+     3) 完成或作廢皆還原懶渲染。 */
+  var _acimCorrectGen=0,_acimCorrectReveal=null;
+  function acimRevealSection(el){
+    var sec=el&&el.closest?el.closest('section.csec'):null;
+    if(!sec||!sec.isConnected)return null;
+    if(getComputedStyle(sec).contentVisibility==='visible')return null;
+    var prev=sec.style.contentVisibility||'';
+    sec.style.contentVisibility='visible';
+    return {sec:sec,prev:prev};
+  }
+  function acimSearchCorrect(el,margin,reveal){
+    if(!el||!el.isConnected)return;
+    _acimCorrectGen++;
+    if(_acimCorrectReveal&&_acimCorrectReveal!==reveal){
+      _acimCorrectReveal.sec.style.contentVisibility=_acimCorrectReveal.prev;
     }
-    function resolve(){
-      var node=typeof target==='function'?target():target;
-      var connected=node&&(node.startContainer?node.startContainer.isConnected:node.isConnected);
-      if(!connected)node=fallback;
-      return node&&(node.startContainer?node.startContainer.isConnected:node.isConnected)?node:null;
-    }
-    function correct(){
-      if(stopped)return;
-      var node=resolve();if(!node)return;
-      var rect=node.getBoundingClientRect();
-      if((!rect.height||!isFinite(rect.top))&&fallback&&fallback.isConnected)
-        rect=fallback.getBoundingClientRect();
-      if(!rect.height||!isFinite(rect.top))return;
-      var scroll=document.scrollingElement||document.documentElement;
-      var max=Math.max(0,scroll.scrollHeight-window.innerHeight);
-      var next=Math.max(0,Math.min(window.scrollY+rect.top-margin,max));
-      if(Math.abs(next-window.scrollY)>12){
-        /* Do not let smooth-scroll styles prevent convergence on long chapters. */
-        var prev=scroll.style.scrollBehavior;
-        scroll.style.scrollBehavior='auto';window.scrollTo(0,next);
-        requestAnimationFrame(function(){scroll.style.scrollBehavior=prev;});
+    if(reveal)_acimCorrectReveal=reveal;
+    var gen=_acimCorrectGen;
+    var stops=['wheel','touchmove','pointerdown','keydown'];
+    function restoreReveal(){
+      if(reveal&&_acimCorrectReveal===reveal){
+        _acimCorrectReveal=null;
+        reveal.sec.style.contentVisibility=reveal.prev;
       }
     }
+    function cleanup(){
+      stops.forEach(function(n){window.removeEventListener(n,stop,true);});
+      if(gen===_acimCorrectGen)restoreReveal();
+    }
+    function stop(){
+      if(gen===_acimCorrectGen){_acimCorrectGen++;restoreReveal();}
+      stops.forEach(function(n){window.removeEventListener(n,stop,true);});
+    }
     stops.forEach(function(n){window.addEventListener(n,stop,{capture:true,passive:true});});
-    [80,210,460,850,1550,2400].forEach(function(ms){timers.push(setTimeout(correct,ms));});
-    timers.push(setTimeout(stop,2600));
+    [90,220,450,800,1200,1700].forEach(function(ms){
+      setTimeout(function(){
+        if(gen!==_acimCorrectGen)return;
+        if(!el||!el.isConnected)return;
+        var t=window.scrollY+el.getBoundingClientRect().top-margin;
+        var de=document.documentElement;
+        var max=Math.max(0,(document.scrollingElement||de).scrollHeight-window.innerHeight);
+        t=Math.max(0,Math.min(t,max));
+        if(Math.abs(t-window.scrollY)>40){
+          var prev=de.style.scrollBehavior;
+          de.style.scrollBehavior='auto';
+          window.scrollTo(0,t);
+          requestAnimationFrame(function(){ de.style.scrollBehavior=prev; });
+        }
+      },ms);
+    });
+    setTimeout(function(){ if(gen===_acimCorrectGen){_acimCorrectGen++;cleanup();} },2100);
   }
   function clearFnLocate(){
     var old=content.querySelectorAll('.acim-fn-locate');
@@ -23768,10 +23798,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     /* 跳轉錨定在註標本身：註標多位於段落尾端，若錨定段落頭，
        長段落會把註標擠到視窗外；content-visibility 懶渲染誤差由
        __acimCorrectScroll 於 90/260/700ms 校正（與內文命中同一機制）。 */
+    var _rv=acimRevealSection(ref);
     var rect=ref.getBoundingClientRect();
     window.__acimJump(window.scrollY+rect.top-Math.round(window.innerHeight/3));
-    /* V30.7：改用獨立校正器（同內文命中；渲染位移不再誤殺校正） */
-    acimSearchCorrect(ref, Math.round(window.innerHeight/3));
+    /* V30.8：代次校正＋強制渲染還原（同內文命中；見 acimSearchCorrect 註解） */
+    acimSearchCorrect(ref, Math.round(window.innerHeight/3), _rv);
   }
   /* 註文彈窗關閉（body.fn-open 移除）→ 清除定位高亮 */
   if(window.MutationObserver){
@@ -23823,24 +23854,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           if(window.innerWidth<=768)closeSidebar();return;
         }
       }
-      /* V30.8: create the selected highlight before measuring. Range objects
-         from an earlier native pass may be detached after replacing Text nodes. */
-      var mark=_nativeSearchHighlight?materializeFirstHit(el,rx):el.querySelector('mark.search-hl');
-      function matchedTarget(){
-        var current=el.querySelector('mark.search-hl');
-        if(current&&current.isConnected)return current;
-        if(mark&&mark.isConnected)return mark;
-        var range=_searchRanges[en.id];
-        if(range&&range.startContainer&&range.startContainer.isConnected)return range;
-        return el;
-      }
-      var exact=matchedTarget(),rect=exact.getBoundingClientRect();
-      if(!rect.height||!isFinite(rect.top))rect=el.getBoundingClientRect();
-      var margin=Math.round(window.innerHeight/3);
-      window.__acimJump(window.scrollY+rect.top-margin);
-      /* Later passes re-query the same phrase after content-visibility and
-         font swaps; scrolling a long paragraph's first line is insufficient. */
-      acimSearchCorrect(matchedTarget,margin,el);
+      /* V30.8：量測前先強制渲染目標 section（見 acimRevealSection 註解） */
+      var _rv=acimRevealSection(el);
+      if(_nativeSearchHighlight)materializeFirstHit(el,rx);
+      var firstMark=(_nativeSearchHighlight && _searchRanges[en.id]) || el.querySelector('mark.search-hl') || el;
+      var rect=firstMark.getBoundingClientRect();if(!rect.height)rect=el.getBoundingClientRect();
+      window.__acimJump(window.scrollY+rect.top-Math.round(window.innerHeight/3));
+      /* V30.8：代次校正＋完成後還原懶渲染（見 acimSearchCorrect 註解） */
+      acimSearchCorrect(el, Math.round(window.innerHeight/3), _rv);
       /* V30.7：小結果集（≤120 Range）於跳轉校正後整冊重貼一次註冊，
          強制重繪讓鄰近命中也立即顯示；大集合手機重繪代價高，僅靠實體 mark。 */
       if(_nativeSearchHighlight){
@@ -24724,7 +24745,7 @@ html.dark-mode #acim-external-guide .acim-eg-note{color:#c4b8d2}
   try{installed=(!!navigator.standalone)||!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);}catch(e){}
   var inApp=!!label&&!installed;
   var dismissed=false, node=null;
-  var sessionKey='acim-external-guide-dismissed-v30.7';
+  var sessionKey='acim-external-guide-dismissed-v30.8';
   try{ dismissed=sessionStorage.getItem(sessionKey)==='1'; }catch(e){}
 
   function externalUrl(input){
