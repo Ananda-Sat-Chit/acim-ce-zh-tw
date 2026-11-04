@@ -1,18 +1,18 @@
-/* ACIM CE PWA v30.6 — release-bound offline book.
+/* ACIM CE PWA v30.7 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v30.6';
-const RELEASE_ID = '1577f8d589b9f6a1e106df32ddd04b2f2928578361e90772326f3a9554f6d0f2';
+const CACHE_VERSION = 'v30.7';
+const RELEASE_ID = '70ceee2d58dbc0e5e70fe92ab92ff491bb888fceef22a93fa86c50a1cf98a52d';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = '11621f27b49fe175fe68db4cb6bd527fe416bdb08785e100c79cdff5168c4712';
+const BOOK_SHA256 = 'b43e7bc479241632860d65d554a2e613b8929ec372c7219763bddb8d2e8815b7';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
@@ -96,7 +96,7 @@ const ASSET_SHA256 = {
   'index.files/ce-manuscript.webp': 'eecd7efba4c93d721f43eae8cc755a14473d76739d0ceefbe0d47be18a33c6c8',
   'icon-512.png': 'bcebd97a9e265d97874a52da80c330271809de62caf1e26d6effcd59e8371d36',
   'pwa-192x192.png': 'b31efb602bed26f7781fb03b6c94b9ac36a86941138f7d71c4a64690f8f36bd5',
-  'screenshot-og.png': '62f95328589f44a360987cda864322fa3e3765c23f90b0b030430f26fe35b8ed'
+  'screenshot-og.png': 'ae268a06eef2abd19f4631a4131e0f90c845292f68e9763fd14524f19078d804'
 };
 let bookVerifiedInWorker = false;
 let bookVerificationGeneration = 0;
