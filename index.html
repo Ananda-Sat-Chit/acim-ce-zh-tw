@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v30.5">
+<meta name="acim-version" content="v30.6">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="11d0d678f0323119562c3a0d609ef395ecbdcc7321c916cd792f6b221d52986f">
+<meta name="acim-release-id" content="1577f8d589b9f6a1e106df32ddd04b2f2928578361e90772326f3a9554f6d0f2">
 <meta name="acim-build" content="2026-11-04">
-<meta name="acim-build-time" content="02:30">
+<meta name="acim-build-time" content="14:07">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
-<meta name="description" content="完整收錄正文、學員練習手冊與教師指南，支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
+<meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
-<meta property="og:description" content="完整收錄正文、學員練習手冊與教師指南，支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
+<meta property="og:description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:image" content="https://ananda-sat-chit.github.io/acim-ce-zh-tw/og-share-20261104.png">
 <meta property="og:image:secure_url" content="https://ananda-sat-chit.github.io/acim-ce-zh-tw/og-share-20261104.png">
 <meta property="og:image:type" content="image/png">
@@ -24,7 +24,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="完整加註版奇蹟課程">
-<meta name="twitter:description" content="完整收錄正文、學員練習手冊與教師指南，支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
+<meta name="twitter:description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta name="twitter:image" content="https://ananda-sat-chit.github.io/acim-ce-zh-tw/og-share-20261104.png">
 <meta name="twitter:image:alt" content="完整加註版奇蹟課程 ACIM CE 繁體中文版分享預覽圖">
 <meta name="color-scheme" content="light dark">
@@ -121,6 +121,7 @@ window._pwaInstallPrompt = null;
 /* V30：一次性輕提示——14 天最多一次；讀者關閉過就不再自動彈出 */
 function _acimInstallGate(){
   try{
+    if(window.__acimBrowserGuide && window.__acimBrowserGuide.inApp) return false;
     if(window.__acimStorage.get('acim-install-dismissed')==='1') return false;
     var last=parseInt(window.__acimStorage.get('acim-install-last')||'0',10)||0;
     return (Date.now()-last) >= 14*86400000;
@@ -152,7 +153,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v30.5';
+var ACIM_VERSION = 'v30.6';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -24486,6 +24487,132 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 })();
 </script>
 
+<!-- V30.6: Browser support guidance (lightweight; no TOC or reading-content mutations). -->
+<style id="acim-browser-guide-style">
+#acim-external-guide{position:fixed;z-index:999994;top:calc(env(safe-area-inset-top,0px) + 52px);left:50%;transform:translateX(-50%);width:min(432px,calc(100vw - 28px));box-sizing:border-box;max-height:min(48vh,360px);overflow:auto;background:#fffdf9;color:#342c47;border:1px solid rgba(75,64,122,.28);border-radius:12px;padding:13px 14px;box-shadow:0 6px 24px rgba(28,18,50,.22);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;font-size:13px;line-height:1.6;contain:layout style}
+#acim-external-guide .acim-eg-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700;font-size:14px}
+#acim-external-guide .acim-eg-close{background:transparent;border:0;color:inherit;font-size:19px;line-height:1;padding:4px 8px;cursor:pointer;min-width:28px}
+#acim-external-guide .acim-eg-desc{margin:7px 0 9px}
+#acim-external-guide .acim-eg-actions{display:flex;flex-wrap:wrap;gap:7px}
+#acim-external-guide .acim-eg-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;padding:6px 11px;min-height:34px;border:1px solid #66548b;border-radius:7px;background:#514477;color:white;font-size:12px;font-family:inherit;line-height:1.4;cursor:pointer;text-decoration:none}
+#acim-external-guide .acim-eg-button.acim-eg-secondary{background:transparent;color:inherit}
+#acim-external-guide .acim-eg-note{margin:8px 0 0;font-size:11.5px;color:#645a70}
+html.dark-mode #acim-external-guide{background:#24202e;color:#eee9f5;border-color:#74678c}
+html.dark-mode #acim-external-guide .acim-eg-button{background:#8272af;color:#fff}
+html.dark-mode #acim-external-guide .acim-eg-button.acim-eg-secondary{background:transparent;color:#eee9f5}
+html.dark-mode #acim-external-guide .acim-eg-note{color:#c4b8d2}
+@media(max-width:480px){#acim-external-guide{top:calc(env(safe-area-inset-top,0px) + 46px);padding:11px 12px;font-size:12.5px}}
+</style>
+<script id="acim-browser-guide-script">
+(function(){
+  'use strict';
+  var ua=navigator.userAgent||'';
+  var os=/iPad|iPhone|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)?'ios':/Android/i.test(ua)?'android':'other';
+  var label='';
+  if(/MicroMessenger/i.test(ua)) label='WeChat';
+  else if(/Line\//i.test(ua)) label='LINE';
+  else if(/Instagram/i.test(ua)) label='Instagram';
+  else if(/FBAN\/Messenger|FB_IAB\/MESSENGER|MessengerFor/i.test(ua)) label='Messenger';
+  else if(/FBAN|FBAV|FB_IAB|FBIOS|FB4A/i.test(ua)) label='Facebook';
+  else if(/Telegram/i.test(ua)) label='Telegram';
+  else if(/WhatsApp/i.test(ua)) label='WhatsApp';
+  else if(/TikTok|musical_ly|BytedanceWebview/i.test(ua)) label='TikTok';
+  else if(/KAKAOTALK/i.test(ua)) label='KakaoTalk';
+  else if(/Discord/i.test(ua)) label='Discord';
+  else if(/Snapchat/i.test(ua)) label='Snapchat';
+  else if(/Twitter/i.test(ua)) label='X';
+  else if(/(?:^|[;\s])wv(?:[;)\s]|$)/i.test(ua)) label='應用程式';
+  var installed=false;
+  try{installed=(!!navigator.standalone)||!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);}catch(e){}
+  var inApp=!!label&&!installed;
+  var dismissed=false, node=null;
+  var sessionKey='acim-external-guide-dismissed-v30.6';
+  try{ dismissed=sessionStorage.getItem(sessionKey)==='1'; }catch(e){}
+
+  function externalUrl(input){
+    try{
+      var u=new URL(input||location.href,location.href);
+      if(u.origin!==location.origin) return u.href;
+      u.searchParams.set('openExternalBrowser','1');
+      return u.href;
+    }catch(e){
+      return location.origin+location.pathname+'?openExternalBrowser=1'+location.hash;
+    }
+  }
+  window.__acimShareUrl=externalUrl;
+
+  function create(tag,className,text){
+    var el=document.createElement(tag);
+    if(className) el.className=className;
+    if(text!=null) el.textContent=text;
+    return el;
+  }
+  function copyUrl(btn){
+    var value=externalUrl(location.href);
+    function done(){btn.textContent='已複製網址';}
+    function fallback(){
+      var el=document.createElement('textarea');
+      el.value=value;el.setAttribute('readonly','');
+      el.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
+      document.body.appendChild(el); el.select();
+      try{if(document.execCommand&&document.execCommand('copy'))done(); else window.prompt('請複製以下網址',value);}
+      catch(e){window.prompt('請複製以下網址',value);}
+      el.remove();
+    }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(value).then(done,fallback);
+    }else fallback();
+  }
+  function show(reason){
+    reason=reason||'auto';
+    if(reason==='auto'&&(!inApp||dismissed||document.hidden))return;
+    if(node&&node.isConnected)return;
+    if(!document.body)return;
+    node=create('section');node.id='acim-external-guide';
+    node.setAttribute('role','status');node.setAttribute('aria-live','polite');
+    node.setAttribute('aria-label','外部瀏覽器使用提醒');
+    var head=create('div','acim-eg-head');
+    head.appendChild(create('span','',reason==='tts-unavailable'||reason==='tts-error'?'語音朗讀功能提醒':'使用外部瀏覽器閱讀'));
+    var close=create('button','acim-eg-close','×');
+    close.type='button';close.setAttribute('aria-label','關閉提醒');
+    close.addEventListener('click',function(){dismissed=true;try{sessionStorage.setItem(sessionKey,'1');}catch(e){}if(node){node.remove();node=null;}});
+    head.appendChild(close);node.appendChild(head);
+    var browser=os==='ios'?'Safari':os==='android'?'Chrome 或系統預設瀏覽器':'Chrome、Safari 或 Edge';
+    var source=label?label+' 內建瀏覽器':'目前的瀏覽器';
+    var desc=reason==='tts-unavailable'?'此環境未提供網頁語音朗讀功能。':reason==='tts-error'?'語音朗讀無法正常啟動。':source+'可能限制語音朗讀等部分功能。';
+    if(inApp)desc+=' 建議點選應用程式選單，尋找在瀏覽器開啟，或複製網址後改用 '+browser+' 開啟。';
+    else desc+=' 可先檢查系統語音服務與瀏覽器設定，必要時改用 '+browser+' 重新開啟。';
+    node.appendChild(create('p','acim-eg-desc',desc));
+    var actions=create('div','acim-eg-actions');
+    if(label==='LINE'){
+      var lineLink=create('a','acim-eg-button','嘗試由 LINE 開啟外部瀏覽器');
+      lineLink.href=externalUrl(location.href);lineLink.setAttribute('rel','noopener');
+      actions.appendChild(lineLink);
+    }
+    var copy=create('button','acim-eg-button acim-eg-secondary','複製閱讀網址');copy.type='button';
+    copy.addEventListener('click',function(){copyUrl(copy);});actions.appendChild(copy);
+    node.appendChild(actions);
+    node.appendChild(create('p','acim-eg-note','此提醒不會中斷閱讀。各通訊軟體的外部瀏覽器選項可能因版本而異。'));
+    document.body.appendChild(node);
+  }
+  window.__acimBrowserGuide={show:show, inApp:inApp, platform:label, os:os, shareUrl:externalUrl};
+  function schedule(){
+    if(!inApp||dismissed)return;
+    var run=function(){
+      var active=document.activeElement;
+      if(document.hidden||(active&&active.matches&&active.matches('input,textarea,select,[contenteditable="true"]')))return;
+      show('auto');
+    };
+    window.setTimeout(function(){
+      if('requestIdleCallback' in window)requestIdleCallback(run,{timeout:5000});
+      else run();
+    },2200);
+  }
+  if(document.readyState==='complete')schedule();
+  else window.addEventListener('load',schedule,{once:true});
+})();
+</script>
+
 <!-- ══ TTS 語音朗讀模組 ══ -->
 <div id="tts-bar">
   <span id="tts-bar-label">🔊 朗讀中…</span>
@@ -24511,7 +24638,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 ══════════════════════════════════════════ */
 (function(){
   'use strict';
-  if (!window.speechSynthesis) return;
+  if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
+    /* No Web Speech API: keep reading intact and guide users only on TTS action. */
+    document.addEventListener('click',function(ev){
+      var target=ev.target&&ev.target.closest?ev.target.closest('#btn-sec-tts,#crumb-tts,#fn-tts-btn'):null;
+      if(target&&window.__acimBrowserGuide)window.__acimBrowserGuide.show('tts-unavailable');
+    },true);
+    return;
+  }
 
   var synth = window.speechSynthesis;
   var currentBtn  = null;
@@ -24891,7 +25025,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       /* Any real engine error stops this job for an explicit retry. A failed
          unit is neither silently skipped nor recursively replayed. Retired
          cancellation callbacks have already failed valid() above. */
-      if(error){ stopTTS(); return; }
+      if(error){
+        stopTTS();
+        if(window.__acimBrowserGuide)window.__acimBrowserGuide.show('tts-error');
+        return;
+      }
       if(unit.onDone) unit.onDone();
     }
     if(unit.item.pause){
@@ -26057,7 +26195,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     }
 
     /* 繁中 URL */
-    var zhUrl = location.origin + location.pathname + '#' + acimId + sentSuffix;
+    var zhUrl = location.origin + location.pathname +
+      '?openExternalBrowser=1#' + acimId + sentSuffix;
     /* 英文 acimce.app URL：支援範圍格式 :N-M */
     var enUrl = toAcimceUrl(acimId, sent, sentEnd);
 
@@ -27410,6 +27549,7 @@ function iosGuide(){
     var ua=navigator.userAgent||'';
     var isIOS=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
     if(!isIOS) return;
+    if(window.__acimBrowserGuide && window.__acimBrowserGuide.inApp) return;
     var standalone=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
     if(standalone) return;
     if(get('acim-install-dismissed')==='1') return;
