@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v30.7">
+<meta name="acim-version" content="v30.8">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="70ceee2d58dbc0e5e70fe92ab92ff491bb888fceef22a93fa86c50a1cf98a52d">
+<meta name="acim-release-id" content="4f875d7673d863e069d063dc71f03efecda66388a1a9e1f9e8f4ddfe01c4cd0d">
 <meta name="acim-build" content="2026-11-04">
-<meta name="acim-build-time" content="15:43">
+<meta name="acim-build-time" content="17:03">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -153,7 +153,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v30.7';
+var ACIM_VERSION = 'v30.8';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -932,6 +932,9 @@ html.dark-mode #footnote-bar{background:#423A66;border-top:2px solid #B4AED6;}
 #fn-num{flex-shrink:0;font-size:13px;font-weight:bold;color:#fff;min-width:28px;padding-top:2px;}
 #fn-text{flex-grow:1;line-height:1.75;font-size:14px;}
 #fn-text *{color:#F1EDE4!important;background:transparent!important;}
+/* V30.8: footnote highlight must override the popup reset (which uses !important). */
+#fn-text mark.search-hl{background:#ffe066!important;color:#1F1A2E!important;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+html.dark-mode #fn-text mark.search-hl{background:#b18a22!important;color:#fff!important;}
 /* 保留標楷體等明確設定的 font-family，不強制覆蓋 */
 #fn-text [style*="標楷體"],
 #fn-text [style*="DFKai-SB"],
@@ -2095,7 +2098,7 @@ html.dark-mode sup.fn-badge.acim-fn-locate{
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 15:43</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 17:03</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -22689,7 +22692,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     settingsToggle.addEventListener('keydown',closeSettingsOnEscape);
     settingsPanel.addEventListener('keydown',closeSettingsOnEscape);
     document.getElementById('toc-search-input').addEventListener('focus',function(){
-      setSidebarSettings(false,false);
+      /* V30.8: leave the search results and badge intact on normal focus.
+         Closing an actually open settings panel remains supported. */
+      if(!settingsPanel.hidden)setSidebarSettings(false,false);
     });
   }
 
@@ -23308,7 +23313,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
      style invalidation（聚焦搜尋欄、字級、明暗切換）都需全書調解高亮繪製，
      造成讀者回報的「點搜尋欄卡頓 6~8 秒」。上限 300 處已涵蓋一般查詢；
      超出部分結果列表仍完整、點擊跳轉仍精準（實體 mark 保證點擊命中可見）。 */
-  var ACIM_HL_MAX=300,_hlCapped=false;
+  /* V30.8: mobile keyboards and font-size buttons can invalidate every registered
+     Custom Highlight Range. Keep the full list of search results but restrict
+     background ranges on narrow screens; an opened result is always marked on demand. */
+  var ACIM_HL_MAX=(window.matchMedia&&window.matchMedia('(max-width:768px)').matches)?72:300,_hlCapped=false;
   var stats=window.__acimV20Stats={indexState:'pending',indexCount:0,
     indexYieldCount:0,ttsButtons:0,searchState:'idle',query:'',resultCount:0};
   /* Retain the previous diagnostics hook used by the lazy TTS module. */
@@ -23506,6 +23514,14 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   function clearHighlight(done){
     if(_hlAbort){_hlAbort.abort();_hlAbort=null;}
     _searchRanges=Object.create(null);
+    /* V30.8: the open popup is cloned and is not inside #content-area. */
+    var popup=document.getElementById('fn-text');
+    if(popup){
+      var oldPopup=popup.querySelectorAll('mark.search-hl');
+      for(var i=oldPopup.length-1;i>=0;i--){
+        var m=oldPopup[i];if(m.parentNode)m.parentNode.replaceChild(document.createTextNode(m.textContent),m);
+      }
+    }
     if(_nativeSearchHighlight){
       CSS.highlights.delete('acim-search');
       /* V30.1：註文條目為 mark 路徑，native 清除時須一併還原 */
@@ -23625,19 +23641,21 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     return {nodes:nodes,pieces:pieces};
   }
   function materializeFirstHit(root,rx){
-    if(!root||!root.isConnected)return;
-    if(root.querySelector('mark.search-hl'))return;
+    if(!root||!root.isConnected)return null;
+    var existing=root.querySelector('mark.search-hl');
+    if(existing)return existing;
     var parts=acimHlTextNodes(root);
-    if(!parts.nodes.length)return;
+    if(!parts.nodes.length)return null;
     var expr=new RegExp(rx.source.replace(/ /g,'\\s+'),'gi');
     var text=parts.pieces.join(''),m=expr.exec(text);
-    if(!m||!m[0].length)return;
+    if(!m||!m[0].length)return null;
     var start=m.index,end=start+m[0].length,i=0,acc=0,seg=[];
     while(i<parts.nodes.length&&acc<end){
       var len=parts.pieces[i].length,s=Math.max(start,acc)-acc,e=Math.min(end,acc+len)-acc;
       if(e>s)seg.push([parts.nodes[i],s,e]);
       acc+=len;i++;
     }
+    var first=null;
     for(i=seg.length-1;i>=0;i--){
       var node=seg[i][0],val=node.nodeValue,s2=seg[i][1],e2=seg[i][2];
       if(e2<=s2)continue;
@@ -23647,35 +23665,48 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       mk.textContent=val.slice(s2,e2);frag.appendChild(mk);
       if(e2<val.length)frag.appendChild(document.createTextNode(val.slice(e2)));
       node.parentNode.replaceChild(frag,node);
+      first=mk; /* reversed insertion means the first segment is assigned last */
     }
+    return first;
   }
   function highlightPopupNow(rx){
     var box=document.getElementById('fn-text');
     if(!box||!rx||!rx.source)return;
-    if(box.querySelector('mark.search-hl'))return;
+    /* Work on the popup clone only. Unwrap inherited marks before painting,
+       otherwise a single inherited mark prevents the rest from highlighting. */
+    var old=Array.prototype.slice.call(box.querySelectorAll('mark.search-hl'));
+    old.forEach(function(m){
+      if(m.parentNode)m.parentNode.replaceChild(document.createTextNode(m.textContent),m);
+    });
+    box.normalize();
+    var parts=acimHlTextNodes(box),nodes=parts.nodes,pieces=parts.pieces;
+    if(!nodes.length)return;
     var expr=new RegExp(rx.source.replace(/ /g,'\\s+'),'gi');
-    var walker=document.createTreeWalker(box,NodeFilter.SHOW_TEXT),nd;
-    var todo=[];
-    while((nd=walker.nextNode())){
-      if(nd.parentElement&&nd.parentElement.closest('script,style,.tts-btn,.sent-num,sup.fn-badge,mark.search-hl'))continue;
-      var v=nd.nodeValue||'';
-      if(v)todo.push(nd);
-    }
-    todo.forEach(function(node){
-      var val=node.nodeValue;if(!val)return;
-      expr.lastIndex=0;
-      if(!expr.test(val))return;
-      expr.lastIndex=0;
-      var frag=document.createDocumentFragment(),last=0,m2;
-      while((m2=expr.exec(val))!==null){
-        if(!m2[0].length){expr.lastIndex++;continue;}
-        if(m2.index>last)frag.appendChild(document.createTextNode(val.slice(last,m2.index)));
-        var mk=document.createElement('mark');mk.className='search-hl';
-        mk.textContent=m2[0];frag.appendChild(mk);
-        last=m2.index+m2[0].length;
+    var text=pieces.join(''),endPositions=[],total=0,segments=new Map(),match,startNode=0,endNode=0;
+    pieces.forEach(function(piece){total+=piece.length;endPositions.push(total);});
+    while((match=expr.exec(text))!==null){
+      if(!match[0].length){expr.lastIndex++;continue;}
+      var start=match.index,end=start+match[0].length;
+      while(startNode<endPositions.length-1&&endPositions[startNode]<=start)startNode++;
+      if(endNode<startNode)endNode=startNode;
+      while(endNode<endPositions.length-1&&endPositions[endNode]<end)endNode++;
+      for(var i=startNode;i<=endNode;i++){
+        var at=i?endPositions[i-1]:0,lo=Math.max(start,at)-at,hi=Math.min(end,endPositions[i])-at;
+        if(hi<=lo)continue;
+        var list=segments.get(nodes[i])||[];list.push([lo,hi]);segments.set(nodes[i],list);
       }
-      if(!last)return;
-      if(last<val.length)frag.appendChild(document.createTextNode(val.slice(last)));
+    }
+    segments.forEach(function(ranges,node){
+      if(!node.parentNode)return;
+      var value=node.nodeValue||'',frag=document.createDocumentFragment(),last=0;
+      ranges.forEach(function(range){
+        var begin=Math.max(last,range[0]),end=range[1];
+        if(end<=begin)return;
+        if(begin>last)frag.appendChild(document.createTextNode(value.slice(last,begin)));
+        var mk=document.createElement('mark');mk.className='search-hl';
+        mk.textContent=value.slice(begin,end);frag.appendChild(mk);last=end;
+      });
+      if(last<value.length)frag.appendChild(document.createTextNode(value.slice(last)));
       node.parentNode.replaceChild(frag,node);
     });
   }
@@ -23686,28 +23717,42 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
      pass 全部失效，落點停在離命中數百~千 px 處（高亮也一併落在視窗外）。
      此校正器不依賴 nav token：各 pass 重新量測目標即時位置收斂；
      任一真實使用者手勢（滾輪／觸控／按鍵）立即停止。 */
-  function acimSearchCorrect(el,margin){
-    if(!el||!el.isConnected)return;
-    var stops=['wheel','touchmove','pointerdown','keydown'];
-    function cleanup(){stops.forEach(function(n){window.removeEventListener(n,stop,true);});}
-    function stop(){cleanup();}
+  function acimSearchCorrect(target,margin,fallback){
+    if(!target)return;
+    var stops=['wheel','touchstart','touchmove','pointerdown','keydown'];
+    var timers=[],stopped=false;
+    function stop(){
+      if(stopped)return;
+      stopped=true;
+      timers.forEach(clearTimeout);timers.length=0;
+      stops.forEach(function(n){window.removeEventListener(n,stop,true);});
+    }
+    function resolve(){
+      var node=typeof target==='function'?target():target;
+      var connected=node&&(node.startContainer?node.startContainer.isConnected:node.isConnected);
+      if(!connected)node=fallback;
+      return node&&(node.startContainer?node.startContainer.isConnected:node.isConnected)?node:null;
+    }
+    function correct(){
+      if(stopped)return;
+      var node=resolve();if(!node)return;
+      var rect=node.getBoundingClientRect();
+      if((!rect.height||!isFinite(rect.top))&&fallback&&fallback.isConnected)
+        rect=fallback.getBoundingClientRect();
+      if(!rect.height||!isFinite(rect.top))return;
+      var scroll=document.scrollingElement||document.documentElement;
+      var max=Math.max(0,scroll.scrollHeight-window.innerHeight);
+      var next=Math.max(0,Math.min(window.scrollY+rect.top-margin,max));
+      if(Math.abs(next-window.scrollY)>12){
+        /* Do not let smooth-scroll styles prevent convergence on long chapters. */
+        var prev=scroll.style.scrollBehavior;
+        scroll.style.scrollBehavior='auto';window.scrollTo(0,next);
+        requestAnimationFrame(function(){scroll.style.scrollBehavior=prev;});
+      }
+    }
     stops.forEach(function(n){window.addEventListener(n,stop,{capture:true,passive:true});});
-    [90,260,700,1200].forEach(function(ms){
-      setTimeout(function(){
-        if(!el||!el.isConnected)return;
-        var t=window.scrollY+el.getBoundingClientRect().top-margin;
-        var de=document.documentElement;
-        var max=Math.max(0,(document.scrollingElement||de).scrollHeight-window.innerHeight);
-        t=Math.max(0,Math.min(t,max));
-        if(Math.abs(t-window.scrollY)>40){
-          var prev=de.style.scrollBehavior;
-          de.style.scrollBehavior='auto';
-          window.scrollTo(0,t);
-          requestAnimationFrame(function(){ de.style.scrollBehavior=prev; });
-        }
-      },ms);
-    });
-    setTimeout(cleanup,1500);
+    [80,210,460,850,1550,2400].forEach(function(ms){timers.push(setTimeout(correct,ms));});
+    timers.push(setTimeout(stop,2600));
   }
   function clearFnLocate(){
     var old=content.querySelectorAll('.acim-fn-locate');
@@ -23778,12 +23823,24 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           if(window.innerWidth<=768)closeSidebar();return;
         }
       }
-      if(_nativeSearchHighlight)materializeFirstHit(el,rx);
-      var firstMark=(_nativeSearchHighlight && _searchRanges[en.id]) || el.querySelector('mark.search-hl') || el;
-      var rect=firstMark.getBoundingClientRect();if(!rect.height)rect=el.getBoundingClientRect();
-      window.__acimJump(window.scrollY+rect.top-Math.round(window.innerHeight/3));
-      /* V30.7：改用獨立校正器（渲染位移不再誤殺校正；見函式註解） */
-      acimSearchCorrect(el, Math.round(window.innerHeight/3));
+      /* V30.8: create the selected highlight before measuring. Range objects
+         from an earlier native pass may be detached after replacing Text nodes. */
+      var mark=_nativeSearchHighlight?materializeFirstHit(el,rx):el.querySelector('mark.search-hl');
+      function matchedTarget(){
+        var current=el.querySelector('mark.search-hl');
+        if(current&&current.isConnected)return current;
+        if(mark&&mark.isConnected)return mark;
+        var range=_searchRanges[en.id];
+        if(range&&range.startContainer&&range.startContainer.isConnected)return range;
+        return el;
+      }
+      var exact=matchedTarget(),rect=exact.getBoundingClientRect();
+      if(!rect.height||!isFinite(rect.top))rect=el.getBoundingClientRect();
+      var margin=Math.round(window.innerHeight/3);
+      window.__acimJump(window.scrollY+rect.top-margin);
+      /* Later passes re-query the same phrase after content-visibility and
+         font swaps; scrolling a long paragraph's first line is insufficient. */
+      acimSearchCorrect(matchedTarget,margin,el);
       /* V30.7：小結果集（≤120 Range）於跳轉校正後整冊重貼一次註冊，
          強制重繪讓鄰近命中也立即顯示；大集合手機重繪代價高，僅靠實體 mark。 */
       if(_nativeSearchHighlight){
