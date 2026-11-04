@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v30.11">
+<meta name="acim-version" content="v40">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="8b880a76ae2342f1906aec84c4fdf1282099372f6a832d5daecc3c97f0926a7d">
+<meta name="acim-release-id" content="47993f5116cd0c8ad39b06a4946d63f2851a2cd96e5a356094e402507082a19b">
 <meta name="acim-build" content="2026-11-04">
-<meta name="acim-build-time" content="22:29">
+<meta name="acim-build-time" content="23:39">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -153,7 +153,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v30.11';
+var ACIM_VERSION = 'v40';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -1903,11 +1903,16 @@ ul{margin-bottom:0;}
 }
 @media print{.acim-sec-nav{display:none !important;}}
 
-/* ── V30 P0→V30.3：手機底部導覽列已退場（讀者回饋：底列拖慢側欄開闔
-   與面板切換），手機功能鈕回歸 V29.2 右側浮球 #pwa-tools（同電腦）。
-   以下規則保留但不作用（display:none＋JS 不建構）。── */
+/* ── V40：底列復活（V30.2 原設計＋V40 四紀律）──
+   V30.3 曾因「開抽屜／切面板卡頓」退場；V30.10/V30.11 已證真兇是全書級
+   樣式結算（面紗根除）而非底列本身，本版原設計復活，並加上：
+   ① 鍵盤讓位：visualViewport 壓縮→ transform 滑出（合成器動畫、零重排）
+   ② 底列開啟的抽屜沿用 V30.11 面紗＋錨點還原（openSidebar/closeSidebar 總閘）
+   ③ 明暗／字級沿用 V30.10 排程器掛鉤（事件掛鉤，與按鈕位置無關）
+   ④ 層級秩序：註文彈窗(999999)＞快選單(10003)＞底列(10002)＞抽屜(10001)＞overlay */
 #acim-bottomnav{
-  display:none !important;position:fixed;left:0;right:0;bottom:0;z-index:10002;
+  display:none;position:fixed;left:0;right:0;bottom:0;z-index:10002;
+  transition:transform 0.18s ease;
   height:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px));
   padding-bottom:env(safe-area-inset-bottom,0px);
   background:var(--c-sidebar);border-top:1px solid var(--c-border);
@@ -1925,12 +1930,17 @@ ul{margin-bottom:0;}
 #acim-bottomnav button:active{color:var(--c-accent);}
 #acim-bottomnav button.acim-bn-on{color:var(--c-accent);}
 @media(max-width:768px){
-  /* V30.3：bottomnav 手機覆蓋規則全數退場——#pwa-tools 浮球恢復顯示，
-     content-area／tts-bar／bm-panel／install-bar／update-toast 的手機位置
-     自動回退到本檔上方原封保留的 V29.2 手機規則。
-     閱讀分頁的手機錨定規則移至 #rtabs-bar 基底宣告之後（原寫在這裡，
-     被後方基底規則覆蓋，自 V30.2 起即未生效，本版一併修正）。 */
-  #acim-bottomnav{display:none !important;}
+  /* V40：手機顯示底列、右側浮球退場（同 V30.2 佈局）；各浮層上移讓位。
+     鍵盤彈出（visualViewport 壓縮）時 .acim-bn-hide 以 transform 滑出螢幕。 */
+  #acim-bottomnav{display:flex;}
+  #acim-bottomnav.acim-bn-hide{transform:translateY(110%);}
+  #pwa-tools{display:none !important;}
+  #content-area{padding-bottom:calc(130px + env(safe-area-inset-bottom,0px));}
+  #tts-bar{right:10px;bottom:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px) + 10px);}
+  body.fn-open #tts-bar{bottom:calc(42vh + var(--acim-nav-h) + 10px);}
+  #pwa-install-bar{bottom:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px));}
+  #acim-update-toast{bottom:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px) + 12px) !important;}
+  #bm-panel{bottom:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px) + 12px);}
 }
 
 /* ── V30：字級／外觀快選單（底部導覽列「字級」頁籤）── */
@@ -2112,7 +2122,7 @@ html.dark-mode sup.fn-badge.acim-fn-locate{
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 22:29</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 23:39</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -24933,7 +24943,7 @@ html.dark-mode #acim-external-guide .acim-eg-note{color:#c4b8d2}
   try{installed=(!!navigator.standalone)||!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);}catch(e){}
   var inApp=!!label&&!installed;
   var dismissed=false, node=null;
-  var sessionKey='acim-external-guide-dismissed-v30.11';
+  var sessionKey='acim-external-guide-dismissed-v40';
   try{ dismissed=sessionStorage.getItem(sessionKey)==='1'; }catch(e){}
 
   function externalUrl(input){
@@ -27663,16 +27673,16 @@ function buildBottomNav(){
   }
   tab('☰','目錄',function(){
     if(window.__acimOpenSidebar) window.__acimOpenSidebar();
-  });
+  },'acim-bn-toc');
   tab('🔍','搜尋',function(){
     if(window.__acimOpenSidebar) window.__acimOpenSidebar();
     var inp=document.getElementById('toc-search-input');
     if(inp) setTimeout(function(){ try{ inp.focus({preventScroll:true}); }catch(e){ inp.focus(); } },320);
-  });
+  },'acim-bn-search');
   tab('🔖','書籤',function(){
     if(window.__acimOpenBookmarks) window.__acimOpenBookmarks();
     else if(window.__acimOpenSidebar) window.__acimOpenSidebar();
-  });
+  },'acim-bn-bm');
   sheetBtn=tab('Aa','字級',function(){
     var sh=document.getElementById('acim-quick-sheet');
     if(sh) sh.classList.toggle('open');
@@ -27680,7 +27690,7 @@ function buildBottomNav(){
   tab('⋯','更多',function(){
     if(window.__acimOpenSettings) window.__acimOpenSettings();
     else if(window.__acimOpenSidebar) window.__acimOpenSidebar();
-  });
+  },'acim-bn-more');
   document.body.appendChild(nav);
 
   /* 字級快選單：重用既有浮動鈕的處理器（手機上它們只是被隱藏，click 仍有效） */
@@ -27718,6 +27728,26 @@ function buildBottomNav(){
     if(sheet.contains(e.target)||sheetBtn.contains(e.target)) return;
     sheet.classList.remove('open');
   });
+}
+
+/* ═══ 2.5) V40：底列×虛擬鍵盤共存 ═══
+   interactive-widget=resizes-visual：鍵盤彈出只壓縮 visualViewport、
+   版面視口不變 → 固定底列會被鍵盤蓋住。偵測壓縮逾 22% 即把底列
+   translateY(110%) 滑出螢幕（合成器動畫、零重排），收鍵盤自動滑回。
+   桌面 visualViewport 恆等於 innerHeight，永不觸發。
+   window.__acimBnKbSet 供 e2e 直接驅動同一程式路徑。 */
+function bottomNavKbInit(){
+  var vv=window.visualViewport;
+  function setKb(kb){
+    var el=document.getElementById('acim-bottomnav');
+    if(el) el.classList.toggle('acim-bn-hide',!!kb);
+  }
+  window.__acimBnKbSet=setKb;
+  if(!vv) return;
+  var update=function(){ setKb(vv.height < Math.round(window.innerHeight*0.78)); };
+  vv.addEventListener('resize',update);
+  vv.addEventListener('scroll',update);
+  update();
 }
 
 /* ═══ 3) 閱讀分頁 ═══ */
@@ -28017,7 +28047,10 @@ function secTtsInit(){
 function init(){
   try{ buildSecNav(); }catch(e){ console.warn('[V30] sec-nav:',e); }
   try{ buildGlossaryNav(); }catch(e){ console.warn('[V30] glossary-nav:',e); }
-  /* V30.3：buildBottomNav 不再呼叫——手機回歸 V29.2 右側浮球（卡頓修復） */
+  /* V40：底列復活——手機功能鈕回歸底部一列（V30.2 原設計＋V40 紀律：
+     鍵盤讓位／抽屜走 V30.11 面紗／明暗字級沿用 V30.10 排程器掛鉤） */
+  try{ buildBottomNav(); }catch(e){ console.warn('[V40] bottom-nav:',e); }
+  try{ bottomNavKbInit(); }catch(e){ console.warn('[V40] bottomnav-kb:',e); }
   try{ rtabsInit(); }catch(e){ console.warn('[V30] rtabs:',e); }
   try{ locateInit(); }catch(e){ console.warn('[V30] locate:',e); }
   try{ backupInit(); }catch(e){ console.warn('[V30] backup:',e); }
