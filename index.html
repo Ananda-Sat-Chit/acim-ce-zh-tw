@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v30.9">
+<meta name="acim-version" content="v30.10">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="6c5b8754cf699472206ca1d10534c3bbdcadae21e539f7703af130a3661d63c2">
+<meta name="acim-release-id" content="16c4f32be4e906308659f9bc9b7591ac4a968a4fd40b3b995449c034ad6cbd15">
 <meta name="acim-build" content="2026-11-04">
-<meta name="acim-build-time" content="19:32">
+<meta name="acim-build-time" content="21:10">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -153,7 +153,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v30.9';
+var ACIM_VERSION = 'v30.10';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -2101,7 +2101,7 @@ html.dark-mode sup.fn-badge.acim-fn-locate{
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 19:32</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 21:10</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -22777,6 +22777,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var u = document.getElementById('btn-fup'), d = document.getElementById('btn-fdn');
     if (u) u.style.opacity = fi >= 6 ? '0.38' : '1';
     if (d) d.style.opacity = fi <= 0 ? '0.38' : '1';
+    scheduleStyleDischarge();
   }
   applyZoom();
 
@@ -22809,6 +22810,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var mq=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');
     document.documentElement.classList.toggle('dark-mode',mode==='auto'?!!(mq&&mq.matches):mode==='dark');
     syncDark();
+    scheduleStyleDischarge();
   }
   syncDark();
   if(themeMode) themeMode.addEventListener('change',function(){ setThemeMode(themeMode.value); });
@@ -22816,7 +22818,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var _acimMq=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');
     if(_acimMq&&_acimMq.addEventListener) _acimMq.addEventListener('change',function(e){
       if(window.__acimStorage.get('acim-dark')===null){
-        document.documentElement.classList.toggle('dark-mode',e.matches); syncDark();
+        document.documentElement.classList.toggle('dark-mode',e.matches); syncDark(); scheduleStyleDischarge();
       }
     });
   }catch(err){}
@@ -23483,7 +23485,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     if(document.hidden){
       if(_indexWarmup){_indexWarmup.abort();_indexWarmup=null;}
       stopIndexSchedule(_indexJob);
-    }else resumeOptionalIndex();
+    }else {resumeOptionalIndex();scheduleStyleDischarge();}
   },{passive:true});
   /* No focus-in work. The shared queue keeps optional work paused, including
      when an off-canvas editor remains active after a drawer closes. */
@@ -23509,6 +23511,41 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     timer=setTimeout(step,0);
     return {abort:function(){stopped=true;clearTimeout(timer);}};
   }
+  /* ══ V30.10：全域樣式債的背景結清（根治手機點搜尋欄卡頓 6~8 秒）══
+     讀者 Redmi 13C 實機：明暗／字型按鈕（及初次載入）讓 799 個
+     content-visibility:auto 未渲染節承接全書樣式失效；下次聚焦搜尋欄
+     （鍵盤彈出）時瀏覽器把整本書的樣式解析一次結清——6x 節流模擬為
+     8.9~16.7 秒單一 long task，實機即 6~8 秒；結清後就順，直到下一次
+     全域失效（讀者回報「再按功能鈕又卡」）。本排程器在全域失效的當下，
+     把樣式債以 ≤6ms 分片在背景結清（799 節全走訪實測 37~590ms），
+     聚焦時已無債可結。只做樣式解析（getComputedStyle），不觸發版面
+     重排／繪製；組字中、分頁隱藏時自動暫停。 */
+  var _disTimer=null,_disSecs=null,_disIdx=0,_disPass=0;
+  function scheduleStyleDischarge(){
+    try{
+      if(!_disSecs)_disSecs=Array.prototype.slice.call(content.querySelectorAll('section.csec'));
+      _disIdx=0;_disPass=0;
+      if(_disTimer)clearTimeout(_disTimer);
+      _disTimer=setTimeout(dischargeStep,150);
+    }catch(e){}
+  }
+  function dischargeStep(){
+    _disTimer=null;
+    if(!_disSecs)return;
+    if(document.hidden||_composing){_disTimer=setTimeout(dischargeStep,400);return;}
+    var t0=performance.now();
+    while(_disIdx<_disSecs.length&&performance.now()-t0<6){
+      var s=_disSecs[_disIdx++];
+      try{void getComputedStyle(s).color;}catch(e){}
+    }
+    if(_disIdx<_disSecs.length){_disTimer=setTimeout(dischargeStep,16);return;}
+    /* 保險：走訪完成後再補一遍——吸收走訪期間排隊的其他失效
+       （排序／高亮退休等），至多兩遍後停止，乾淨頁的補走訪近零成本。 */
+    if(++_disPass<2){_disIdx=0;_disTimer=setTimeout(dischargeStep,120);return;}
+    _disSecs=null;
+  }
+  if(window.visualViewport&&visualViewport.addEventListener)
+    visualViewport.addEventListener('resize',scheduleStyleDischarge,{passive:true});
   function afterPresentation(fn){
     var active=true,timer=null,frame=null;
     function run(){if(!active)return;active=false;clearTimeout(timer);fn();}
@@ -23562,7 +23599,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     if(_rm.length){
       _hlAbort=runChunks(_rm,300,function(mk){
         if(mk.parentNode) mk.parentNode.replaceChild(document.createTextNode(mk.textContent),mk);
-      },null);
+      },function(){scheduleStyleDischarge();});
     }
     if(sb&&sb.hidden===false&&sb.dataset.searchState==='searching'){
       sb.textContent='\u5171\u627e\u5230 '+stats.resultCount+' \u500b\u6bb5\u843d\uff08\u6a19\u793a\u5df2\u66ab\u6642\u6536\u8d77\uff09';
@@ -23648,6 +23685,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     _hlAbort=runChunks(roots,180,process,function(){
       if(_nativeSearchHighlight){CSS.highlights.set('acim-search',nativeSet);_searchRanges=first;}
       if(done)done();
+      scheduleStyleDischarge();
     });
   }
 
@@ -24761,7 +24799,7 @@ html.dark-mode #acim-external-guide .acim-eg-note{color:#c4b8d2}
   try{installed=(!!navigator.standalone)||!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);}catch(e){}
   var inApp=!!label&&!installed;
   var dismissed=false, node=null;
-  var sessionKey='acim-external-guide-dismissed-v30.9';
+  var sessionKey='acim-external-guide-dismissed-v30.10';
   try{ dismissed=sessionStorage.getItem(sessionKey)==='1'; }catch(e){}
 
   function externalUrl(input){
