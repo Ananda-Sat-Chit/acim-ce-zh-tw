@@ -2,12 +2,12 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="acim-version" content="v30.8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
+<meta name="acim-version" content="v30.9">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="4f875d7673d863e069d063dc71f03efecda66388a1a9e1f9e8f4ddfe01c4cd0d">
+<meta name="acim-release-id" content="6c5b8754cf699472206ca1d10534c3bbdcadae21e539f7703af130a3661d63c2">
 <meta name="acim-build" content="2026-11-04">
-<meta name="acim-build-time" content="17:14">
+<meta name="acim-build-time" content="19:32">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -153,7 +153,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v30.8';
+var ACIM_VERSION = 'v30.9';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -2101,7 +2101,7 @@ html.dark-mode sup.fn-badge.acim-fn-locate{
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 17:14</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 19:32</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -23314,7 +23314,16 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       sb=document.getElementById('search-count-badge'), st;
   var _indexJob=null, _searchToken=0, _hlAbort=null, _paintJob=null, _matchJob=null;
   var _composing=false, _lastResults=[], _lastRx=null, _shownCount=0;
-  var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight);
+  /* V30.9：手機一律走實體 mark 路徑（自源頭不使用 CSS Custom Highlight registry）。
+   根因（Redmi 13C 讀者實機 6~8 秒卡頓）：native Range 註冊後，「在位」時鍵盤彈出、
+   聚焦搜尋欄、明暗切換等任何繪製失效都要為全書調解高亮；V30.8 聚焦時退休閥的
+   CSS.highlights.delete() 本身也觸發同級全書調解——上限 300 與退休時點都避不開。
+   手機（≤768px 或主要輸入為觸控）改用實體 mark：一般 inline 元素，繪製只涉及
+   可視區域，registry 從此不存在，聚焦／鍵盤零額外全書成本。mark 路徑沿用 V30.8
+   的 300 上限、聚焦/收抽屜退休與 pin 保留。桌面（≥769px 且主指標精準）維持
+   native Range 上限 300，行為不變。 */
+var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&&
+  !(window.innerWidth<=768||(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches));
   var _searchRanges=Object.create(null);
   /* V30.7：native 高亮 Range 上限。實測 912 個 Range 在位時，手機上任何一次
      style invalidation（聚焦搜尋欄、字級、明暗切換）都需全書調解高亮繪製，
@@ -23668,7 +23677,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   }
   function materializeFirstHit(root,rx){
     if(!root||!root.isConnected)return;
-    if(root.querySelector('mark.search-hl'))return;
+    /* V30.9：mark 路徑下命中段已有 mark——將首個 mark 升級為 pin 後返回，
+       使「收抽屜／聚焦退休」時點擊命中的螢光依舊保留（與 native 路徑的
+       pin 保證一致；V30.8 的無 native 模擬測試因 0==0 空過未抓到此缺口）。 */
+    var _exMk=root.querySelector('mark.search-hl');
+    if(_exMk){_exMk.classList.add('search-hl-pin');return;}
     var parts=acimHlTextNodes(root);
     if(!parts.nodes.length)return;
     var expr=new RegExp(rx.source.replace(/ /g,'\\s+'),'gi');
@@ -23856,7 +23869,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       }
       /* V30.8：量測前先強制渲染目標 section（見 acimRevealSection 註解） */
       var _rv=acimRevealSection(el);
-      if(_nativeSearchHighlight)materializeFirstHit(el,rx);
+      /* V30.9：materializeFirstHit 無條件呼叫——mark 路徑下命中段已有 mark
+         時函式會把首個 mark 升級為 pin；超過 300 上限而未標示的命中，點擊
+         當下補上實體 mark，維持 V30.7 起的「點擊命中可見」保證。 */
+      materializeFirstHit(el,rx);
       var firstMark=(_nativeSearchHighlight && _searchRanges[en.id]) || el.querySelector('mark.search-hl') || el;
       var rect=firstMark.getBoundingClientRect();if(!rect.height)rect=el.getBoundingClientRect();
       window.__acimJump(window.scrollY+rect.top-Math.round(window.innerHeight/3));
@@ -24745,7 +24761,7 @@ html.dark-mode #acim-external-guide .acim-eg-note{color:#c4b8d2}
   try{installed=(!!navigator.standalone)||!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);}catch(e){}
   var inApp=!!label&&!installed;
   var dismissed=false, node=null;
-  var sessionKey='acim-external-guide-dismissed-v30.8';
+  var sessionKey='acim-external-guide-dismissed-v30.9';
   try{ dismissed=sessionStorage.getItem(sessionKey)==='1'; }catch(e){}
 
   function externalUrl(input){
