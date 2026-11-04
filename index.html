@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v30.10">
+<meta name="acim-version" content="v30.11">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="16c4f32be4e906308659f9bc9b7591ac4a968a4fd40b3b995449c034ad6cbd15">
+<meta name="acim-release-id" content="8b880a76ae2342f1906aec84c4fdf1282099372f6a832d5daecc3c97f0926a7d">
 <meta name="acim-build" content="2026-11-04">
-<meta name="acim-build-time" content="21:10">
+<meta name="acim-build-time" content="22:29">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -153,7 +153,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v30.10';
+var ACIM_VERSION = 'v30.11';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -997,6 +997,17 @@ html.dark-mode #chapter-crumb{background:var(--c-sidebar);border-color:var(--c-b
     box-shadow:none;
   }
   #sidebar-toc.mobile-open{left:0;box-shadow:4px 0 24px rgba(0,0,0,0.3);}
+  /* ══ V30.11：書本面紗（手機目錄抽屜＝全螢幕模態）══
+     抽屜滑入後書本淡出並暫離版面樹（display:none）：聚焦搜尋欄／鍵盤彈出／
+     明暗字級失效時，瀏覽器只需結算抽屜本身，不再為整本書（799 個
+     content-visibility 懶渲染節＋搜尋 mark＋捲動累積失效）做全書樣式結算
+     ——這是 Redmi 13C 點搜尋欄卡 6~8 秒的結構性根除。各節已有烘焙
+     contain-intrinsic-size，關閉抽屜時由 unveilBookBehindDrawer 恢復書本、
+     校正捲動位置，並把重新附著的樣式債交給背景結清排程器。 */
+  html.acim-book-veiled #content-area{display:none!important;}
+  #content-area.acim-book-fadeout{opacity:0;transition:opacity 0.2s ease;}
+  @keyframes acimBookFadeIn{from{opacity:0;}to{opacity:1;}}
+  #content-area.acim-book-fadein{animation:acimBookFadeIn 0.2s ease;}
   #chapter-crumb{display:flex;}
   /* 32pt Word cover subtitle: avoid oversized wrapping on phones. */
     #pwa-tools{right:10px;bottom:calc(14px + env(safe-area-inset-bottom, 0px));gap:5px;}
@@ -2101,7 +2112,7 @@ html.dark-mode sup.fn-badge.acim-fn-locate{
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 21:10</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 22:29</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -22702,18 +22713,138 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     });
   }
 
+  /* ══ V30.11：書本面紗（veil）——抽屜開啟期間讓全書暫離版面樹 ══
+     「點搜尋欄卡 6~8 秒」的共通結構：抽屜開著、書本仍在版面樹上，任何
+     聚焦／鍵盤彈出／全域樣式失效都會逼瀏覽器為整本書做一次結算。
+     抽屜滑入後將 #content-area display:none，這筆結算從結構上消失；
+     關閉抽屜時恢復書本、以「暫存錨點＋自帶輕量校正」還原捲動位置，
+     重新附著的樣式債交給 V30.10 背景結清排程器。 */
+  var _veil={on:false,timer:null,y:0,zoom:'',aid:null,aidOrig:null,atop:null,gen:0};
+  function veilApplyNow(){
+    if(_veil.timer){clearTimeout(_veil.timer);_veil.timer=null;}
+    if(_veil.on)return;
+    _veil.on=true;
+    try{
+      var ca=document.getElementById('content-area');
+      if(ca)ca.classList.remove('acim-book-fadeout');
+      document.documentElement.classList.add('acim-book-veiled');
+    }catch(e){}
+  }
+  function veilClearAnchor(){
+    try{
+      var el=_veil.aid?document.getElementById(_veil.aid):null;
+      if(el){
+        if(_veil.aidOrig)el.id=_veil.aidOrig;else el.removeAttribute('id');
+      }
+    }catch(e){}
+    _veil.aid=null;_veil.aidOrig=null;_veil.atop=null;
+  }
+  function unveilBookBehindDrawer(){
+    if(!_veil.on&&!_veil.timer)return;
+    if(_veil.timer){clearTimeout(_veil.timer);_veil.timer=null;}
+    try{document.getElementById('content-area').classList.remove('acim-book-fadeout');}catch(e){}
+    if(!_veil.on)return;
+    _veil.on=false;
+    try{document.documentElement.classList.remove('acim-book-veiled');}catch(e){}
+    var y=_veil.y,aid=_veil.aid,atop=_veil.atop,gen=_veil.gen;
+    _veil.y=0;
+    try{scheduleStyleDischarge();}catch(e){}
+    /* 使用者一有滾動／觸控／按鍵，校正立即讓位 */
+    var stopped=false;
+    function stop(){stopped=true;}
+    ['wheel','touchmove','pointerdown','keydown'].forEach(function(n){
+      window.addEventListener(n,stop,{capture:true,passive:true});
+    });
+    setTimeout(function(){
+      ['wheel','touchmove','pointerdown','keydown'].forEach(function(n){
+        window.removeEventListener(n,stop,{capture:true,passive:true});
+      });
+      veilClearAnchor();
+    },2200);
+    requestAnimationFrame(function(){
+      try{
+        /* 已有跳轉接管（章節連結／搜尋結果先量測後關抽屜）就交給原流程 */
+        if((window.scrollY||0)>2)return;
+        if(y>2)window.scrollTo(0,y);
+        /* 自帶輕量校正：錨點渲染完成（有真實高度）才釘回面紗前的框景；
+           各節由烘焙高度重建為真實高度時，瀏覽器捲動錨定會先補償，
+           本校正負責最後對位。 */
+        [90,260,700,1300].forEach(function(ms){
+          setTimeout(function(){
+            if(stopped||_veil.on||_veil.gen!==gen)return;
+            var el=aid?document.getElementById(aid):null;
+            if(!el||atop===null)return;
+            var r=el.getBoundingClientRect();
+            if(!r.height)return; /* 尚未渲染（content-visibility），等下一次 */
+            var t=window.scrollY+r.top-Math.round(atop);
+            if(Math.abs(t-window.scrollY)>40)
+              window.scrollTo(0,Math.max(0,t));
+          },ms);
+        });
+      }catch(e){}
+      requestAnimationFrame(function(){
+        try{var c=document.getElementById('content-area');
+          if(c&&!c.classList.contains('acim-book-fadein')){
+            c.classList.add('acim-book-fadein');
+            setTimeout(function(){c.classList.remove('acim-book-fadein');},260);
+          }}catch(e){}
+      });
+    });
+  }
+  window.__acimVeilUnveil=unveilBookBehindDrawer;
+  function veilScheduleForDrawer(){
+    if(_veil.on||_veil.timer)return;
+    _veil.gen++;
+    try{
+      var ca=document.getElementById('content-area');
+      if(!ca)return;
+      veilClearAnchor();
+      _veil.y=Math.max(0,window.scrollY||0);
+      _veil.zoom=(content&&content.style.zoom)||'';
+      /* 暫存錨點：面紗前視口內區塊元素（多點探測），以臨時 id 標記 */
+      var pts=[[0.5,0.22],[0.5,0.35],[0.35,0.22],[0.65,0.22],[0.5,0.12]];
+      for(var pi=0;pi<pts.length;pi++){
+        var pr=document.elementFromPoint(Math.round(window.innerWidth*pts[pi][0]),
+          Math.round(window.innerHeight*pts[pi][1]));
+        var pp=pr&&pr.closest?pr.closest('p,h1,h2,h3,h4,h5,h6,li,td,blockquote'):null;
+        if(pp&&!pp.closest('#sidebar-toc')&&content.contains(pp)){
+          _veil.aidOrig=pp.id||null;
+          pp.id='acim-veil-anchor';
+          _veil.aid='acim-veil-anchor';
+          _veil.atop=pp.getBoundingClientRect().top;
+          break;
+        }
+      }
+      ca.classList.add('acim-book-fadeout');
+      _veil.timer=setTimeout(function(){
+        _veil.timer=null;
+        if(sidebar.classList.contains('mobile-open'))veilApplyNow();
+        else{var c2=document.getElementById('content-area');
+          if(c2)c2.classList.remove('acim-book-fadeout');
+          veilClearAnchor();}
+      },200);
+    }catch(e){}
+  }
+  /* 抽屜滑入的 200ms 內就點搜尋欄：聚焦結算前先完成面紗 */
+  document.addEventListener('pointerdown',function(e){
+    if(!_veil.timer||_veil.on)return;
+    var t=e.target;
+    if(t&&t.closest&&t.closest('#toc-search-input'))veilApplyNow();
+  },true);
   var sidebarHideTimer=null,sidebarOpenFrame=null;
   function openSidebar(){
     if(sidebarHideTimer!==null){clearTimeout(sidebarHideTimer);sidebarHideTimer=null;}
     if(sidebar.classList.contains('mobile-open')&&overlay.style.display==='block')return;
     sidebar.classList.add('mobile-open');
     overlay.style.display='block';
+    if(window.innerWidth<=768)veilScheduleForDrawer();
     sidebarOpenFrame=requestAnimationFrame(function(){
       sidebarOpenFrame=null;
       if(sidebar.classList.contains('mobile-open'))overlay.style.opacity='1';
     });
   }
   function closeSidebar(){
+    unveilBookBehindDrawer();
     setSidebarSettings(false,false);
     if(sidebarOpenFrame!==null){cancelAnimationFrame(sidebarOpenFrame);sidebarOpenFrame=null;}
     if(!sidebar.classList.contains('mobile-open')&&overlay.style.display==='none')return;
@@ -23018,6 +23149,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         e.preventDefault();
         var el=document.getElementById(a.dataset.id);
         if(!el) return;
+        unveilBookBehindDrawer(); /* V30.11：量測前先讓書本回到版面樹 */
         /* 捲動內文到目標 heading */
         var rect = el.getBoundingClientRect();
         var offset = window.scrollY + rect.top - 56;
@@ -23181,6 +23313,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
           a.addEventListener('click', function(e){
             e.preventDefault();
             var t=document.getElementById(this.dataset.gid); if(!t) return;
+            unveilBookBehindDrawer(); /* V30.11：量測前先讓書本回到版面樹 */
             window.__acimJump(window.scrollY + t.getBoundingClientRect().top - 72);
             window.__acimCorrectScroll(t, 72);
             t.classList.remove('glossary-flash'); void t.offsetWidth; t.classList.add('glossary-flash');
@@ -23885,6 +24018,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     hint.textContent=inNote?(noteLabel||'註 '+noteId)+' · 開啟註文並跳至內文':'點擊跳至';
     item.appendChild(hint);
     item.addEventListener('click',function(){
+      unveilBookBehindDrawer(); /* V30.11：量測前先讓書本回到版面樹 */
       var el=en.node;if(!el || !el.isConnected)return;
       if(inNote){
         var def=el.closest('[id^="ftn"]');
@@ -24799,7 +24933,7 @@ html.dark-mode #acim-external-guide .acim-eg-note{color:#c4b8d2}
   try{installed=(!!navigator.standalone)||!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);}catch(e){}
   var inApp=!!label&&!installed;
   var dismissed=false, node=null;
-  var sessionKey='acim-external-guide-dismissed-v30.10';
+  var sessionKey='acim-external-guide-dismissed-v30.11';
   try{ dismissed=sessionStorage.getItem(sessionKey)==='1'; }catch(e){}
 
   function externalUrl(input){
@@ -27344,6 +27478,7 @@ function currentHeading(){
 }
 function jumpToHeading(h){
   if(!h || !window.__acimJump) return;
+  if(window.__acimVeilUnveil)window.__acimVeilUnveil(); /* V30.11：量測前先讓書本回到版面樹 */
   var rect=h.getBoundingClientRect();
   var margin=Math.round(window.innerHeight/3);
   window.__acimJump(window.scrollY+rect.top-margin);
