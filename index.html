@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.13">
+<meta name="acim-version" content="v40.14">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="1e62e7424b4d37e72d69d3897ab049e8a24f177021479708f1c98615772988b4">
-<meta name="acim-build" content="2026-11-06">
-<meta name="acim-build-time" content="09:30">
+<meta name="acim-release-id" content="f1fcb219fd245745cf581c09c35eed2de5e27e903cb9491b68191c8955828095">
+<meta name="acim-build" content="2026-11-05">
+<meta name="acim-build-time" content="22:51">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -161,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.13';
+var ACIM_VERSION = 'v40.14';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* V40.9：套用新版後的首次啟動，顯示一次性「已套用」確認——讓讀者與
@@ -2035,7 +2035,28 @@ ul{margin-bottom:0;}
      目的地冷節是跳頂結算的最大嫌疑；預熱不動 content-visibility、
      不觸發版面與繪製，對既有順暢路徑零風險；
    ④ 直跳改「雙 rAF 讓幀」：關面板的樣式收尾與跳頂分屬不同幀，
-     跳頂落在乾淨幀上執行。 */
+     跳頂落在乾淨幀上執行。
+   V40.14：回頂「A＋ 同構面紗管線＋書首真預渲染」——V40.13 實機截圖
+   定案：直跳路徑凍結 23.1 秒，且完成提示的「23 秒」（t0→回報總長）
+   證明凍結落在「關面板處理器返回之後、雙 rAF 跳頂之前」的縫隙
+   （步級歸因的「面板關閉」是所有區間重疊量皆 0 時的 fallback——
+   恰證明 long task 在未被覆蓋的縫隙裡）。八版實證收斂：「書本保持
+   可見＋面板開合幀＋位置大跳」是唯一實機凍結的結構；而掛紗→關
+   面板→債閘→解紗（A＋／明暗／抽屜／書籤）全數順暢。另發現
+   V40.13 預熱無效的根因：getComputedStyle(節) 只解析「節元素本身」
+   的樣式，content-visibility:auto 節 skip 期間「後代樣式＋首次佈局」
+   從未執行。本版：① 行動裝置回頂一律借用 A＋ 已驗證序列——
+   __acimVeilApplyNow() 同步掛紗→關面板→債閘等待（背景結清）→
+   解紗（面紗期間版面高度塌陷、scrollY 已夾限為 0，恢復天然落頂部，
+   零量測零捲動）→rAF#2 __acimJump(0) 收尾；② topMode 零量測化：
+   移除 V40.11 的「封面節臨時 id＋強制渲染＋gBCR＋瞬跳」（該序列
+   本身就是 23.7 秒 long task 主體）；③ 書首「真」預渲染 preRenderTop：
+   載入後閒置與開面板兩時點，前 6 節逐節 inline content-visibility:
+   visible 強制後代樣式解析＋首次佈局（每節獨立一幀、雙 rAF 後還原、
+   單節 >1200ms 即中止防打斷閱讀），樣式樹於 CVA 再 skip 後保留，
+   回頂首幀只剩再佈局；④ 歸因補洞：新增「關面板後等待／縫隙」區間、
+   long task 筆數與最大單筆、跳頂未完成偵測——若仍凍結，一張截圖
+   直接定案落點。 */
 #acim-bottomnav{
   display:none;position:fixed;left:0;right:0;bottom:0;z-index:10002;
   transition:transform 0.18s ease;
@@ -23054,30 +23075,16 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
            落點短了 1673px、錨點在視野外未渲染、校正永遠跳過＝永久偏移）。
            錨點落點強制渲染錨點節、取真實節點位置，與上方烘焙高度無關；
            無錨點才退回 y 夾限。 */
-        /* V40.11：回頂（topMode）＝與 A＋ 錨點還原完全同構的「頂部錨點序列」，
-           全部發生在第一幀繪製之前：第一節（封面節）臨時 id→content-visibility
-           強制渲染→getBoundingClientRect 暖機→acimScrollNow 瞬跳。V40.10 儀器化
-           證實凍結落在「繞過本區塊的解紗」——回頂改走本區塊後，與實機已驗證
-           順暢的 A＋／抽屜關閉路徑無任何結構差異。臨時 id 即裝即拆，零殘留；
-           go() 的 __acimJump(0) 在 rAF#2 最後精確歸零。 */
+        /* V40.14：topMode 零量測化——V40.11 的「封面節臨時 id→強制渲染→
+           gBCR 暖機→瞬跳」在實機是 23.7 秒 long task 的主體：強制渲染
+           封面節＝本 session 從未解析的後代樣式＋首次佈局一次償付，且
+           發生在互動路徑上。面紗期間版面高度塌陷、scrollY 已夾限為 0，
+           恢復顯示天然落頂部，此處任何量測與捲動都屬多餘；跳頂由解紗
+           回調（rAF#2，書本已繪製一幀、版面乾淨）的 __acimJump(0) 完成。
+           頂部首次渲染成本已由 V40.14 preRenderTop 在背景預付。 */
         if(topMode){
-          var sec0=content&&content.querySelector?content.querySelector('section.csec'):null;
-          if(sec0){
-            var _had0=sec0.getAttribute('id');
-            sec0.setAttribute('id','acim-top-anchor');
-            try{
-              if(getComputedStyle(sec0).contentVisibility!=='visible'){
-                sec0.style.contentVisibility='visible';
-                setTimeout(function(){try{sec0.style.contentVisibility='';}catch(e){}},2600);
-              }
-              var r0=sec0.getBoundingClientRect();
-              if(r0&&r0.height)acimScrollNow(0,0);
-              try{window.__acimVeilDebug={topMode:true,sec0Top:Math.round((r0&&r0.top)||0),
-                scrollAtRestore:Math.round(window.scrollY)};}catch(e){}
-            }finally{
-              if(_had0)sec0.setAttribute('id',_had0);else sec0.removeAttribute('id');
-            }
-          }
+          try{window.__acimVeilDebug={topMode:true,zeroWork:true,
+            scrollAtRestore:Math.round(window.scrollY)};}catch(e){}
         }else if(!skipRestore&&(window.scrollY||0)<=2&&y>2){
           var targetY=y,aidShown=false;
           if(!aid){
@@ -28306,16 +28313,19 @@ function buildBottomNav(){
   nav.setAttribute('aria-label','主要導覽');
   /* V40.1：快選單開合總閘——開啟即掛共享面紗，關閉時若抽屜仍開著
      則由抽屜續用面紗，全部關閉才解紗。 */
-  /* ── V40.13：書首目的地預熱（回頂凍結的結構性緩解）──
-     實機已定案：全書級樣式一次結清＝6~8 秒單一 long task（V30.10 實測：
-     799 個 content-visibility 未渲染節承接全域失效）。跳頂結算的最大
-     嫌疑是「目的地冷節」——閱讀位置深（如卷一第31章）時，書首各節本
-     session 從未承接樣式解析，跳頂瞬間一次償付。本模組在「開啟字級
-     面板」與「載入後閒置 3.2 秒」兩個時點，以 ≤5ms 分片對書首 48 節
-     做 getComputedStyle 預熱：只做樣式解析、不動 content-visibility、
-     不量測版面、零繪製零位移——與 V30.10 結清排程器同一手法、同一
-     前提，對浮動↑鈕／書籤／A＋ 等已驗證順暢路徑零風險。 */
-  var _warmSecs=null,_warmIdx=0,_warmTimer=null;
+  /* ── V40.14：書首「真」預渲染（回頂凍結的結構性緩解）──
+     V40.13 預熱無效的根因定案：getComputedStyle(節).color 只解析「節元素
+     本身」的樣式；content-visibility:auto 節在 skip 期間「後代樣式從未
+     解析＋佈局從未計算」，任何抵達書首的渲染首幀要一次償付數百個後代
+     元素的樣式＋行盒佈局——實機 22~24 秒級 long task 的主體。本模組改
+     為「真預渲染」：在「載入後閒置 3.2 秒」與「開啟字級面板」兩個時點，
+     逐節（前 6 節，每節獨立一幀、雙 rAF 後還原 inline、間隔 64ms 讓位）
+     以 content-visibility:visible 強制瀏覽器完成該節後代樣式解析＋首次
+     佈局。CVA 之後雖會丟棄離視口節的佈局物件，但樣式樹保留，回頂首幀
+     只剩「已解析樣式上的再佈局」（A＋ 恢復幀同級成本，實機已證可負擔）。
+     防衛：單節耗時 >1200ms 立即中止整個預渲染（寧可回頂慢一次，也不
+     打斷閱讀）；分頁隱藏／面紗期間／桌面不執行；面紗掛上時自動停止。 */
+  var _warmSecs=null,_warmIdx=0,_warmTimer=null,_warmFrame=null;
   function warmTopDestination(){
     try{
       if(window.innerWidth>768)return;
@@ -28323,29 +28333,40 @@ function buildBottomNav(){
       if(!_warmSecs){
         var ca=document.getElementById('content-area');
         if(!ca)return;
-        _warmSecs=Array.prototype.slice.call(ca.querySelectorAll('section.csec'),0,48);
+        _warmSecs=Array.prototype.slice.call(ca.querySelectorAll('section.csec'),0,6);
         _warmIdx=0;
       }
-      if(_warmIdx>=_warmSecs.length||_warmTimer)return;
+      if(_warmIdx>=_warmSecs.length||_warmTimer||_warmFrame)return;
       var step=function(){
         _warmTimer=null;
         try{
           if(document.hidden||document.documentElement.classList.contains('acim-book-veiled')){
             _warmIdx=_warmSecs.length;return;
           }
+          if(_warmIdx>=_warmSecs.length)return;
+          var s=_warmSecs[_warmIdx];
+          if(!s||!s.isConnected){_warmIdx++;_warmTimer=setTimeout(step,16);return;}
           var t0=performance.now();
-          while(_warmIdx<_warmSecs.length&&performance.now()-t0<5){
-            try{void getComputedStyle(_warmSecs[_warmIdx++]).color;}catch(e){_warmIdx++;}
-          }
-          if(_warmIdx<_warmSecs.length)_warmTimer=setTimeout(step,16);
+          try{s.style.contentVisibility='visible';}catch(e){}
+          _warmFrame=requestAnimationFrame(function(){
+            _warmFrame=requestAnimationFrame(function(){
+              _warmFrame=null;
+              try{s.style.contentVisibility='';}catch(e){}
+              if(performance.now()-t0>1200){_warmIdx=_warmSecs.length;return;}
+              _warmIdx++;
+              if(_warmIdx<_warmSecs.length)_warmTimer=setTimeout(step,64);
+            });
+          });
         }catch(e){_warmIdx=_warmSecs.length;}
       };
       _warmTimer=setTimeout(step,24);
     }catch(e){}
   }
   window.__acimWarmTopDestination=warmTopDestination;
-  if(document.readyState==='complete')setTimeout(warmTopDestination,3200);
-  else window.addEventListener('load',function(){setTimeout(warmTopDestination,3200);});
+  /* 4.5 秒起跑：避開 lazyFontFaces 的全書樣式失效（load+2.5s 注入
+     @font-face ⇒ 全書 style invalidation），預渲染不與字型交換爭幀。 */
+  if(document.readyState==='complete')setTimeout(warmTopDestination,4500);
+  else window.addEventListener('load',function(){setTimeout(warmTopDestination,4500);});
   function setSheet(open,opts){
     if(!sheet)return;
     if(open){
@@ -28361,11 +28382,12 @@ function buildBottomNav(){
     }else{
       sheet.classList.remove('open');
       if(opts&&typeof opts.onVeilDropped==='function'&&window.__acimUnveilNow){
-        /* V40.11：帶 onVeilDropped 的關閉＝主動跳轉（回頂）——直通唯一一次
-           解紗管線，並以 topJump 傳遞「頂部錨點」意圖；skipRestore 特殊分支
-           自此廢除（V40.10 儀器化定案：繞過 rAF#1 錨點區塊的解紗本身就是
-           V40.2~V40.10 六版回頂凍結的唯一不變共因）。 */
-        window.__acimUnveilNow(false,opts.onVeilDropped,{topJump:!!opts.topJump});
+        /* V40.11→V40.14：帶 onVeilDropped 的關閉＝主動跳轉（回頂）——直通
+           唯一一次解紗管線。V40.14：skipRestore 由呼叫端傳遞（回頂＝true，
+           不做錨點還原——版面塌陷已落頂部，錨點還原會把讀者拉回深位再
+           與校正窗口對抗）；topJump 繼續標記 topMode（零量測解紗）。 */
+        window.__acimUnveilNow(opts.skipRestore===true,opts.onVeilDropped,
+          {topJump:!!opts.topJump});
       }else if(window.__acimSheetVeilClose)window.__acimSheetVeilClose();
     }
   }
@@ -28496,18 +28518,15 @@ function buildBottomNav(){
   var t3=document.createElement('span'); t3.textContent='回到頂部';
   bTop.appendChild(i3); bTop.appendChild(t3);
   bTop.addEventListener('click',function(){
-    /* V40.12：回頂「零面紗直跳」雙路徑。
-       五種捲動實作（V40.5~9）＋兩種解紗管線（V40.10 skipRestore、
-       V40.11 A＋ 同構）實機症狀完全相同（12→18→23.7 秒，單一 long
-       task，永遠落在「書本恢復排版」段），而本機 6x 節流全數 0.3 秒
-       ⇒ 凍結是實機瀏覽器對 display:none→block 恢復結算的行為，與
-       捲動方法無關。實機已驗證順暢的浮動↑鈕與書籤面板跳轉唯一
-       共同點：書本從未離開版面樹。本版：① 快選單開啟不再掛紗，
-       回頂時若面紗未掛（常態）→關面板後直接 __acimJump(0)，與浮動
-       ↑鈕完全同構，零結算零解紗；② 面紗仍掛（抽屜共用面紗等罕見
-       情境）→維持 V40.11 topJump 管線（topMode 解紗＋rAF#2 歸零）；
-       ③ 兩路徑共用 longtask＋LoAF 觀測：若實機仍慢，診斷提示直接
-       給出落點與成本分解，一張截圖即可定位。 */
+    /* V40.14：回頂「A＋ 同構面紗管線」——V40.13 實機截圖定案：直跳路徑
+       凍結 23.1 秒，且完成提示的「23 秒」（t0→回報總長）證明凍結落在
+       「關面板處理器返回之後、雙 rAF 跳頂之前」的縫隙（歸因標籤
+       「面板關閉」是所有區間重疊量皆 0 時的 fallback——恰證明 long
+       task 在未被覆蓋的縫隙裡）。八版實證收斂：「書本保持可見＋面板
+       開合幀＋位置大跳」是唯一實機凍結的結構；而掛紗→關面板→債閘→
+       解紗（A＋／明暗／抽屜／書籤）全數順暢。本版行動裝置一律借用
+       A＋ 已驗證序列（詳見檔頭 V40.14 條目）；桌面（>768）維持零面紗
+       直跳（桌面從未凍結）。longtask＋LoAF 觀測保留。 */
     var _tnow=function(){return (window.performance&&performance.now)?performance.now():Date.now();};
     var _t0=_tnow();
     /* V40.13：步級歸因——V40.12 的 segs 分類在直跳路徑失真（t0 與 tJump
@@ -28517,7 +28536,7 @@ function buildBottomNav(){
        解紗路徑）｜[tJ0,tJ1]=跳頂呼叫內｜tJ1 之後=跳頂返回後（含起始
        延遲）——單張截圖即可定案凍結落在哪一步。 */
     var _tr={t0:_t0,tEntry:_t0,tSheet:0,tVeil:0,tRestore:0,tJ0:0,tJ1:0,tAnc:0,
-      gated:false,veiled:false,longs:[],obs:null,lafs:[],loaf:null};
+      gated:false,veiled:false,via:'',longs:[],obs:null,lafs:[],loaf:null};
     try{
       _tr.obs=new PerformanceObserver(function(list){
         try{
@@ -28566,22 +28585,29 @@ function buildBottomNav(){
             }
             window.__acimTopJumpTrace=null;
             if(sum<800)return;
-            /* 區間重疊歸因：哪一段吃掉最多凍結 */
+            /* V40.14 區間重疊歸因（補洞版）：V40.13 的區間未覆蓋「關面板
+               之後→跳頂之前」縫隙，long task 落在縫隙時全部重疊量為 0，
+               誤報預設標籤「面板關閉」（23.1 秒截圖的真正落點）。本版
+               區間：[0,tS] 面板關閉｜[tS,tV] 掛紗後債閘等待（僅面紗
+               管線）｜[tV,a0] 解紗恢復（僅面紗管線）｜直跳路徑 [tS,a0]
+               關面板後縫隙｜[a0,a1] 跳頂呼叫內｜[a1,∞) 跳頂返回後。 */
             var tS=Math.max(0,_tr.tSheet-_tr.t0),
-                tV=_tr.tVeil?_tr.tVeil-_tr.t0:1e15,
+                tV=_tr.tVeil?_tr.tVeil-_tr.t0:0,
                 a0=_tr.tJ0-_tr.t0,a1=_tr.tJ1-_tr.t0;
             function ovl(s,e,at,d){return Math.max(0,Math.min(e,at+d)-Math.max(s,at));}
-            var sgP=0,sgV=0,sgJ=0,sgA=0;
+            var sgP=0,sgW=0,sgV=0,sgJ=0,sgA=0;
             for(var q=0;q<n;q++){
               var L=_tr.longs[q];
               sgP+=ovl(0,tS,L.at,L.d);
-              if(tV<1e15)sgV+=ovl(tV,a0>0?a0:1e15,L.at,L.d);
+              if(tV>0){sgW+=ovl(tS,tV,L.at,L.d);sgV+=ovl(tV,a0>0?a0:1e15,L.at,L.d);}
+              else if(a0>0)sgW+=ovl(tS,a0,L.at,L.d);
               if(a1>0){
                 sgJ+=ovl(a0,a1,L.at,L.d);
                 sgA+=ovl(a1,1e15,L.at,L.d);
               }
             }
             var where='面板關閉',mv=sgP;
+            if(sgW>mv){where='關面板後等待';mv=sgW;}
             if(sgV>mv){where='解紗恢復';mv=sgV;}
             if(sgJ>mv){where='跳頂呼叫內';mv=sgJ;}
             if(sgA>mv){
@@ -28592,11 +28618,14 @@ function buildBottomNav(){
               }
               where='跳頂返回後'+(minLat<1e15?'（+'+(Math.round(minLat/100)/10)+'秒）':'');
             }
-            var attr='';
+            var mx=0;
+            for(var q2=0;q2<n;q2++)if(_tr.longs[q2].d>mx)mx=_tr.longs[q2].d;
+            var attr='（'+n+'筆/最大'+(Math.round(mx/100)/10)+'秒）';
             if(st+ly+sc>=250)
-              attr='（樣式'+(Math.round(st/100)/10)+'・排版'+(Math.round(ly/100)/10)
+              attr+='（樣式'+(Math.round(st/100)/10)+'・排版'+(Math.round(ly/100)/10)
                   +'・腳本'+(Math.round(sc/100)/10)+'秒）';
-            v30toast('回頂診斷：'+(_tr.veiled?'解紗':'直跳')+'｜凍結'+(Math.round(sum/100)/10)
+            if(a1<=0&&a0>0)attr+='（跳頂未完成）';
+            v30toast('回頂診斷：'+(_tr.via||(_tr.veiled?'解紗':'直跳'))+'｜凍結'+(Math.round(sum/100)/10)
               +'秒@'+where+attr+'・'+ACIM_VERSION.toUpperCase(),8000);
           }catch(e){}
         },2600);
@@ -28613,19 +28642,32 @@ function buildBottomNav(){
       _report();
     };
     /* 面紗狀態判定（在關面板之前取樣）：acim-book-veiled＝書本已離開
-       版面樹（抽屜共用面紗等情境）→ 必須走解紗管線；否則書本可見，
-       關面板（setSheet(false) 內部會取消任何尚在排程的掛紗 timer）後
-       直接跳頂。單執行緒同步取樣→分支→關面板，其間 timer 不可能
-       搶先生效，狀態判定不會漂移。 */
+       版面樹（抽屜共用面紗等情境）→ 直接走解紗管線；否則行動裝置
+       先同步掛紗再關面板（與 A＋ 點按當下同一原子操作）。單執行緒
+       同步取樣→分支→掛紗→關面板，其間 timer 不可能搶先生效，
+       狀態判定不會漂移。 */
     var veiled=false;
     try{veiled=document.documentElement.classList.contains('acim-book-veiled');}catch(e){}
     _tr.veiled=veiled;
     if(veiled){
-      setSheet(false,{onVeilDropped:go,topJump:true});
+      _tr.via='面紗管線';
+      /* 紗已掛：直接解紗。skipRestore=true＝不做錨點還原（回頂要離開
+         原位；面紗期間版面塌陷已落 0，錨點還原會把讀者拉回深位）。 */
+      setSheet(false,{onVeilDropped:go,topJump:true,skipRestore:true});
+      try{_tr.tSheet=_tnow();}catch(e){}
+    }else if(window.innerWidth<=768&&window.__acimVeilApplyNow){
+      _tr.via='面紗管線';
+      /* V40.14 核心修復：先同步掛紗（書本 display:none，A＋ 同款原子
+         操作、實機已證零可見結算），再關面板——關面板幀零成本，且
+         「書本可見＋面板開合幀」的實機凍結結構從此不存在於回頂路徑。
+         解紗由債閘保護：面紗模式 40ms 大分片背景結清，書區空白換
+         零凍結；scrollY 已夾限為 0，恢復天然落頂部。 */
+      try{window.__acimVeilApplyNow();}catch(e){}
+      setSheet(false,{onVeilDropped:go,topJump:true,skipRestore:true});
       try{_tr.tSheet=_tnow();}catch(e){}
     }else{
-      /* V40.13：雙 rAF 讓幀——面板收合的樣式收尾與跳頂分屬不同幀，
-         跳頂落在乾淨幀上執行（~33ms 延遲，面板動畫期間無感）。 */
+      /* 桌面：雙 rAF 讓幀——面板收合的樣式收尾與跳頂分屬不同幀。 */
+      _tr.via='直跳';
       setSheet(false);
       try{_tr.tSheet=_tnow();}catch(e){}
       requestAnimationFrame(function(){requestAnimationFrame(function(){go();});});
