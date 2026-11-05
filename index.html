@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.9">
+<meta name="acim-version" content="v40.10">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="a2b8ffc134de29db295a3efcbdf83c4eb27369692390402842d1223f0eaaf38a">
+<meta name="acim-release-id" content="a1cf47a8a30d993fd03284c4371698dd7e808adcee58b776a155400bf6167e51">
 <meta name="acim-build" content="2026-11-05">
-<meta name="acim-build-time" content="15:40">
+<meta name="acim-build-time" content="11:20">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -161,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.9';
+var ACIM_VERSION = 'v40.10';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* V40.9：套用新版後的首次啟動，顯示一次性「已套用」確認——讓讀者與
@@ -1990,7 +1990,16 @@ ul{margin-bottom:0;}
    錨點：回頂目標是絕對座標 0，移除 revealSection／getBoundingClientRect
    ／acimSearchCorrect 八釘點，路徑上零版面讀取；② 啟動時自動套用等待中
    的新版（SKIP_WAITING＋重載一次）；③ 套用後首次啟動顯示「✅ 已套用」；
-   ④ 字級面板頂部加版本標籤；⑤ 回頂完成顯示「回到頂部完成 · X.X 秒」。 */
+   ④ 字級面板頂部加版本標籤；⑤ 回頂完成顯示「回到頂部完成 · X.X 秒」。
+   V40.10：回頂「零同步捲動」——真兇定案：unveilCore 的 skipRestore 分支
+   在移除 display:none 的同一同步任務內 acimScrollNow(0,0)，而 window.scrollTo
+   需要最新版面＝「全書剛回版面樹＋樣式失效」下的同步全書強制排版
+   （實機 12 秒級 long task，發生在第一幀之前＝凍結在「面板未關」舊幀）。
+   V40.3~V40.9 六版共用此行，故四種不同跳轉實作症狀分毫不動；書籤面板
+   不掛紗、浮動↑鈕在乾淨版面捲動，故永遠順暢。移除之（面紗期間 scrollY
+   已夾限為 0，恢復本就落在頂部）；跳頂延後至解紗回調（rAF#2，書本已
+   繪製一幀）；onVeilDropped 消除雙重解紗呼叫；長任務觀測＋凍結明細提示
+   （段數／總秒／落點階段）供實機單張截圖定案。 */
 #acim-bottomnav{
   display:none;position:fixed;left:0;right:0;bottom:0;z-index:10002;
   transition:transform 0.18s ease;
@@ -22908,6 +22917,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       }
       var dones=typeof done==='function'?[done]:[];
       _veil.waiting={dones:dones,gen:_veil.gen,skip:!!skipRestore};
+      try{if(window.__acimTopJumpTrace)window.__acimTopJumpTrace.gated=true;}catch(e){}
       var _fire=function(){
         var w=_veil.waiting;
         _veil.waiting=null;
@@ -22952,7 +22962,15 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(!_veil.on)return;
     _veil.on=false;
     try{document.documentElement.classList.remove('acim-book-veiled');}catch(e){}
-    if(skipRestore){try{acimScrollNow(0,0);}catch(e){}} /* V40.3：回頂先歸零，防恢復瞬間閃跳；V40.7：瞬捲防護 */
+    /* V40.10：移除 skipRestore 路徑的同步 acimScrollNow(0,0)——V40.3~V40.9
+       六版回頂 12 秒凍結的真兇。window.scrollTo 需要最新版面，在「display:none
+       剛解除、全書樣式失效」狀態下＝一次同步全書強制排版（實機 LoAF 單次
+       1.5~1.8 秒起跳，全髒即 12 秒級），且落在移除面紗後的第一幀之前＝讀者
+       看到「面板還開著」的凍結舊幀（實機截圖）。面紗期間 scrollY 已被夾限
+       為 0（版面高度塌陷），恢復顯示本來就落在頂部，此行從頭到尾多餘；
+       跳頂改由解紗回調（rAF#2，書本已繪製一幀、版面乾淨）中的 __acimJump(0)
+       完成，與浮動↑鈕同一成本。 */
+    try{if(window.__acimTopJumpTrace)window.__acimTopJumpTrace.tVeil=(window.performance&&performance.now)?performance.now():0;}catch(e){}
     var y=_veil.y,aid=_veil.aid,atop=_veil.atop,gen=_veil.gen;
     /* V40.1：面紗期間字級若被改變（快選單 A＋／A－），解紗後上方各節
        會隨背景結清持續長高，原 1300ms 內的四次校正擋不住——zoom 有變時
@@ -23071,6 +23089,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         /* V40.3：量測／跳轉回調——書本已恢復顯示且完成一幀佈局，
            此時 getBoundingClientRect 的座標才真實。搜尋點選、書籤跳回、
            章節 pill 等呼叫端把「量測＋跳轉」放進本回調。 */
+        try{if(window.__acimTopJumpTrace&&!window.__acimTopJumpTrace.tRestore)
+          window.__acimTopJumpTrace.tRestore=(window.performance&&performance.now)?performance.now():0;}catch(e){}
         try{if(typeof done==='function')done();}catch(e){}
       });
     });
@@ -28231,8 +28251,13 @@ function buildBottomNav(){
       if(window.__acimSheetVeilOpen)window.__acimSheetVeilOpen();
     }else{
       sheet.classList.remove('open');
-      if(opts&&opts.skipRestore){ /* 主動跳轉（回頂）：不需要錨點還原 */
-        if(window.__acimUnveilNow)window.__acimUnveilNow(true);
+      if(opts&&opts.skipRestore){ /* 主動跳轉（回頂）：不需要錨點還原。
+         V40.10：onVeilDropped＝解紗完成（書本恢復、繪製一幀）後的回調，
+         直通唯一一次解紗管線——消除 V40.9「setSheet 先解紗一次＋handler
+         再排一次」雙重呼叫（無債路徑下雙呼叫會讓 go() 搶在解紗 rAF 之前
+         同步執行，把跳轉落回髒版面上）。 */
+        if(window.__acimUnveilNow)window.__acimUnveilNow(true,opts.onVeilDropped);
+        else if(typeof opts.onVeilDropped==='function')opts.onVeilDropped();
       }else if(window.__acimSheetVeilClose)window.__acimSheetVeilClose();
     }
   }
@@ -28362,34 +28387,71 @@ function buildBottomNav(){
   var t3=document.createElement('span'); t3.textContent='回到頂部';
   bTop.appendChild(i3); bTop.appendChild(t3);
   bTop.addEventListener('click',function(){
-    /* V40.9：回頂＝「零量測、零校正」路徑。
-       V40.8 的 skipRestore 管線在本機 6x 節流重現已只需 0.36 秒，但
-       go() 仍殘留 revealSection＋getBoundingClientRect 量測＋
-       acimSearchCorrect 八釘點（90~3200ms 各一次強制版面讀取）。回頂
-       的目標是絕對座標 scrollY=0——0 不會漂移，不需要量測也不需要校正；
-       解紗（unveilCore）在 skipRestore 下已 acimScrollNow(0,0)，面紗期間
-       scrollY 本就被夾限為 0。本版把 go() 縮減為 __acimJump(0)（y≤0
-       零夾限零結算分支）＋作廢面紗錨點：回頂路徑上不再有任何一次
-       getBoundingClientRect／scrollHeight 讀取，也沒有任何會與結清走訪
-       重疊的校正計時器。
-       另加「回頂耗時提示」：完成後顯示『回到頂部完成 · X.X 秒』——實機
-       若仍慢，此數字即為回報依據（面板上方同時應見 V40.9 版本標籤；
-       兩者皆無＝裝置尚未運行本版，請讓啟動時的自動套用完成換版）。 */
+    /* V40.10：回頂＝「零同步捲動」＋全路徑儀器化。
+       真兇定案：V40.3~V40.9 六版共有的 unveilCore skipRestore 分支在移除
+       display:none 的同一同步任務內 acimScrollNow(0,0)——window.scrollTo
+       需要最新版面，等於強迫瀏覽器在「全書剛回版面樹＋樣式失效」狀態下
+       同步排版整本書（實機 12 秒級 long task），且落在第一幀之前＝畫面
+       凍結在「面板未關」的舊幀（讀者截圖所見）；這也解釋了四種不同跳轉
+       實作症狀分毫不動、而書籤面板（不掛紗）與浮動↑鈕（乾淨版面捲動）
+       永遠順暢。本版：① unveilCore 移除該行（見面紗模組）；② 跳頂延後到
+       解紗回調（rAF#2，書本已繪製一幀、版面乾淨）執行；③ onVeilDropped
+       直通唯一一次解紗，消除雙重呼叫。④ 長任務觀測：完成提示顯示總耗時；
+       若偵測到 ≥0.8 秒凍結，2.6 秒後追加「凍結幾段共幾秒＋落點階段」——
+       實機若仍慢，一張截圖即可定案。 */
     var _t0=(window.performance&&performance.now)?performance.now():Date.now();
-    if(sheet)setSheet(false,{skipRestore:true});
+    var _tr={t0:_t0,tVeil:0,tRestore:0,tJump:0,gated:false,longs:[],obs:null};
+    try{
+      _tr.obs=new PerformanceObserver(function(list){
+        try{
+          var es=list.getEntries();
+          for(var i=0;i<es.length;i++) if(es[i].duration>=250)
+            _tr.longs.push({d:Math.round(es[i].duration),at:Math.round(es[i].startTime-_t0)});
+        }catch(e){}
+      });
+      _tr.obs.observe({entryTypes:['longtask']});
+    }catch(e){_tr.obs=null;}
+    window.__acimTopJumpTrace=_tr;
     var go=function(){
       try{
+        _tr.tJump=(window.performance&&performance.now)?performance.now():Date.now();
         if(window.__acimJump)window.__acimJump(0);
         if(window.__acimVeilDropAnchor)window.__acimVeilDropAnchor();
       }finally{
         try{
           var _now=(window.performance&&performance.now)?performance.now():Date.now();
           var _sec=Math.max(0,(_now-_t0)/1000);
-          v30toast('回到頂部完成 · '+(_sec<10?_sec.toFixed(1):Math.round(_sec))+' 秒 · '+ACIM_VERSION.toUpperCase(),2800);
+          v30toast('回到頂部完成 · '+(_sec<10?_sec.toFixed(1):Math.round(_sec))+' 秒 · '+ACIM_VERSION.toUpperCase(),3200);
         }catch(e){}
+        /* 凍結明細延遲結算：longtask 條目在任務結束後才送達觀測器。
+           只有真的偵測到 ≥0.8 秒凍結才追加提示——順暢時完全靜默。 */
+        setTimeout(function(){
+          try{
+            if(_tr.obs){_tr.obs.disconnect();_tr.obs=null;}
+            var n=_tr.longs.length,sum=0;
+            for(var i=0;i<n;i++)sum+=_tr.longs[i].d;
+            window.__acimTopJumpTrace=null;
+            if(n&&sum>=800){
+              var rVeil=_tr.tVeil?_tr.tVeil-_tr.t0:1e15,
+                  rRes=_tr.tRestore?_tr.tRestore-_tr.t0:1e15,
+                  rJmp=_tr.tJump?_tr.tJump-_tr.t0:1e15;
+              var segs={a:0,b:0,c:0};
+              for(var j=0;j<n;j++){
+                var L=_tr.longs[j];
+                if(L.at>=rJmp-50)segs.c+=L.d;
+                else if(L.at>=rVeil-50)segs.b+=L.d;
+                else segs.a+=L.d;
+              }
+              var where='面板關閉階段',mv=segs.a;
+              if(segs.b>mv){where='書本恢復排版';mv=segs.b;}
+              if(segs.c>mv){where='恢復之後';mv=segs.c;}
+              v30toast('回頂診斷：偵測到'+n+'段凍結共'+(Math.round(sum/100)/10)+'秒（'+where+'）· '+ACIM_VERSION.toUpperCase(),5000);
+            }
+          }catch(e){}
+        },2600);
       }
     };
-    if(window.__acimVeilUnveil)window.__acimVeilUnveil(true,go);
+    if(sheet)setSheet(false,{skipRestore:true,onVeilDropped:go});
     else go();
   });
   sheet.appendChild(bTop);
