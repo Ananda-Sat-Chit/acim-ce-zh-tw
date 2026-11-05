@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.12">
+<meta name="acim-version" content="v40.13">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="80cee432168d4576772246b3cee2a929abe7fd7a5d1e382dab1a2292a2f86219">
-<meta name="acim-build" content="2026-11-05">
-<meta name="acim-build-time" content="12:05">
+<meta name="acim-release-id" content="1e62e7424b4d37e72d69d3897ab049e8a24f177021479708f1c98615772988b4">
+<meta name="acim-build" content="2026-11-06">
+<meta name="acim-build-time" content="09:30">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -161,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.12';
+var ACIM_VERSION = 'v40.13';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* V40.9：套用新版後的首次啟動，顯示一次性「已套用」確認——讓讀者與
@@ -2020,7 +2020,22 @@ ul{margin-bottom:0;}
    同構，書本保持可見）；② A＋／A－／明暗維持 V40.2「點按當下先掛紗
    再套用」機制不變；③ 回頂改雙路徑——面紗未掛→關面板後直接
    __acimJump(0)（浮動↑同構，零結算零解紗）；面紗仍掛（抽屜共用）→
-   維持 V40.11 topJump 管線；④ 診斷觀測保留供實機驗收。 */
+   維持 V40.11 topJump 管線；④ 診斷觀測保留供實機驗收。
+   V40.13：回頂「步級歸因儀器＋目的地預熱」——V40.12 實機截圖定案：凍結
+   22.1 秒＝單一 long task，但「（恢復之後）」標籤在直跳路徑無鑑別力：
+   t0 與 tJump 同在點擊處理器內（相差 <1ms），rJmp-50 為負值，處理器
+   自身任務必然落入 segs.c——七版無法定案的儀器根源即此。本版：
+   ① 步級時間軸：記錄處理器入口／關面板完成／跳頂呼叫前後（tJ0/tJ1）
+     ／錨點作廢完成，long task 以「區間重疊量」歸因到
+     面板關閉｜跳頂呼叫內｜跳頂返回後（含起始延遲），單張截圖定案；
+   ② 凍結時不再發「完成」提示（會被診斷提示覆蓋），順暢時照舊；
+   ③ 目的地預熱 warmTopDestination：開啟字級面板與載入後閒置時，
+     以 ≤5ms 分片對書首 48 節做 getComputedStyle 樣式預熱——
+     V30.10 已實測本機「全書樣式一次結清」＝6~8 秒單一 long task，
+     目的地冷節是跳頂結算的最大嫌疑；預熱不動 content-visibility、
+     不觸發版面與繪製，對既有順暢路徑零風險；
+   ④ 直跳改「雙 rAF 讓幀」：關面板的樣式收尾與跳頂分屬不同幀，
+     跳頂落在乾淨幀上執行。 */
 #acim-bottomnav{
   display:none;position:fixed;left:0;right:0;bottom:0;z-index:10002;
   transition:transform 0.18s ease;
@@ -28291,6 +28306,46 @@ function buildBottomNav(){
   nav.setAttribute('aria-label','主要導覽');
   /* V40.1：快選單開合總閘——開啟即掛共享面紗，關閉時若抽屜仍開著
      則由抽屜續用面紗，全部關閉才解紗。 */
+  /* ── V40.13：書首目的地預熱（回頂凍結的結構性緩解）──
+     實機已定案：全書級樣式一次結清＝6~8 秒單一 long task（V30.10 實測：
+     799 個 content-visibility 未渲染節承接全域失效）。跳頂結算的最大
+     嫌疑是「目的地冷節」——閱讀位置深（如卷一第31章）時，書首各節本
+     session 從未承接樣式解析，跳頂瞬間一次償付。本模組在「開啟字級
+     面板」與「載入後閒置 3.2 秒」兩個時點，以 ≤5ms 分片對書首 48 節
+     做 getComputedStyle 預熱：只做樣式解析、不動 content-visibility、
+     不量測版面、零繪製零位移——與 V30.10 結清排程器同一手法、同一
+     前提，對浮動↑鈕／書籤／A＋ 等已驗證順暢路徑零風險。 */
+  var _warmSecs=null,_warmIdx=0,_warmTimer=null;
+  function warmTopDestination(){
+    try{
+      if(window.innerWidth>768)return;
+      if(document.documentElement.classList.contains('acim-book-veiled'))return;
+      if(!_warmSecs){
+        var ca=document.getElementById('content-area');
+        if(!ca)return;
+        _warmSecs=Array.prototype.slice.call(ca.querySelectorAll('section.csec'),0,48);
+        _warmIdx=0;
+      }
+      if(_warmIdx>=_warmSecs.length||_warmTimer)return;
+      var step=function(){
+        _warmTimer=null;
+        try{
+          if(document.hidden||document.documentElement.classList.contains('acim-book-veiled')){
+            _warmIdx=_warmSecs.length;return;
+          }
+          var t0=performance.now();
+          while(_warmIdx<_warmSecs.length&&performance.now()-t0<5){
+            try{void getComputedStyle(_warmSecs[_warmIdx++]).color;}catch(e){_warmIdx++;}
+          }
+          if(_warmIdx<_warmSecs.length)_warmTimer=setTimeout(step,16);
+        }catch(e){_warmIdx=_warmSecs.length;}
+      };
+      _warmTimer=setTimeout(step,24);
+    }catch(e){}
+  }
+  window.__acimWarmTopDestination=warmTopDestination;
+  if(document.readyState==='complete')setTimeout(warmTopDestination,3200);
+  else window.addEventListener('load',function(){setTimeout(warmTopDestination,3200);});
   function setSheet(open,opts){
     if(!sheet)return;
     if(open){
@@ -28298,8 +28353,11 @@ function buildBottomNav(){
          面板同構）。面紗唯一要保護的是 A＋／A－／明暗的「套用瞬間」，
          而那些按鈕自 V40.2 起就在點按當下先 __acimVeilApplyNow 再套用；
          回頂則因 display:none→block 恢復結算在實機上是 12~24 秒級 long
-         task（V40.10/V40.11 儀器化實測），必須讓書本從未離開版面樹。 */
+         task（V40.10/V40.11 儀器化實測），必須讓書本從未離開版面樹。
+         V40.13：開面板即啟動書首預熱（回頂的唯一定向跳轉由此面板發起，
+         面板開啟到點按回頂之間有數秒——預熱正好在這段時間完成）。 */
       sheet.classList.add('open');
+      if(window.__acimWarmTopDestination)window.__acimWarmTopDestination();
     }else{
       sheet.classList.remove('open');
       if(opts&&typeof opts.onVeilDropped==='function'&&window.__acimUnveilNow){
@@ -28450,8 +28508,16 @@ function buildBottomNav(){
        情境）→維持 V40.11 topJump 管線（topMode 解紗＋rAF#2 歸零）；
        ③ 兩路徑共用 longtask＋LoAF 觀測：若實機仍慢，診斷提示直接
        給出落點與成本分解，一張截圖即可定位。 */
-    var _t0=(window.performance&&performance.now)?performance.now():Date.now();
-    var _tr={t0:_t0,tVeil:0,tRestore:0,tJump:0,gated:false,longs:[],obs:null,lafs:[],loaf:null};
+    var _tnow=function(){return (window.performance&&performance.now)?performance.now():Date.now();};
+    var _t0=_tnow();
+    /* V40.13：步級歸因——V40.12 的 segs 分類在直跳路徑失真（t0 與 tJump
+       同在點擊處理器內、相差 <1ms，rJmp-50 為負值 ⇒ 處理器自身任務必然
+       落入「恢復之後」＝標籤無鑑別力，七版定案失敗的儀器根源）。改以
+       「區間重疊量」歸因：[0,tSheet]=面板關閉｜[tVeil,tJ0]=解紗恢復（僅
+       解紗路徑）｜[tJ0,tJ1]=跳頂呼叫內｜tJ1 之後=跳頂返回後（含起始
+       延遲）——單張截圖即可定案凍結落在哪一步。 */
+    var _tr={t0:_t0,tEntry:_t0,tSheet:0,tVeil:0,tRestore:0,tJ0:0,tJ1:0,tAnc:0,
+      gated:false,veiled:false,longs:[],obs:null,lafs:[],loaf:null};
     try{
       _tr.obs=new PerformanceObserver(function(list){
         try{
@@ -28463,9 +28529,9 @@ function buildBottomNav(){
       _tr.obs.observe({entryTypes:['longtask']});
     }catch(e){_tr.obs=null;}
     try{
-      /* V40.11：LoAF（長動畫幀）——longtask 只給總時長，LoAF 額外拆出
+      /* LoAF（長動畫幀）——longtask 只給總時長，LoAF 額外拆出
          styleDuration（樣式重算）／layoutDuration（排版）／scriptDuration
-         （腳本），實機若仍慢可直接歸因。不支援的瀏覽器靜默降級。 */
+         （腳本），實機若支援可直接歸因；不支援的瀏覽器靜默降級。 */
       _tr.loaf=new PerformanceObserver(function(list){
         try{
           var es=list.getEntries();
@@ -28482,22 +28548,12 @@ function buildBottomNav(){
       _tr.loaf.observe({entryTypes:['long-animation-frame']});
     }catch(e){_tr.loaf=null;}
     window.__acimTopJumpTrace=_tr;
-    var go=function(){
-      /* 兩路徑共用：直接 __acimJump(0)（浮動↑鈕同構）。直跳路徑時
-         書本從未 display:none，版面全新鮮、零結算；解紗路徑時本呼
-         在 rAF#2（書本已繪製一幀）執行，與 V40.11 相同。 */
+    var _report=function(){
       try{
-        _tr.tJump=(window.performance&&performance.now)?performance.now():Date.now();
-        if(window.__acimJump)window.__acimJump(0);
-        if(window.__acimVeilDropAnchor)window.__acimVeilDropAnchor();
-      }finally{
-        try{
-          var _now=(window.performance&&performance.now)?performance.now():Date.now();
-          var _sec=Math.max(0,(_now-_t0)/1000);
-          v30toast('回到頂部完成 · '+(_sec<10?_sec.toFixed(1):Math.round(_sec))+' 秒 · '+ACIM_VERSION.toUpperCase(),3200);
-        }catch(e){}
-        /* 凍結明細延遲結算：longtask 條目在任務結束後才送達觀測器。
-           只有真的偵測到 ≥0.8 秒凍結才追加提示——順暢時完全靜默。 */
+        var _sec=Math.max(0,(_tnow()-_t0)/1000);
+        v30toast('回到頂部完成 · '+(_sec<10?_sec.toFixed(1):Math.round(_sec))+' 秒 · '+ACIM_VERSION.toUpperCase(),3200);
+        /* 凍結診斷延遲結算：longtask 條目在任務結束後才送達觀測器。
+           累計 ≥0.8 秒才追加診斷提示——順暢時完全靜默。 */
         setTimeout(function(){
           try{
             if(_tr.obs){_tr.obs.disconnect();_tr.obs=null;}
@@ -28509,31 +28565,52 @@ function buildBottomNav(){
               st+=_tr.lafs[k].st;ly+=_tr.lafs[k].ly;sc+=_tr.lafs[k].sc;
             }
             window.__acimTopJumpTrace=null;
-            if(n&&sum>=800){
-              var rVeil=_tr.tVeil?_tr.tVeil-_tr.t0:1e15,
-                  rRes=_tr.tRestore?_tr.tRestore-_tr.t0:1e15,
-                  rJmp=_tr.tJump?_tr.tJump-_tr.t0:1e15;
-              var segs={a:0,b:0,c:0};
-              for(var j=0;j<n;j++){
-                var L=_tr.longs[j];
-                if(L.at>=rJmp-50)segs.c+=L.d;
-                else if(L.at>=rVeil-50)segs.b+=L.d;
-                else segs.a+=L.d;
+            if(sum<800)return;
+            /* 區間重疊歸因：哪一段吃掉最多凍結 */
+            var tS=Math.max(0,_tr.tSheet-_tr.t0),
+                tV=_tr.tVeil?_tr.tVeil-_tr.t0:1e15,
+                a0=_tr.tJ0-_tr.t0,a1=_tr.tJ1-_tr.t0;
+            function ovl(s,e,at,d){return Math.max(0,Math.min(e,at+d)-Math.max(s,at));}
+            var sgP=0,sgV=0,sgJ=0,sgA=0;
+            for(var q=0;q<n;q++){
+              var L=_tr.longs[q];
+              sgP+=ovl(0,tS,L.at,L.d);
+              if(tV<1e15)sgV+=ovl(tV,a0>0?a0:1e15,L.at,L.d);
+              if(a1>0){
+                sgJ+=ovl(a0,a1,L.at,L.d);
+                sgA+=ovl(a1,1e15,L.at,L.d);
               }
-              var where='面板關閉階段',mv=segs.a;
-              if(segs.b>mv){where='書本恢復排版';mv=segs.b;}
-              if(segs.c>mv){where='恢復之後';mv=segs.c;}
-              /* V40.11：LoAF 歸因——只有真的抓到長幀才附加成本分解。 */
-              var attr='';
-              if(st+ly+sc>=250)
-                attr='（樣式'+(Math.round(st/100)/10)+'・排版'+(Math.round(ly/100)/10)
-                    +'・腳本'+(Math.round(sc/100)/10)+'秒）';
-              v30toast('回頂診斷：偵測到'+n+'段凍結共'+(Math.round(sum/100)/10)
-                +'秒'+attr+'（'+where+'）· '+ACIM_VERSION.toUpperCase(),6000);
             }
+            var where='面板關閉',mv=sgP;
+            if(sgV>mv){where='解紗恢復';mv=sgV;}
+            if(sgJ>mv){where='跳頂呼叫內';mv=sgJ;}
+            if(sgA>mv){
+              var minLat=1e15;
+              for(var w=0;w<n;w++){
+                var L2=_tr.longs[w];
+                if(a1>0&&ovl(a1,1e15,L2.at,L2.d)>0&&L2.at-a1<minLat)minLat=L2.at-a1;
+              }
+              where='跳頂返回後'+(minLat<1e15?'（+'+(Math.round(minLat/100)/10)+'秒）':'');
+            }
+            var attr='';
+            if(st+ly+sc>=250)
+              attr='（樣式'+(Math.round(st/100)/10)+'・排版'+(Math.round(ly/100)/10)
+                  +'・腳本'+(Math.round(sc/100)/10)+'秒）';
+            v30toast('回頂診斷：'+(_tr.veiled?'解紗':'直跳')+'｜凍結'+(Math.round(sum/100)/10)
+              +'秒@'+where+attr+'・'+ACIM_VERSION.toUpperCase(),8000);
           }catch(e){}
         },2600);
-      }
+      }catch(e){}
+    };
+    var go=function(){
+      try{
+        _tr.tJ0=_tnow();
+        if(window.__acimJump)window.__acimJump(0);
+        _tr.tJ1=_tnow();
+        if(window.__acimVeilDropAnchor)window.__acimVeilDropAnchor();
+        _tr.tAnc=_tnow();
+      }catch(e){}
+      _report();
     };
     /* 面紗狀態判定（在關面板之前取樣）：acim-book-veiled＝書本已離開
        版面樹（抽屜共用面紗等情境）→ 必須走解紗管線；否則書本可見，
@@ -28542,8 +28619,17 @@ function buildBottomNav(){
        搶先生效，狀態判定不會漂移。 */
     var veiled=false;
     try{veiled=document.documentElement.classList.contains('acim-book-veiled');}catch(e){}
-    if(veiled)setSheet(false,{onVeilDropped:go,topJump:true});
-    else{setSheet(false);go();}
+    _tr.veiled=veiled;
+    if(veiled){
+      setSheet(false,{onVeilDropped:go,topJump:true});
+      try{_tr.tSheet=_tnow();}catch(e){}
+    }else{
+      /* V40.13：雙 rAF 讓幀——面板收合的樣式收尾與跳頂分屬不同幀，
+         跳頂落在乾淨幀上執行（~33ms 延遲，面板動畫期間無感）。 */
+      setSheet(false);
+      try{_tr.tSheet=_tnow();}catch(e){}
+      requestAnimationFrame(function(){requestAnimationFrame(function(){go();});});
+    }
   });
   sheet.appendChild(bTop);
   document.body.appendChild(sheet);
