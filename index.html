@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.7">
+<meta name="acim-version" content="v40.8">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="1e5f55eff9fa5a22b8ba736d6595e03c9ad59e7c094a321d49de459b49e8720b">
+<meta name="acim-release-id" content="11df7d14be4076b29b4bb7321a932837fdc9fd2d2f96bd84870b53e42e8ad3f1">
 <meta name="acim-build" content="2026-11-05">
-<meta name="acim-build-time" content="08:12">
+<meta name="acim-build-time" content="09:55">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -161,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.7';
+var ACIM_VERSION = 'v40.8';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -1937,7 +1937,16 @@ ul{margin-bottom:0;}
    把解紗還原的裸呼 scrollTo 變成橫跨全書的平滑動畫（逐幀 cvis 排版，且
    執行中會吞掉後續瞬跳；V40.2~V40.6 五版皆受其害）。樣式表改
    scroll-behavior:auto，面紗所有程式捲動改走 acimScrollNow 瞬捲防護；
-   回頂仍走 V40.6 的書籤式序列，原樣即瞬達。 */
+   回頂仍走 V40.6 的書籤式序列，原樣即瞬達。
+   V40.8：⑫ 真正根治「字級面板回頂 12 秒」——本機 30x 節流＋LoAF 逐幀
+   歸因重現：go() 跳到頂之後，unveilCore 下一幀的 rAF#1「錨點還原」才跑，
+   條件 (scrollY≤2 && 暫存y>2) 成立 → 把畫面猛拉回數十萬 px 深處（已收合
+   節整段重渲染），searchCorrect 再拉回頂部又重渲染，加上 saveProgress
+   二分搜尋在髒版面上的全書強制排版（LoAF 單次 1.5 秒級）——三者相加
+   即實機 12 秒。修法：回頂改走面紗模組為主動跳轉預留的 skipRestore
+   管線（setSheet(false,{skipRestore:true}) ＋ unveil(true,go)），rAF#1
+   整段跳過、書本以頂部狀態恢復；另加 saveProgress 面紗防護（夾限位置
+   不存檔、不量測）。A＋／A－／明暗與關面板的錨點還原一字不動。 */
 #acim-bottomnav{
   display:none;position:fixed;left:0;right:0;bottom:0;z-index:10002;
   transition:transform 0.18s ease;
@@ -23389,6 +23398,32 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(sidebarOwnsReadingInput()){
       deferReadingMetrics();return;
     }
+    /* V40.8：面紗期間（抽屜／快選單開著、書本 display:none）一律跳過——
+       此時 scrollY 已被夾限為 0（版面高度塌陷），存檔只會把真實閱讀位置
+       蓋成 0；且二分搜尋的 getBoundingClientRect 會在「書本剛恢復、結清
+       走訪進行中」的髒版面上強制全書排版（LoAF 實測單次 1.5 秒級）。
+       掛紗夾限觸發的 scroll 事件於 800ms 後落在這裡，正是字級面板開啟
+       當下卡頓的來源。解紗後的任何真實捲動會照常存檔，位置不會遺失。 */
+    try{
+      if(document.documentElement.classList.contains('acim-book-veiled'))return;
+    }catch(e){}
+    /* V40.8：結清走訪進行中→改掛「債清完成」回調再補存。此時任何
+       getBoundingClientRect 都是一次全書強制排版（LoAF 實測 1.5~1.8 秒級），
+       而 jump 之後 800ms 的存檔時點經常正落在解紗後的走訪窗口內——
+       延後到走訪完成（版面乾淨）再量測，同一次事件只排一發。 */
+    try{
+      if(window.__acimStyleDebtPending&&window.__acimStyleDebtPending()&&
+         window.__acimOnDischargeDone&&!saveProgress._queued){
+        saveProgress._queued=true;
+        window.__acimOnDischargeDone(function(){
+          saveProgress._queued=false;
+          try{
+            if(!document.documentElement.classList.contains('acim-book-veiled'))saveProgress();
+          }catch(e){}
+        });
+      }
+      if(window.__acimStyleDebtPending&&window.__acimStyleDebtPending())return;
+    }catch(e){}
     try{ window.__acimStorage.set('acim-scroll', Math.round(window.scrollY)); }catch(e){} /* V25（I19）*/
     if(!progressHeadings) progressHeadings=Array.from(content.querySelectorAll('h1,h2,h3,h4'));
     /* 章節標題按文件順序排列，二分搜尋減少大量重複的版面計算。 */
@@ -28277,31 +28312,38 @@ function buildBottomNav(){
   bTop.addEventListener('click',function(){
     /* V40.6：回頂改走「書籤／搜尋點選同款」已驗證快路徑（讀者指定方向：
        不再維持浮球時代的 scrollTo(0,0) 做法）。
-       實機四版（V40.2~V40.5）驗證：回頂專用的「skipRestore＋盲跳 y=0」
-       路徑在 Redmi 13C 上無論怎麼修（固定閥→自適應閥→同步掛紗補刀）
-       都是 12 秒級；同一期間書籤任意跳、搜尋點選、章節連結——解析真實
-       元素→強制渲染→量測→nav.jump→代次校正釘回——全部瞬跳，字級
-       A＋／A－／明暗（同一解紗閘門）也正常。可見瓶頸不在閘門本身，
-       而在「回頂=盲跳座標、無目標元素可校正」這條自創支線。
-       本版把回頂變成「跳到全書第一個標題」的書籤式跳轉，與實測瞬跳的
-       搜尋點選序列逐一同構：
-       ① setSheet(false) 先收快選單——與搜尋點選的 closeSidebar() 同位，
-          解紗閘門由關面板路徑起頭（skipRestore=false，錨點還原照跑）；
-       ② __acimVeilUnveil(false,go) 把「量測＋跳轉」掛進解紗回調——
+       序列（V40.8 保留）：
+       ① 收快選單——但改帶 {skipRestore:true}（見下方 V40.8 定罪）；
+       ② __acimVeilUnveil(true,go) 把「量測＋跳轉」掛進解紗回調——
           書本恢復顯示＋債清完成後座標才真實（與搜尋點選同一時序）；
        ③ go()：強制渲染第一節（acimRevealSection，cvis 佔位誤差歸零）、
-          量測第一個標題、nav.jump 至其視口頂（margin=0）、
+          量測第一個標題、nav.jump 至其視口頂、
           acimSearchCorrect 90~3200ms 代次校正釘回——與書籤「跳回偏下」
           的修法同一套，殘餘失效由校正吸收而非同步結算；
-       ④ 落點確定後 __acimVeilDropAnchor() 作廢面紗暫存錨點——回頂是
-          deliberate navigation，舊閱讀位置的校正 pass 全數失效，
-          不與代次校正搶捲軸。
-       V40.7 實測定罪：V40.2~V40.6 回頂 12 秒的真因不在本序列，而是
-       html{scroll-behavior:smooth} 接管解紗還原的裸呼 scrollTo，成為
-       橫跨全書的平滑動畫（逐幀 cvis 排版、並吞掉本序列的後續瞬跳）。
-       CSS 已改 scroll-behavior:auto、解紗捲動全數改 acimScrollNow
-       瞬捲防護後，本序列原樣保留即瞬達（6x 節流實測 919ms）。 */
-    if(sheet)setSheet(false);
+       ④ 落點確定後 __acimVeilDropAnchor() 作廢面紗暫存錨點。
+       V40.8 實測定罪（本機 30x 節流重現＋逐幀歸因）：V40.2~V40.7 回頂
+       12 秒的真因是「解紗錨點還原與回頂跳轉打架」——
+       ‧ go() 先把畫面跳到頂（scrollY=0），但 unveilCore 排在下一幀的
+         rAF#1「錨點還原」此時才跑：它看到的 scrollY≈0、暫存 y=深處，
+         條件 (scrollY≤2 && y>2) 成立 → 把畫面猛拉回數十萬 px 的原閱讀
+         位置（實測 trace：y=0 → y=280291 → y=0）；
+       ‧ 被拉回的深處節早已收合（content-visibility），必須整段重渲染；
+         隨後 searchCorrect 再拉回頂部、頂部又重渲染一次；
+       ‧ 拉回深處觸發 scroll → saveProgress 的標題二分搜尋在「結清走訪
+         中」的髒版面上執行＝每次 getBoundingClientRect 都是一次全書
+         強制排版（LoAF 實測單一 saveProgress 內含 1,539ms layout）。
+         三者相加，低階實機即為「12 秒以上」。
+       書籤面板跳轉全程無面紗循環（書本從未 display:none），根本沒有
+       rAF#1 錨點還原，因此永遠順暢——這就是同一套跳轉碼一快一慢的
+       完整解釋，也是 V40.6/V40.7「複用書籤機制仍卡」的原因：差的不是
+       跳轉本身，而是跳轉之後才執行的解紗還原。
+       修法＝回頭採用面紗模組為「主動跳轉」預留的 skipRestore 管線
+       （unveilCore 註解：主動跳轉不做錨點還原）：收快選單與解紗都帶
+       skipRestore=true → rAF#1 整段跳過、書本直接以頂部狀態恢復顯示
+       （acimScrollNow(0,0)，面紗期間 scrollY 本就為 0，零成本），
+       go() 在已位於頂部的乾淨版面上量測釘回。A＋／A－／明暗與關面板
+       的錨點還原路徑（skipRestore=false）一字不動。 */
+    if(sheet)setSheet(false,{skipRestore:true});
     var go=function(){
       var ca=document.getElementById('content-area');
       var sec=ca?ca.querySelector('section.csec'):null;
@@ -28321,7 +28363,7 @@ function buildBottomNav(){
       }
       if(window.__acimJump)window.__acimJump(0);
     };
-    if(window.__acimVeilUnveil)window.__acimVeilUnveil(false,go);
+    if(window.__acimVeilUnveil)window.__acimVeilUnveil(true,go);
     else go();
   });
   sheet.appendChild(bTop);
