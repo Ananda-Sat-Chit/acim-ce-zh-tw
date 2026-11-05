@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.4">
+<meta name="acim-version" content="v40.5">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="8a1d82719e0c48dd827f926ab689c2874ff5c3e8aa7c394d9bf5639ce78493ef">
+<meta name="acim-release-id" content="285109e520d4673d6624840b01a3563493ecd0b760b14e841c15d209987add2f">
 <meta name="acim-build" content="2026-11-05">
 <meta name="acim-build-time" content="05:35">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
@@ -161,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.4';
+var ACIM_VERSION = 'v40.5';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -23931,11 +23931,21 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
   var _disTimer=null,_disSecs=null,_disIdx=0,_disPass=0,_disCbs=null,_disWork=0,_disWalking=false;
   function scheduleStyleDischarge(){
     try{
-      if(!_disSecs)_disSecs=Array.prototype.slice.call(content.querySelectorAll('section.csec'));
-      _disIdx=0;_disPass=0;
+      if(!_disSecs){
+        _disSecs=Array.prototype.slice.call(content.querySelectorAll('section.csec'));
+        _disIdx=0;_disPass=0;
+      }else if(_disIdx>=_disSecs.length&&!_disTimer){
+        /* V40.5：上一遍已走完但尚未收尾又來新失效——重開一遍吸收。 */
+        _disIdx=0;if(_disPass>=2)_disPass=1;
+      }
+      /* V40.5：restart 防風暴——走訪進行中被再呼叫時不再歸零進度。
+         實機上 URL bar 伸縮（面紗使捲動歸零時觸發）、visualViewport
+         resize、聚焦等事件會在解紗閘門等待期間反覆呼叫本函式；舊版
+         每次歸零讓「債清完成點」不斷後退，自適應閥被推到 9 秒上限後
+         帶債恢復（實機 12 秒級結算的第二來源）。改為：進行中→只續
+         timer，走訪中段之後的新失效由既有的「第二遍保險」吸收
+         （_disPass<2 保證全書至少再走一遍）；閒置→全新走訪。 */
       if(_disTimer)clearTimeout(_disTimer);
-      /* V40.3：面紗模式下書已 display:none——結清只做樣式解析（零 layout／
-         paint），開始延遲縮短，把債在「書本看不見的期間」盡快清完。 */
       _disTimer=setTimeout(dischargeStep,
         document.documentElement.classList.contains('acim-book-veiled')?60:150);
     }catch(e){}
@@ -24033,23 +24043,45 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
      彈出／任何 style invalidation 都要為全書高亮重算繪製（回報 6~8 秒）。
      除上限 300 外，於「搜尋欄聚焦」與「手機抽屜收起」時退休全文高亮：
      native 註冊即時刪除、實體 mark 分批還原（不阻塞輸入）；最後一次點擊
-     命中的 .search-hl-pin 保留，落點仍可見。新搜尋會重新標示。 */
+     命中的 .search-hl-pin 保留，落點仍可見。新搜尋會重新標示。
+     V40.5：讀者回報「搜尋取消後回主頁，最後一次高亮字串處殘留」——
+     ✕ 取消流程為 doSearch('')→clearHighlight（含 pin 全拆）→si.focus()，
+     而 focus／收抽屜會觸發本函式並 abort 掉 clearHighlight 的拆除批次，
+     自身清單卻排除 pin → pin 殘留。修正二處：
+     ①搜尋已無作用中查詢（輸入框為空）時，pin 視同一般 mark 一併拆除
+       ——「取消搜尋」後不該有任何螢光殘留；仍有查詢在身時維持 V30.8
+       語意（pin 保留＝點擊落點可見）。
+     ②本函式接管拆除且查詢已取消時，補發 acim:search-cleared——原本由
+       clearHighlight 完成回調發出的事件被 abort 吞掉，註文定位高亮
+       （acim-fn-locate）清理與句號碼補排程會跟著漏掉。 */
   function retireSearchHighlights(){
     if(window.innerWidth>768)return;
     if(_nativeSearchHighlight)CSS.highlights.delete('acim-search');
     _searchRanges=Object.create(null);
     if(_hlAbort){_hlAbort.abort();_hlAbort=null;}
-    var _rm=Array.prototype.slice.call(content.querySelectorAll('mark.search-hl:not(.search-hl-pin)'));
+    /* V40.5：輸入框為空＝搜尋已取消（✕／清空）——pin 一併拆除 */
+    var _si=document.getElementById('toc-search-input');
+    var _keepPin=!!(_si&&_si.value&&_si.value.trim().length>=2);
+    var _rm=Array.prototype.slice.call(content.querySelectorAll(
+      _keepPin?'mark.search-hl:not(.search-hl-pin)':'mark.search-hl'));
     if(_rm.length){
       /* V40.3：執行時守衛——清單求值後、批次執行前，點擊命中可能已把某個
          mark 升級為 pin（搜尋點選的 materializeFirstHit 在解紗回調中執行，
          晚於收抽屜的 retire 求值）。批次執行時再查一次 pin，避免把
-         「點擊命中的螢光」拆掉（實測第一次點選 pin 即被拆，第二次才留）。 */
+         「點擊命中的螢光」拆掉（實測第一次點選 pin 即被拆，第二次才留）。
+         V40.5：查詢已取消時 pin 不豁免（_keepPin=false 一律拆）。 */
+      var _tok=_searchToken;
       _hlAbort=runChunks(_rm,300,function(mk){
         if(!mk.parentNode)return;
-        if(mk.classList&&mk.classList.contains('search-hl-pin'))return;
+        if(_keepPin&&mk.classList&&mk.classList.contains('search-hl-pin'))return;
         mk.parentNode.replaceChild(document.createTextNode(mk.textContent),mk);
-      },function(){scheduleStyleDischarge();});
+      },function(){
+        scheduleStyleDischarge();
+        /* V40.5：被 abort 的 clearHighlight 不會發 acim:search-cleared，
+           由本函式代發（token 守衛：新搜尋已啟動則不發）。 */
+        if(!_keepPin&&_searchToken===_tok)
+          document.dispatchEvent(new Event('acim:search-cleared'));
+      });
     }
     if(sb&&sb.hidden===false&&sb.dataset.searchState==='searching'){
       sb.textContent='\u5171\u627e\u5230 '+stats.resultCount+' \u500b\u6bb5\u843d\uff08\u6a19\u793a\u5df2\u66ab\u6642\u6536\u8d77\uff09';
@@ -28221,7 +28253,18 @@ function buildBottomNav(){
        V40.4：選單即時收起＋解紗閘門改自適應（債清推進中續等、停滯才
        恢復）——實機「回頂要等 12 秒以上」是 V40.3 固定 1.6 秒閥帶債
        恢復造成的一次性全書結算，本版根除；掛紗排程未做實時直接跳頂
-       （書本從未離開版面樹，零等待）。 */
+       （書本從未離開版面樹，零等待）。
+       V40.5：實機殘留 12 秒的真兇在此補刀——「掛紗排程未做實時直接
+       跳頂」正是缺口：快選單開啟後 200ms 內（淡出排程未做實）或任何
+       _veil.on=false 情境下按回頂，書本帶著「全量樣式樹＋當前捲動
+       座標」原地 scrollTo(0,0)，瀏覽器為整本書做一次同步結算＋頂部
+       重排——6x 節流實測單顆 690ms long task，實機放大 6~12 倍即
+       12 秒級。A＋／A－／明暗自 V40.2 起都有 __acimVeilApplyNow()
+       同步掛紗保護（書本先暫離版面樹再套用），回頂是唯一沒做的。
+       本版補齊：先同步掛紗（已掛紗時冪等返回、不重啟結清），再收
+       快選單、再經解紗閘門跳頂——回頂從此與 A＋ 同一保證：債清完成
+       後書本直接在頂部出現，零帶債結算。 */
+    if(window.__acimVeilApplyNow)window.__acimVeilApplyNow();
     if(sheet)sheet.classList.remove('open');
     if(window.__acimUnveilNow){
       window.__acimUnveilNow(true,function(){
