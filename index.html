@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.11">
+<meta name="acim-version" content="v40.12">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="317f9c1bf209c3614dd24ad2b9d2059f4acfef2ebb6fff8a570aaf6804388150">
+<meta name="acim-release-id" content="80cee432168d4576772246b3cee2a929abe7fd7a5d1e382dab1a2292a2f86219">
 <meta name="acim-build" content="2026-11-05">
-<meta name="acim-build-time" content="11:20">
+<meta name="acim-build-time" content="12:05">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -161,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.11';
+var ACIM_VERSION = 'v40.12';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* V40.9：套用新版後的首次啟動，顯示一次性「已套用」確認——讓讀者與
@@ -2009,7 +2009,18 @@ ul{margin-bottom:0;}
    content-visibility 強制渲染→getBoundingClientRect 暖機→acimScrollNow
    瞬跳——臨時 id 即裝即拆零殘留；go() 的 __acimJump(0) 最後精確歸零。
    另加 LoAF 觀測（樣式／排版／腳本歸因）：若實機仍慢，下一張截圖
-   直接給出成本分解。 */
+   直接給出成本分解。
+   V40.12：回頂「零面紗」定案——V40.11 實機仍凍結 23.7 秒（單一 long
+   task，同樣落在「書本恢復排版」段），而本機 6x 節流重現（含 zoom 1.38
+   ＋深色＋深位還原＋多輪面紗熱身）全數 0.3 秒 ⇒ 凍結是實機瀏覽器對
+   display:none→block 恢復結算的行為；六種捲動實作（V40.5~9）＋兩種
+   解紗管線（V40.10/11）症狀全同，正因為元兇不在捲動而在「書本曾離開
+   版面樹」。實機已驗證順暢的浮動↑鈕與書籤面板跳轉，唯一共同點＝
+   書本從未 display:none。本版：① 快選單開啟不再掛面紗（與書籤面板
+   同構，書本保持可見）；② A＋／A－／明暗維持 V40.2「點按當下先掛紗
+   再套用」機制不變；③ 回頂改雙路徑——面紗未掛→關面板後直接
+   __acimJump(0)（浮動↑同構，零結算零解紗）；面紗仍掛（抽屜共用）→
+   維持 V40.11 topJump 管線；④ 診斷觀測保留供實機驗收。 */
 #acim-bottomnav{
   display:none;position:fixed;left:0;right:0;bottom:0;z-index:10002;
   transition:transform 0.18s ease;
@@ -28283,8 +28294,12 @@ function buildBottomNav(){
   function setSheet(open,opts){
     if(!sheet)return;
     if(open){
+      /* V40.12：開啟快選單「不再掛面紗」——書本保持在版面樹上（與書籤
+         面板同構）。面紗唯一要保護的是 A＋／A－／明暗的「套用瞬間」，
+         而那些按鈕自 V40.2 起就在點按當下先 __acimVeilApplyNow 再套用；
+         回頂則因 display:none→block 恢復結算在實機上是 12~24 秒級 long
+         task（V40.10/V40.11 儀器化實測），必須讓書本從未離開版面樹。 */
       sheet.classList.add('open');
-      if(window.__acimSheetVeilOpen)window.__acimSheetVeilOpen();
     }else{
       sheet.classList.remove('open');
       if(opts&&typeof opts.onVeilDropped==='function'&&window.__acimUnveilNow){
@@ -28378,8 +28393,9 @@ function buildBottomNav(){
   },'acim-bn-more');
   document.body.appendChild(nav);
 
-  /* 字級快選單：重用既有浮動鈕的處理器。V40.1：開啟快選單即掛面紗，
-     A＋／A－／明暗在書本暫離版面樹時套用，不再觸發全書級樣式結算。 */
+  /* 字級快選單：重用既有浮動鈕的處理器。V40.1：開啟快選單即掛面紗
+     （V40.12 改：開啟不掛紗、書本可見；A＋／A－／明暗在點按當下才
+     掛紗套用，回頂走零面紗直跳——詳見下方 setSheet 與 bTop 註解）。 */
   sheet=document.createElement('div');
   sheet.id='acim-quick-sheet';
   /* V40.9：面板內版本標籤——開面板即可確認裝置真正運行的版本；
@@ -28422,16 +28438,18 @@ function buildBottomNav(){
   var t3=document.createElement('span'); t3.textContent='回到頂部';
   bTop.appendChild(i3); bTop.appendChild(t3);
   bTop.addEventListener('click',function(){
-    /* V40.11：回頂＝「與 A＋ 同構」＋LoAF 歸因儀器化。
-       V40.10 儀器化實機截圖定案：凍結 18 秒落在「書本恢復排版」段
-       （解紗之後、跳頂之前），且九版下來唯一不變的共因是回頂走
-       skipRestore 特殊分支——繞過 unveilCore rAF#1 的錨點區塊直接解紗；
-       而所有實機順暢的路徑（抽屜關閉、A＋自動收起、搜尋點選）全部走
-       錨點還原管線。本版：① 廢除 skipRestore，改帶 topJump 走完整解紗，
-       rAF#1 內對第一節執行與 A＋ 完全同構的「強制渲染→量測暖機→瞬跳」
-       序列（見面紗模組）；② go() 的 __acimJump(0) 在 rAF#2 最後精確歸零；
-       ③ 長任務觀測照舊＋新增 LoAF 觀測：若實機仍慢，診斷提示直接給出
-       「樣式／排版／腳本」成本分解，一張截圖即可定位下一層元兇。 */
+    /* V40.12：回頂「零面紗直跳」雙路徑。
+       五種捲動實作（V40.5~9）＋兩種解紗管線（V40.10 skipRestore、
+       V40.11 A＋ 同構）實機症狀完全相同（12→18→23.7 秒，單一 long
+       task，永遠落在「書本恢復排版」段），而本機 6x 節流全數 0.3 秒
+       ⇒ 凍結是實機瀏覽器對 display:none→block 恢復結算的行為，與
+       捲動方法無關。實機已驗證順暢的浮動↑鈕與書籤面板跳轉唯一
+       共同點：書本從未離開版面樹。本版：① 快選單開啟不再掛紗，
+       回頂時若面紗未掛（常態）→關面板後直接 __acimJump(0)，與浮動
+       ↑鈕完全同構，零結算零解紗；② 面紗仍掛（抽屜共用面紗等罕見
+       情境）→維持 V40.11 topJump 管線（topMode 解紗＋rAF#2 歸零）；
+       ③ 兩路徑共用 longtask＋LoAF 觀測：若實機仍慢，診斷提示直接
+       給出落點與成本分解，一張截圖即可定位。 */
     var _t0=(window.performance&&performance.now)?performance.now():Date.now();
     var _tr={t0:_t0,tVeil:0,tRestore:0,tJump:0,gated:false,longs:[],obs:null,lafs:[],loaf:null};
     try{
@@ -28465,6 +28483,9 @@ function buildBottomNav(){
     }catch(e){_tr.loaf=null;}
     window.__acimTopJumpTrace=_tr;
     var go=function(){
+      /* 兩路徑共用：直接 __acimJump(0)（浮動↑鈕同構）。直跳路徑時
+         書本從未 display:none，版面全新鮮、零結算；解紗路徑時本呼
+         在 rAF#2（書本已繪製一幀）執行，與 V40.11 相同。 */
       try{
         _tr.tJump=(window.performance&&performance.now)?performance.now():Date.now();
         if(window.__acimJump)window.__acimJump(0);
@@ -28514,8 +28535,15 @@ function buildBottomNav(){
         },2600);
       }
     };
-    if(sheet)setSheet(false,{onVeilDropped:go,topJump:true});
-    else go();
+    /* 面紗狀態判定（在關面板之前取樣）：acim-book-veiled＝書本已離開
+       版面樹（抽屜共用面紗等情境）→ 必須走解紗管線；否則書本可見，
+       關面板（setSheet(false) 內部會取消任何尚在排程的掛紗 timer）後
+       直接跳頂。單執行緒同步取樣→分支→關面板，其間 timer 不可能
+       搶先生效，狀態判定不會漂移。 */
+    var veiled=false;
+    try{veiled=document.documentElement.classList.contains('acim-book-veiled');}catch(e){}
+    if(veiled)setSheet(false,{onVeilDropped:go,topJump:true});
+    else{setSheet(false);go();}
   });
   sheet.appendChild(bTop);
   document.body.appendChild(sheet);
