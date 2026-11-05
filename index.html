@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.6">
+<meta name="acim-version" content="v40.7">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="6378732dba7452c1b0ad5de7fe4b4fef4e55825c30d7216515d09b7afcc29653">
+<meta name="acim-release-id" content="1e5f55eff9fa5a22b8ba736d6595e03c9ad59e7c094a321d49de459b49e8720b">
 <meta name="acim-build" content="2026-11-05">
 <meta name="acim-build-time" content="08:12">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
@@ -161,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.6';
+var ACIM_VERSION = 'v40.7';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -413,7 +413,13 @@ html.dark-mode, html.dark-mode {
 html,body{margin:0;padding:0;height:100%;background:var(--c-page);}
 body,div,p,table,tr,td,span{max-width:100%;word-wrap:break-word;overflow-wrap:break-word;}
 img{max-width:100%!important;height:auto!important;}
-html{scroll-behavior:smooth;}
+/* V40.7：scroll-behavior 一律 auto——本站所有導航（章節／搜尋／書籤／回頂）
+   都走 __acimJump 瞬跳＋代次校正釘回，smooth 從無正面作用；反之任何未設防
+   的程式捲動會被 smooth 接管成「橫跨全書的平滑動畫」，每幀為捲過的 cvis
+   各節同步排版（實機 Redmi 13C 單次回頂 12 秒凍結），且執行中的動畫會吞掉
+   後續瞬跳指令（V40.2~V40.6 五版回頂 12 秒的真因；6x 節流重現：關閉本值
+   2,624ms→919ms、13 顆 long task→5 顆）。 */
+html{scroll-behavior:auto;}
 
 /* ── 主佈局 ── */
 #book-container {
@@ -1926,7 +1932,12 @@ ul{margin-bottom:0;}
    var(--surface) 未定義造成的快選單／閱讀分頁列／章末 pill 透明。
    V40.4：⑨ A＋／A－／明暗／回頂按完「自動收起快選單」（讀者指定：按完
    直接看到內容，不必再手動按一次字級鈕）；⑩ 解紗閘門改自適應——結清
-   推進中續等、停滯才恢復，根除「帶債恢復」在實機上的 12 秒凍結。 */
+   推進中續等、停滯才恢復，根除「帶債恢復」在實機上的 12 秒凍結。
+   V40.7：⑪ 根治「字級面板回頂 12 秒」——真因是 html{scroll-behavior:smooth}
+   把解紗還原的裸呼 scrollTo 變成橫跨全書的平滑動畫（逐幀 cvis 排版，且
+   執行中會吞掉後續瞬跳；V40.2~V40.6 五版皆受其害）。樣式表改
+   scroll-behavior:auto，面紗所有程式捲動改走 acimScrollNow 瞬捲防護；
+   回頂仍走 V40.6 的書籤式序列，原樣即瞬達。 */
 #acim-bottomnav{
   display:none;position:fixed;left:0;right:0;bottom:0;z-index:10002;
   transition:transform 0.18s ease;
@@ -22799,6 +22810,16 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     }catch(e){}
     _veil.aid=null;_veil.aidOrig=null;_veil.atop=null;
   }
+  /* V40.7：瞬捲工具——面紗路徑所有程式捲動必須即時到位。CSS smooth 已於
+     樣式表根除（見 html 規則註解），本工具再加單幀 inline 防護雙保險：
+     未來任何樣式變動若重新引入 smooth，程式捲動也不會被動畫接管、
+     更不會反過來吞掉後續的瞬跳指令。 */
+  function acimScrollNow(x,y){
+    var de=document.documentElement,prev='';
+    try{prev=de.style.scrollBehavior;de.style.scrollBehavior='auto';}catch(e){}
+    try{window.scrollTo(x,y);}catch(e){}
+    requestAnimationFrame(function(){try{de.style.scrollBehavior=prev;}catch(e){}});
+  }
   function unveilBookBehindDrawer(skipRestore,done){
     if(!_veil.on&&!_veil.timer){
       /* V40.3：面紗未掛（桌面、或從未開面板）——回調立即執行，
@@ -22878,7 +22899,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(!_veil.on)return;
     _veil.on=false;
     try{document.documentElement.classList.remove('acim-book-veiled');}catch(e){}
-    if(skipRestore){try{window.scrollTo(0,0);}catch(e){}} /* V40.3：回頂先歸零，防恢復瞬間閃跳 */
+    if(skipRestore){try{acimScrollNow(0,0);}catch(e){}} /* V40.3：回頂先歸零，防恢復瞬間閃跳；V40.7：瞬捲防護 */
     var y=_veil.y,aid=_veil.aid,atop=_veil.atop,gen=_veil.gen;
     /* V40.1：面紗期間字級若被改變（快選單 A＋／A－），解紗後上方各節
        會隨背景結清持續長高，原 1300ms 內的四次校正擋不住——zoom 有變時
@@ -22949,7 +22970,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
               }
             }catch(e){}
           }
-          if(targetY>2)window.scrollTo(0,targetY);
+          if(targetY>2)acimScrollNow(0,targetY); /* V40.7：瞬捲防護（原裸呼＝smooth 動畫入口） */
           try{window.__acimVeilDebug={y:y,zoom0:_veil.zoom,zNow:zNow,zoomChanged:zoomChanged,
             targetY:targetY,aidShown:aidShown,
             scrollAtRestore:Math.round(window.scrollY),hadAid:!!aid};}catch(e){}
@@ -22977,7 +22998,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
               }
               var t=window.scrollY+r.top-Math.round(atop);
               if(Math.abs(t-window.scrollY)>40)
-                window.scrollTo(0,Math.max(0,t));
+                acimScrollNow(0,Math.max(0,t)); /* V40.7：瞬捲防護 */
               /* V40.2：儀器化——最後一個校正 pass 落定後記錄錨點殘差，
                  供驗收（e2e）斷言「面紗錨點釘回精準度」。 */
               if(idx===arr.length-1){
@@ -28274,7 +28295,12 @@ function buildBottomNav(){
           的修法同一套，殘餘失效由校正吸收而非同步結算；
        ④ 落點確定後 __acimVeilDropAnchor() 作廢面紗暫存錨點——回頂是
           deliberate navigation，舊閱讀位置的校正 pass 全數失效，
-          不與代次校正搶捲軸。 */
+          不與代次校正搶捲軸。
+       V40.7 實測定罪：V40.2~V40.6 回頂 12 秒的真因不在本序列，而是
+       html{scroll-behavior:smooth} 接管解紗還原的裸呼 scrollTo，成為
+       橫跨全書的平滑動畫（逐幀 cvis 排版、並吞掉本序列的後續瞬跳）。
+       CSS 已改 scroll-behavior:auto、解紗捲動全數改 acimScrollNow
+       瞬捲防護後，本序列原樣保留即瞬達（6x 節流實測 919ms）。 */
     if(sheet)setSheet(false);
     var go=function(){
       var ca=document.getElementById('content-area');
