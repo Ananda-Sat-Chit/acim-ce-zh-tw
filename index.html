@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.3">
+<meta name="acim-version" content="v40.4">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="7a3658d141bebebaf15acbd26a8f44919913619570f2292280408f86b518646e">
+<meta name="acim-release-id" content="8a1d82719e0c48dd827f926ab689c2874ff5c3e8aa7c394d9bf5639ce78493ef">
 <meta name="acim-build" content="2026-11-05">
-<meta name="acim-build-time" content="12:05">
+<meta name="acim-build-time" content="05:35">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -81,6 +81,9 @@
     if(!valid(token)) return false;
     var de=document.documentElement;
     y=Math.max(0,Number(y)||0);
+    /* V40.4：任何程式跳轉（章節／搜尋／書籤／回頂）都意味著閱讀位置改變，
+       字級連調錨點 session 重置（掛鉤由面紗模組提供，閉環解耦）。 */
+    if(window.__acimVeilOnNavJump){try{window.__acimVeilOnNavJump();}catch(e){}}
     /* V40.2：y<=0（回頂）不需夾限——跳過 scrollHeight 讀取。面紗剛解開、
        樣式全失效時，這次讀取是一次全書 layout（實測低階機 6~8 秒 long task，
        即「回頂要等 8 秒」的主因）；scrollTo(0,0) 本身零結算。 */
@@ -158,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.3';
+var ACIM_VERSION = 'v40.4';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -1920,7 +1923,10 @@ ul{margin-bottom:0;}
    避免誤定位）；⑦ 字級快選單開啟即掛「共享面紗」（抽屜／快選單全關才
    解紗），A＋／A－／明暗在書本暫離版面樹時套用，不再觸發 6~8 秒全書
    樣式結算，「回到頂部」以 skipRestore 解紗後跳頂；⑧ 修
-   var(--surface) 未定義造成的快選單／閱讀分頁列／章末 pill 透明。 */
+   var(--surface) 未定義造成的快選單／閱讀分頁列／章末 pill 透明。
+   V40.4：⑨ A＋／A－／明暗／回頂按完「自動收起快選單」（讀者指定：按完
+   直接看到內容，不必再手動按一次字級鈕）；⑩ 解紗閘門改自適應——結清
+   推進中續等、停滯才恢復，根除「帶債恢復」在實機上的 12 秒凍結。 */
 #acim-bottomnav{
   display:none;position:fixed;left:0;right:0;bottom:0;z-index:10002;
   transition:transform 0.18s ease;
@@ -22741,7 +22747,8 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
      抽屜滑入後將 #content-area display:none，這筆結算從結構上消失；
      關閉抽屜時恢復書本、以「暫存錨點＋自帶輕量校正」還原捲動位置，
      重新附著的樣式債交給 V30.10 背景結清排程器。 */
-  var _veil={on:false,timer:null,y:0,zoom:'',aid:null,aidOrig:null,atop:null,gen:0,waiting:null};
+  var _veil={on:false,timer:null,y:0,zoom:'',aid:null,aidOrig:null,atop:null,gen:0,waiting:null,
+    session:null}; /* V40.4：session＝字級連調錨點（同段落＋同框景跨週期沿用） */
   /* V40.1：面紗為「共享資源」——抽屜或字級快選單任一開啟即掛紗，
      兩者全關才解紗；先開其一不重掛、關其中之一不解全紗。 */
   function acimPanelOpen(){
@@ -22802,6 +22809,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if(_veil.timer){clearTimeout(_veil.timer);_veil.timer=null;}
     try{document.getElementById('content-area').classList.remove('acim-book-fadeout');}catch(e){}
     if(!_veil.on){
+      /* V40.4：掛紗排程被取消（書本從未暫離）——暫存錨點 id 還原，
+         不讓 'acim-veil-anchor' 外洩到後續的搜尋／書籤定位。 */
+      veilClearAnchor();
       try{if(typeof done==='function')done();}catch(e){}
       return;
     }
@@ -22834,7 +22844,31 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       };
       _veil.waiting.fire=_fire;
       try{ if(window.__acimOnDischargeDone)window.__acimOnDischargeDone(_fire); }catch(e){}
-      setTimeout(_fire,1600); /* 安全閥：連續新失效時不讓書本無限空白 */
+      /* V40.4：自適應安全閥——V40.3 的固定 1.6 秒在實機（Redmi 13C）上
+         會「債沒清完就恢復顯示」：display:none→block 把剩餘樣式失效一次
+         性同步結清＝回到 12 秒凍結（實測「回到頂部要等 12 秒以上」的根因；
+         桌面 6x 節流模擬測不出來，因為桌面結清遠快於實機）。改為每 600ms
+         檢查結清進度（__acimStyleDebtProgress 單調計數）：仍在推進就繼續
+         等（書本維持隱藏，寧可多空白一兩秒也不要凍結），停滯或完成才
+         恢復；9 秒硬上限保底（連續新失效時不讓書本無限空白）。 */
+      var _valveLast=-1,_valveT0=Date.now(),_valveTimer=null;
+      var _valveTick=function(){
+        _valveTimer=null;
+        var w=_veil.waiting;
+        if(!w||w.gen!==_veil.gen||!_veil.on)return;
+        var pend=false,prog=-1;
+        try{
+          pend=!!(window.__acimStyleDebtPending&&window.__acimStyleDebtPending());
+          prog=window.__acimStyleDebtProgress?window.__acimStyleDebtProgress():-1;
+        }catch(e){}
+        if(pend&&prog>_valveLast&&(Date.now()-_valveT0)<9000){
+          _valveLast=prog;
+          _valveTimer=setTimeout(_valveTick,600);
+          return;
+        }
+        _fire();
+      };
+      _valveTimer=setTimeout(_valveTick,650);
       return;
     }
     unveilCore(skipRestore,done);
@@ -22867,7 +22901,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       ['wheel','touchmove','pointerdown','keydown'].forEach(function(n){
         window.removeEventListener(n,stop,{capture:true,passive:true});
       });
-      veilClearAnchor();
+      /* V40.4：代數守衛——自動收起讓「開快選單→套用→關」週期變快，舊週期
+         的窗口結束若撞上新週期（面紗已重掛、錨點已重記），不得誤殺新錨點
+         （否則新週期校正找不到元素、位置還原失準）。 */
+      if(_veil.gen===gen&&!_veil.on)veilClearAnchor();
       /* V40.1：非 zoom 路徑也延長到 3400ms——6x 節流（≈低階手機）下
          錨點節渲染可能超過 1300ms，原窗口會錯過釘回。 */
     },zoomChanged?6800:3400);
@@ -22881,14 +22918,21 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
            主因），重試期間畫面停在錯誤位置直到結算完。新落點只讀一次
            scrollHeight 防夾限；zoom 變化路徑棄用比例換算（無法反映烘焙
            高度落差，實測可達數個螢幕，多次開關即累積漂移），改為強制
-           渲染錨點節後以其實際位置落點，隨後交給 atop 校正窗口精準釘回。 */
+           渲染錨點節後以其實際位置落點，隨後交給 atop 校正窗口精準釘回。
+           V40.4：凡有錨點一律走錨點落點（不再限 zoom 變化）——y 夾限的
+           基準 scrollHeight 來自各節「烘焙高度」，跨字級使用後失真（實測
+           落點短了 1673px、錨點在視野外未渲染、校正永遠跳過＝永久偏移）。
+           錨點落點強制渲染錨點節、取真實節點位置，與上方烘焙高度無關；
+           無錨點才退回 y 夾限。 */
         if(!skipRestore&&(window.scrollY||0)<=2&&y>2){
           var targetY=y,aidShown=false;
-          try{
-            var dh=document.documentElement.scrollHeight||0; /* 單次結算 */
-            targetY=Math.min(y,Math.max(0,dh-window.innerHeight));
-          }catch(e){}
-          if(zoomChanged&&aid){
+          if(!aid){
+            try{
+              var dh=document.documentElement.scrollHeight||0; /* 單次結算 */
+              targetY=Math.min(y,Math.max(0,dh-window.innerHeight));
+            }catch(e){}
+          }
+          if(aid){
             try{
               var ael=document.getElementById(aid);
               var asec=ael&&ael.closest?ael.closest('section.csec'):null;
@@ -22918,7 +22962,19 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
               var el=aid?document.getElementById(aid):null;
               if(!el||atop===null)return;
               var r=el.getBoundingClientRect();
-              if(!r.height)return; /* 尚未渲染（content-visibility），等下一次 */
+              if(!r.height){
+                /* V40.4：錨點節未渲染（落點失敗／夾限）——強制渲染後本輪
+                   即量測釘回，不再空等下一輪（下一輪可能已過窗口）。 */
+                try{
+                  var sec0=el.closest?el.closest('section.csec'):null;
+                  if(sec0&&getComputedStyle(sec0).contentVisibility!=='visible'){
+                    sec0.style.contentVisibility='visible';
+                    setTimeout(function(){try{sec0.style.contentVisibility='';}catch(e){}},2600);
+                  }
+                  r=el.getBoundingClientRect();
+                }catch(e){}
+                if(!r.height)return;
+              }
               var t=window.scrollY+r.top-Math.round(atop);
               if(Math.abs(t-window.scrollY)>40)
                 window.scrollTo(0,Math.max(0,t));
@@ -22955,20 +23011,77 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       veilClearAnchor();
       _veil.y=Math.max(0,window.scrollY||0);
       _veil.zoom=(content&&content.style.zoom)||'';
-      /* 暫存錨點：面紗前視口內區塊元素（多點探測），以臨時 id 標記 */
+      /* V40.4：字級連調錨點 session——連續多次 A＋／A－（各自開關快選單）時，
+         每次重新探測會以「當下視口附近的段落」為新基準，校正門樸（40px）
+         內的殘差逐次累積（實測 4 連調漂移 221px，即「放大縮小後回主頁
+         偏移」的完整成因）。改為：session 內沿用「同一段落＋同一視口
+         框景(atop)」，直到使用者真實捲動（wheel/touchmove 永久監聽重置）
+         或程式跳轉（nav.jump 掛鉤重置）才換新錨點。 */
+      var reused=false;
+      try{
+        var ss=_veil.session;
+        if(ss&&ss.orig){
+          var sel0=document.getElementById(ss.orig);
+          var okReuse=false;
+          if(sel0&&content.contains(sel0)&&typeof ss.atop==='number'){
+            /* V40.4：框景貼近度守衛——段落目前的視口位置需仍在 session
+               框景附近（±2 視窗高）且已渲染。讀者已捲走／程式捲動（未經
+               hook 的路徑，如 e2e 的 scrollTo）則換新錨點，否則會把使用者
+               釘回數萬 px 外的舊位置。 */
+            try{
+              var rr=sel0.getBoundingClientRect();
+              okReuse=rr.height>0&&Math.abs(rr.top-ss.atop)<window.innerHeight*2;
+            }catch(e){}
+          }
+          if(okReuse){
+            _veil.aidOrig=ss.orig;
+            sel0.id='acim-veil-anchor';
+            _veil.aid='acim-veil-anchor';
+            _veil.atop=ss.atop;
+            reused=true;
+          }else{ _veil.session=null; }
+        }
+      }catch(e){}
+      /* 暫存錨點：面紗前視口內區塊元素（多點探測），以臨時 id 標記。
+         V40.4：session 未重用時才探測。改用 elementsFromPoint 全堆疊探測
+         ——抽屜開啟時 overlay／抽屜本體會蓋住探測點，舊版 elementFromPoint
+         只看最上層，命中 overlay 後整輪放棄＝抽屜情境「從來沒有錨點」，
+         解紗落點退回「原始 y＋scrollHeight 夾限」；夾限基準（烘焙高度）
+         在跨字級使用後失真，落點可偏差數千 px 且錨點在視野外無法校正
+         （實測 1673px／7628px 漂移）。全堆疊探測穿透 overlay／抽屜，
+         直接找到底下的書本段落。 */
+      if(!reused){
       var pts=[[0.5,0.22],[0.5,0.35],[0.35,0.22],[0.65,0.22],[0.5,0.12]];
       for(var pi=0;pi<pts.length;pi++){
-        var pr=document.elementFromPoint(Math.round(window.innerWidth*pts[pi][0]),
-          Math.round(window.innerHeight*pts[pi][1]));
-        var pp=pr&&pr.closest?pr.closest('p,h1,h2,h3,h4,h5,h6,li,td,blockquote'):null;
-        if(pp&&!pp.closest('#sidebar-toc')&&content.contains(pp)){
+        var px=Math.round(window.innerWidth*pts[pi][0]),
+            py=Math.round(window.innerHeight*pts[pi][1]);
+        var pp=null;
+        try{
+          if(document.elementsFromPoint){
+            var stack=document.elementsFromPoint(px,py)||[];
+            for(var si=0;si<stack.length;si++){
+              var cand=stack[si];
+              var pc=cand&&cand.closest?cand.closest('p,h1,h2,h3,h4,h5,h6,li,td,blockquote'):null;
+              if(pc&&!pc.closest('#sidebar-toc')&&content.contains(pc)){pp=pc;break;}
+            }
+          }else{
+            var pr=document.elementFromPoint(px,py);
+            pp=pr&&pr.closest?pr.closest('p,h1,h2,h3,h4,h5,h6,li,td,blockquote'):null;
+            if(pp&&pp.closest('#sidebar-toc'))pp=null;
+            if(pp&&!content.contains(pp))pp=null;
+          }
+        }catch(e){}
+        if(pp){
           _veil.aidOrig=pp.id||null;
           pp.id='acim-veil-anchor';
           _veil.aid='acim-veil-anchor';
           _veil.atop=pp.getBoundingClientRect().top;
+          /* V40.4：有固定 id 的錨點才入 session（idless 段落無法跨週期寻址） */
+          _veil.session=_veil.aidOrig?{orig:_veil.aidOrig,atop:_veil.atop}:null;
           break;
         }
       }
+      } /* end if(!reused) */
       ca.classList.add('acim-book-fadeout');
       _veil.timer=setTimeout(function(){
         _veil.timer=null;
@@ -22985,6 +23098,12 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     var t=e.target;
     if(t&&t.closest&&t.closest('#toc-search-input'))veilApplyNow();
   },true);
+  /* V40.4：使用者真實捲動＝閱讀位置已變，字級連調錨點 session 重置
+     （永久監聽；被動式，零成本）。程式跳轉由 nav.jump 掛鉤重置。 */
+  ['wheel','touchmove'].forEach(function(n){
+    window.addEventListener(n,function(){_veil.session=null;},{capture:true,passive:true});
+  });
+  window.__acimVeilOnNavJump=function(){ _veil.session=null; };
   var sidebarHideTimer=null,sidebarOpenFrame=null;
   function openSidebar(){
     if(sidebarHideTimer!==null){clearTimeout(sidebarHideTimer);sidebarHideTimer=null;}
@@ -23809,7 +23928,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
      把樣式債以 ≤6ms 分片在背景結清（799 節全走訪實測 37~590ms），
      聚焦時已無債可結。只做樣式解析（getComputedStyle），不觸發版面
      重排／繪製；組字中、分頁隱藏時自動暫停。 */
-  var _disTimer=null,_disSecs=null,_disIdx=0,_disPass=0,_disCbs=null;
+  var _disTimer=null,_disSecs=null,_disIdx=0,_disPass=0,_disCbs=null,_disWork=0,_disWalking=false;
   function scheduleStyleDischarge(){
     try{
       if(!_disSecs)_disSecs=Array.prototype.slice.call(content.querySelectorAll('section.csec'));
@@ -23823,22 +23942,32 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
   }
   function dischargeStep(){
     _disTimer=null;
-    if(!_disSecs)return;
+    if(!_disSecs){_disWalking=false;return;}
+    /* V40.4：走訪進行中旗標——舊版每步開頭清 _disTimer，「pending」在
+       走訪中的 40ms 窗內全部回報 false（0ms 間隔下走訪佔了約九成時間），
+       解紗閘門的債查詢幾乎必然落在空窗，帶債恢復照樣發生（實機 12 秒
+       凍結真兇；探針實測 A＋ 後 175ms 面紗即解、結清仍在跑）。 */
+    _disWalking=true;
     if(document.hidden||_composing){_disTimer=setTimeout(dischargeStep,400);return;}
-    /* V40.3：面紗模式＝書本不渲染、無繪製壓力，分片與間隔放大；
-       正常模式維持 6ms／16ms 禮讓前景互動。 */
+    /* V40.4：面紗模式分片再放大（14/8ms→40/0ms）——實機量測顯示，小分片
+       的「每片排程開銷」（任務建立＋timer 夾限）把全書債清拉長到 10 秒級，
+       解紗閘門因此等到地老天荒、自適應閥被迫提前放行帶債恢復。面紗期間
+       書本不渲染、零繪製壓力，40ms 大分片把排程次數砍到約 1/4、債清壓到
+       1~2.5 秒；面紗下唯一的互動是快選單點按，最壞觸控延遲 ≈ 一個分片
+       （<60ms），無感。正常模式維持 6ms／16ms 禮讓前景互動。 */
     var _disVeiled=document.documentElement.classList.contains('acim-book-veiled');
-    var budget=_disVeiled?14:6,gap=_disVeiled?8:16;
+    var budget=_disVeiled?40:6,gap=_disVeiled?0:16;
     var t0=performance.now();
     while(_disIdx<_disSecs.length&&performance.now()-t0<budget){
       var s=_disSecs[_disIdx++];
+      _disWork++; /* V40.4：單調進度計數（重排程不歸零），供解紗閘門判斷推進 */
       try{void getComputedStyle(s).color;}catch(e){}
     }
     if(_disIdx<_disSecs.length){_disTimer=setTimeout(dischargeStep,gap);return;}
     /* 保險：走訪完成後再補一遍——吸收走訪期間排隊的其他失效
        （排序／高亮退休等），至多兩遍後停止，乾淨頁的補走訪近零成本。 */
     if(++_disPass<2){_disIdx=0;_disTimer=setTimeout(dischargeStep,_disVeiled?60:120);return;}
-    _disSecs=null;
+    _disSecs=null;_disWalking=false;
     /* V40.3：債清完成回調——解紗閘門據此決定「何時恢復書本顯示」，
        恢復那一刻近乎零結算（詳見 unveilBookBehindDrawer）。 */
     if(_disCbs){var _cbs=_disCbs;_disCbs=null;
@@ -23848,8 +23977,11 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
      pending＝結清排程或走訪仍在進行；onDone＝債清完成時觸發
      （已無債則同步觸發）。 */
   window.__acimStyleDebtPending=function(){
-    return !!(_disSecs&&_disTimer);
+    return !!(_disSecs&&(_disTimer||_disWalking)); /* V40.4：走訪中也算 pending，填補空窗 */
   };
+  /* V40.4：結清進度計數（單調遞增，重排程不歸零）——解紗閘門據此判斷
+     「結清仍在推進」而繼續等，避免帶債恢復（實機 12 秒凍結根因）。 */
+  window.__acimStyleDebtProgress=function(){ return _disWork; };
   window.__acimOnDischargeDone=function(cb){
     if(typeof cb!=='function')return;
     if(!_disSecs){try{cb();}catch(e){}return;}
@@ -28057,15 +28189,18 @@ function buildBottomNav(){
     b.appendChild(i); b.appendChild(t);
     b.addEventListener('click',function(){
       var el=document.getElementById(target);
-      /* V40.2：先把面紗做實（書本暫離版面樹）再套用 zoom／主題，
+      /* V40.2/V40.3：先把面紗做實（書本暫離版面樹）再套用 zoom／主題，
          全書失效零同步結算；解紗落點由面紗錨點校正負責。
-         V40.3：套用後「快選單保持開啟」——V40.2 的立即關閉會在讀者
-         點按當下觸發解紗，display:none→block 恢復＋全書結清＝實機
-         12 秒凍結（比 V40.1 更惡化）。書本在 display:none 下套用
-         zoom／主題零結算，讀者可連續按 A＋／A－／明暗反覆調整；關閉
-         快選單（點外部／再按字級鈕）時由解紗閘門確保債清完才恢復書本。 */
+         V40.4：套用後「自動收起快選單」——讀者實測指定：按完 A＋／A－／
+         明暗要直接看到內容，不想再手動按一次字級鈕退出選單。180ms 讓
+         按壓回饋先繪製一幀再收起；收起後由解紗閘門保證「債清完才恢復
+         書本」（V40.4 自適應閥＋大分片結清），V40.2 式帶債恢復的 12 秒
+         凍結不會重演。想再調一級，再按字級鈕重開即可。 */
       if(window.__acimVeilApplyNow)window.__acimVeilApplyNow();
       if(el) el.click();
+      setTimeout(function(){
+        if(sheet&&sheet.classList.contains('open'))setSheet(false);
+      },180);
     });
     sheet.appendChild(b);
   }
@@ -28082,7 +28217,11 @@ function buildBottomNav(){
        不做錨點還原才不會被釘回面紗前位置。
        V40.3：jump(0) 移入解紗回調——債清等待下書本恢復顯示後再歸零，
        scrollTo(0,0) 本身零結算；unveilCore 的 skipRestore 分支同步
-       scrollTo(0,0) 防恢復瞬間閃跳。 */
+       scrollTo(0,0) 防恢復瞬間閃跳。
+       V40.4：選單即時收起＋解紗閘門改自適應（債清推進中續等、停滯才
+       恢復）——實機「回頂要等 12 秒以上」是 V40.3 固定 1.6 秒閥帶債
+       恢復造成的一次性全書結算，本版根除；掛紗排程未做實時直接跳頂
+       （書本從未離開版面樹，零等待）。 */
     if(sheet)sheet.classList.remove('open');
     if(window.__acimUnveilNow){
       window.__acimUnveilNow(true,function(){
@@ -28095,10 +28234,11 @@ function buildBottomNav(){
   document.addEventListener('click',function(e){
     if(!sheet.classList.contains('open')) return;
     if(sheet.contains(e.target)||sheetBtn.contains(e.target)) return;
-    /* V40.3：快選單套用按鈕（重用的浮動鈕）不在 sheet DOM 內——row handler
-       的 el.click() 冒泡到 document 會被本 handler 誤判為「點外部」而立即
-       關閉快選單（實測 A＋ 後 sheet 秒關、面紗秒解，等於退回 V40.2 行為）。
-       浮動鈕點擊一律交由 row handler / 字級鈕 toggle 管理。 */
+    /* V40.3/V40.4：快選單套用按鈕（重用的浮動鈕）不在 sheet DOM 內——row
+       handler 的 el.click() 冒泡到 document 會被本 handler 誤判為「點外部」
+       而同步收起快選單。V40.4 的「自動收起」由 row handler 統一在 180ms
+       後以 setSheet(false) 執行（保留按壓回饋一幀），冒泡路徑維持排除，
+       避免收起時序分岔（同步關 vs 延遲關）造成面紗狀態競爭。 */
     if(e.target&&e.target.closest&&e.target.closest('#btn-fup,#btn-fdn,#btn-dark')) return;
     setSheet(false);
   });
