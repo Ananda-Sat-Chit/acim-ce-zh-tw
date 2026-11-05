@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.5">
+<meta name="acim-version" content="v40.6">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="285109e520d4673d6624840b01a3563493ecd0b760b14e841c15d209987add2f">
+<meta name="acim-release-id" content="6378732dba7452c1b0ad5de7fe4b4fef4e55825c30d7216515d09b7afcc29653">
 <meta name="acim-build" content="2026-11-05">
-<meta name="acim-build-time" content="05:35">
+<meta name="acim-build-time" content="08:12">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -161,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.5';
+var ACIM_VERSION = 'v40.6';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -24347,6 +24347,15 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     });
     setTimeout(function(){ if(gen===_acimCorrectGen){_acimCorrectGen++;cleanup();} },3800);
   }
+  /* V40.6：回頂改走「書籤／搜尋點選同款」管線——把量測與校正工具暴露給
+     buildBottomNav（另一 IIFE）使用。__acimVeilDropAnchor 供「主動導航」
+     場景作廢面紗校正錨點：回頂是 deliberate navigation，解紗還原用的
+     暫存錨點在落點確定後即無意義，清除後所有面紗校正 pass（90~3200ms）
+     因 getElementById(aid) 為 null 全數失效，不會把讀者從頂部拉回舊
+     閱讀位置、也不與 acimSearchCorrect 搭配時互相搶捲軸。 */
+  window.__acimRevealSection=acimRevealSection;
+  window.__acimSearchCorrect=acimSearchCorrect;
+  window.__acimVeilDropAnchor=veilClearAnchor;
   function clearFnLocate(){
     var old=content.querySelectorAll('.acim-fn-locate');
     for(var i=0;i<old.length;i++) old[i].classList.remove('acim-fn-locate');
@@ -28245,32 +28254,49 @@ function buildBottomNav(){
   var t3=document.createElement('span'); t3.textContent='回到頂部';
   bTop.appendChild(i3); bTop.appendChild(t3);
   bTop.addEventListener('click',function(){
-    /* V40.1：跳頂是主動移動——以 skipRestore 解紗，
-       不做錨點還原才不會被釘回面紗前位置。
-       V40.3：jump(0) 移入解紗回調——債清等待下書本恢復顯示後再歸零，
-       scrollTo(0,0) 本身零結算；unveilCore 的 skipRestore 分支同步
-       scrollTo(0,0) 防恢復瞬間閃跳。
-       V40.4：選單即時收起＋解紗閘門改自適應（債清推進中續等、停滯才
-       恢復）——實機「回頂要等 12 秒以上」是 V40.3 固定 1.6 秒閥帶債
-       恢復造成的一次性全書結算，本版根除；掛紗排程未做實時直接跳頂
-       （書本從未離開版面樹，零等待）。
-       V40.5：實機殘留 12 秒的真兇在此補刀——「掛紗排程未做實時直接
-       跳頂」正是缺口：快選單開啟後 200ms 內（淡出排程未做實）或任何
-       _veil.on=false 情境下按回頂，書本帶著「全量樣式樹＋當前捲動
-       座標」原地 scrollTo(0,0)，瀏覽器為整本書做一次同步結算＋頂部
-       重排——6x 節流實測單顆 690ms long task，實機放大 6~12 倍即
-       12 秒級。A＋／A－／明暗自 V40.2 起都有 __acimVeilApplyNow()
-       同步掛紗保護（書本先暫離版面樹再套用），回頂是唯一沒做的。
-       本版補齊：先同步掛紗（已掛紗時冪等返回、不重啟結清），再收
-       快選單、再經解紗閘門跳頂——回頂從此與 A＋ 同一保證：債清完成
-       後書本直接在頂部出現，零帶債結算。 */
-    if(window.__acimVeilApplyNow)window.__acimVeilApplyNow();
-    if(sheet)sheet.classList.remove('open');
-    if(window.__acimUnveilNow){
-      window.__acimUnveilNow(true,function(){
-        if(window.__acimJump) window.__acimJump(0);
-      });
-    } else if(window.__acimJump) window.__acimJump(0);
+    /* V40.6：回頂改走「書籤／搜尋點選同款」已驗證快路徑（讀者指定方向：
+       不再維持浮球時代的 scrollTo(0,0) 做法）。
+       實機四版（V40.2~V40.5）驗證：回頂專用的「skipRestore＋盲跳 y=0」
+       路徑在 Redmi 13C 上無論怎麼修（固定閥→自適應閥→同步掛紗補刀）
+       都是 12 秒級；同一期間書籤任意跳、搜尋點選、章節連結——解析真實
+       元素→強制渲染→量測→nav.jump→代次校正釘回——全部瞬跳，字級
+       A＋／A－／明暗（同一解紗閘門）也正常。可見瓶頸不在閘門本身，
+       而在「回頂=盲跳座標、無目標元素可校正」這條自創支線。
+       本版把回頂變成「跳到全書第一個標題」的書籤式跳轉，與實測瞬跳的
+       搜尋點選序列逐一同構：
+       ① setSheet(false) 先收快選單——與搜尋點選的 closeSidebar() 同位，
+          解紗閘門由關面板路徑起頭（skipRestore=false，錨點還原照跑）；
+       ② __acimVeilUnveil(false,go) 把「量測＋跳轉」掛進解紗回調——
+          書本恢復顯示＋債清完成後座標才真實（與搜尋點選同一時序）；
+       ③ go()：強制渲染第一節（acimRevealSection，cvis 佔位誤差歸零）、
+          量測第一個標題、nav.jump 至其視口頂（margin=0）、
+          acimSearchCorrect 90~3200ms 代次校正釘回——與書籤「跳回偏下」
+          的修法同一套，殘餘失效由校正吸收而非同步結算；
+       ④ 落點確定後 __acimVeilDropAnchor() 作廢面紗暫存錨點——回頂是
+          deliberate navigation，舊閱讀位置的校正 pass 全數失效，
+          不與代次校正搶捲軸。 */
+    if(sheet)setSheet(false);
+    var go=function(){
+      var ca=document.getElementById('content-area');
+      var sec=ca?ca.querySelector('section.csec'):null;
+      var el=sec?(sec.querySelector('h1,h2,h3,h4,h5,h6')||sec):null;
+      if(el&&el.isConnected&&window.__acimJump){
+        var _rv=window.__acimRevealSection?window.__acimRevealSection(el):null;
+        /* margin＝目標元素的文件絕對位置（scrollY+rect.top）：校正公式
+           t=scrollY+rect.top−margin 收斂到 elDocY−margin=0——代次校正把
+           捲動釘在精確頂部（scrollY=0）。初始跳躍直接 jump(0)（y≤0 走
+           nav.jump 零夾限零結算分支）；第一節（封面節）上方無其他內容，
+           elDocY 量測後不會漂移，釘回恆為真頂。 */
+        var margin=Math.max(0,Math.round(window.scrollY+el.getBoundingClientRect().top));
+        window.__acimJump(0);
+        if(window.__acimVeilDropAnchor)window.__acimVeilDropAnchor();
+        if(window.__acimSearchCorrect)window.__acimSearchCorrect(el,margin,_rv);
+        return;
+      }
+      if(window.__acimJump)window.__acimJump(0);
+    };
+    if(window.__acimVeilUnveil)window.__acimVeilUnveil(false,go);
+    else go();
   });
   sheet.appendChild(bTop);
   document.body.appendChild(sheet);
