@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.2">
+<meta name="acim-version" content="v40.3">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="a4a494691232c93ebd0f5570b85fe6dd51880aa3bafc7e724c3c97426bb5e8ac">
-<meta name="acim-build" content="2026-11-04">
-<meta name="acim-build-time" content="23:39">
+<meta name="acim-release-id" content="7a3658d141bebebaf15acbd26a8f44919913619570f2292280408f86b518646e">
+<meta name="acim-build" content="2026-11-05">
+<meta name="acim-build-time" content="12:05">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -158,7 +158,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.2';
+var ACIM_VERSION = 'v40.3';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -22741,7 +22741,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
      抽屜滑入後將 #content-area display:none，這筆結算從結構上消失；
      關閉抽屜時恢復書本、以「暫存錨點＋自帶輕量校正」還原捲動位置，
      重新附著的樣式債交給 V30.10 背景結清排程器。 */
-  var _veil={on:false,timer:null,y:0,zoom:'',aid:null,aidOrig:null,atop:null,gen:0};
+  var _veil={on:false,timer:null,y:0,zoom:'',aid:null,aidOrig:null,atop:null,gen:0,waiting:null};
   /* V40.1：面紗為「共享資源」——抽屜或字級快選單任一開啟即掛紗，
      兩者全關才解紗；先開其一不重掛、關其中之一不解全紗。 */
   function acimPanelOpen(){
@@ -22778,6 +22778,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       if(ca)ca.classList.remove('acim-book-fadeout');
       document.documentElement.classList.add('acim-book-veiled');
     }catch(e){}
+    /* V40.3：書本一離版面樹立即啟動背景結清（面紗模式大分片，零繪製
+       壓力）。抽屜／快選單開著的幾秒鐘內把全書樣式債清完——解紗時
+       幾乎無債，「關面板回書 12 秒凍結」與「第一次回主頁慢」由此根治。 */
+    try{scheduleStyleDischarge();}catch(e){}
   }
   function veilClearAnchor(){
     try{
@@ -22788,13 +22792,59 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     }catch(e){}
     _veil.aid=null;_veil.aidOrig=null;_veil.atop=null;
   }
-  function unveilBookBehindDrawer(skipRestore){
-    if(!_veil.on&&!_veil.timer)return;
+  function unveilBookBehindDrawer(skipRestore,done){
+    if(!_veil.on&&!_veil.timer){
+      /* V40.3：面紗未掛（桌面、或從未開面板）——回調立即執行，
+         呼叫端（搜尋點選／書籤跳回）的量測語意保持同步。 */
+      try{if(typeof done==='function')done();}catch(e){}
+      return;
+    }
     if(_veil.timer){clearTimeout(_veil.timer);_veil.timer=null;}
     try{document.getElementById('content-area').classList.remove('acim-book-fadeout');}catch(e){}
+    if(!_veil.on){
+      try{if(typeof done==='function')done();}catch(e){}
+      return;
+    }
+    /* V40.3：解紗閘門——樣式債未清完時「先不恢復書本顯示」。
+       display:none→block 的恢復會把面紗期間累積的全部樣式失效
+       （zoom／主題已改）一次性同步結清：實機 6x 節流下 8~12 秒單一
+       long task，即「A＋／明暗／回頂要等 8~12 秒」「第一次回主頁慢、
+       第二次快」的主因。面紗期間書本不渲染，結清排程器可用大分片
+       在背景把債清完；等債清（或 1.6s 安全閥）再恢復顯示，
+       恢復那一刻近乎零結算。等待期間書區短暫空白，換取零凍結。 */
+    var _debtPending=false;
+    try{_debtPending=!!(window.__acimStyleDebtPending&&window.__acimStyleDebtPending());}catch(e){}
+    if(_debtPending){
+      /* V40.3：等待佇列——債清等待期間的其他解紗呼叫（同一代）只追加
+         回調，由同一個 fire 統一解紗並依序執行，避免多次 unveilCore
+         競爭或回調丟失。 */
+      if(_veil.waiting&&_veil.waiting.gen===_veil.gen){
+        if(typeof done==='function')_veil.waiting.dones.push(done);
+        return;
+      }
+      var dones=typeof done==='function'?[done]:[];
+      _veil.waiting={dones:dones,gen:_veil.gen,skip:!!skipRestore};
+      var _fire=function(){
+        var w=_veil.waiting;
+        _veil.waiting=null;
+        if(!w||w.gen!==_veil.gen||!_veil.on)return;
+        unveilCore(w.skip,function(){
+          w.dones.forEach(function(cb){try{cb();}catch(e){}});
+        });
+      };
+      _veil.waiting.fire=_fire;
+      try{ if(window.__acimOnDischargeDone)window.__acimOnDischargeDone(_fire); }catch(e){}
+      setTimeout(_fire,1600); /* 安全閥：連續新失效時不讓書本無限空白 */
+      return;
+    }
+    unveilCore(skipRestore,done);
+  }
+  function unveilCore(skipRestore,done){
+    if(_veil.timer){clearTimeout(_veil.timer);_veil.timer=null;}
     if(!_veil.on)return;
     _veil.on=false;
     try{document.documentElement.classList.remove('acim-book-veiled');}catch(e){}
+    if(skipRestore){try{window.scrollTo(0,0);}catch(e){}} /* V40.3：回頂先歸零，防恢復瞬間閃跳 */
     var y=_veil.y,aid=_veil.aid,atop=_veil.atop,gen=_veil.gen;
     /* V40.1：面紗期間字級若被改變（快選單 A＋／A－），解紗後上方各節
        會隨背景結清持續長高，原 1300ms 內的四次校正擋不住——zoom 有變時
@@ -22888,6 +22938,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
             c.classList.add('acim-book-fadein');
             setTimeout(function(){c.classList.remove('acim-book-fadein');},260);
           }}catch(e){}
+        /* V40.3：量測／跳轉回調——書本已恢復顯示且完成一幀佈局，
+           此時 getBoundingClientRect 的座標才真實。搜尋點選、書籤跳回、
+           章節 pill 等呼叫端把「量測＋跳轉」放進本回調。 */
+        try{if(typeof done==='function')done();}catch(e){}
       });
     });
   }
@@ -23755,30 +23809,53 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
      把樣式債以 ≤6ms 分片在背景結清（799 節全走訪實測 37~590ms），
      聚焦時已無債可結。只做樣式解析（getComputedStyle），不觸發版面
      重排／繪製；組字中、分頁隱藏時自動暫停。 */
-  var _disTimer=null,_disSecs=null,_disIdx=0,_disPass=0;
+  var _disTimer=null,_disSecs=null,_disIdx=0,_disPass=0,_disCbs=null;
   function scheduleStyleDischarge(){
     try{
       if(!_disSecs)_disSecs=Array.prototype.slice.call(content.querySelectorAll('section.csec'));
       _disIdx=0;_disPass=0;
       if(_disTimer)clearTimeout(_disTimer);
-      _disTimer=setTimeout(dischargeStep,150);
+      /* V40.3：面紗模式下書已 display:none——結清只做樣式解析（零 layout／
+         paint），開始延遲縮短，把債在「書本看不見的期間」盡快清完。 */
+      _disTimer=setTimeout(dischargeStep,
+        document.documentElement.classList.contains('acim-book-veiled')?60:150);
     }catch(e){}
   }
   function dischargeStep(){
     _disTimer=null;
     if(!_disSecs)return;
     if(document.hidden||_composing){_disTimer=setTimeout(dischargeStep,400);return;}
+    /* V40.3：面紗模式＝書本不渲染、無繪製壓力，分片與間隔放大；
+       正常模式維持 6ms／16ms 禮讓前景互動。 */
+    var _disVeiled=document.documentElement.classList.contains('acim-book-veiled');
+    var budget=_disVeiled?14:6,gap=_disVeiled?8:16;
     var t0=performance.now();
-    while(_disIdx<_disSecs.length&&performance.now()-t0<6){
+    while(_disIdx<_disSecs.length&&performance.now()-t0<budget){
       var s=_disSecs[_disIdx++];
       try{void getComputedStyle(s).color;}catch(e){}
     }
-    if(_disIdx<_disSecs.length){_disTimer=setTimeout(dischargeStep,16);return;}
+    if(_disIdx<_disSecs.length){_disTimer=setTimeout(dischargeStep,gap);return;}
     /* 保險：走訪完成後再補一遍——吸收走訪期間排隊的其他失效
        （排序／高亮退休等），至多兩遍後停止，乾淨頁的補走訪近零成本。 */
-    if(++_disPass<2){_disIdx=0;_disTimer=setTimeout(dischargeStep,120);return;}
+    if(++_disPass<2){_disIdx=0;_disTimer=setTimeout(dischargeStep,_disVeiled?60:120);return;}
     _disSecs=null;
+    /* V40.3：債清完成回調——解紗閘門據此決定「何時恢復書本顯示」，
+       恢復那一刻近乎零結算（詳見 unveilBookBehindDrawer）。 */
+    if(_disCbs){var _cbs=_disCbs;_disCbs=null;
+      _cbs.forEach(function(cb){try{cb();}catch(e){}});}
   }
+  /* V40.3：樣式債查詢與完成回調（面紗解紗閘門專用）。
+     pending＝結清排程或走訪仍在進行；onDone＝債清完成時觸發
+     （已無債則同步觸發）。 */
+  window.__acimStyleDebtPending=function(){
+    return !!(_disSecs&&_disTimer);
+  };
+  window.__acimOnDischargeDone=function(cb){
+    if(typeof cb!=='function')return;
+    if(!_disSecs){try{cb();}catch(e){}return;}
+    if(!_disCbs)_disCbs=[];
+    _disCbs.push(cb);
+  };
   if(window.visualViewport&&visualViewport.addEventListener)
     visualViewport.addEventListener('resize',scheduleStyleDischarge,{passive:true});
   function afterPresentation(fn){
@@ -23832,8 +23909,14 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     if(_hlAbort){_hlAbort.abort();_hlAbort=null;}
     var _rm=Array.prototype.slice.call(content.querySelectorAll('mark.search-hl:not(.search-hl-pin)'));
     if(_rm.length){
+      /* V40.3：執行時守衛——清單求值後、批次執行前，點擊命中可能已把某個
+         mark 升級為 pin（搜尋點選的 materializeFirstHit 在解紗回調中執行，
+         晚於收抽屜的 retire 求值）。批次執行時再查一次 pin，避免把
+         「點擊命中的螢光」拆掉（實測第一次點選 pin 即被拆，第二次才留）。 */
       _hlAbort=runChunks(_rm,300,function(mk){
-        if(mk.parentNode) mk.parentNode.replaceChild(document.createTextNode(mk.textContent),mk);
+        if(!mk.parentNode)return;
+        if(mk.classList&&mk.classList.contains('search-hl-pin'))return;
+        mk.parentNode.replaceChild(document.createTextNode(mk.textContent),mk);
       },function(){scheduleStyleDischarge();});
     }
     if(sb&&sb.hidden===false&&sb.dataset.searchState==='searching'){
@@ -24078,7 +24161,11 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
       stops.forEach(function(n){window.removeEventListener(n,stop,true);});
     }
     stops.forEach(function(n){window.addEventListener(n,stop,{capture:true,passive:true});});
-    [90,220,450,800,1200,1700].forEach(function(ms){
+    /* V40.3：校正窗口延長至 3200ms——大字級（zoom 大）＋低階機上，目標節
+       真實渲染與背景結清可能超過原 1700ms；讀者實報「大字級下搜尋點選
+       跑偏」。多兩個釘點吸收結清期間的高度漂移，成本僅每 pass 一次
+       getBoundingClientRect。 */
+    [90,220,450,800,1200,1700,2400,3200].forEach(function(ms){
       setTimeout(function(){
         if(gen!==_acimCorrectGen)return;
         if(!el||!el.isConnected)return;
@@ -24094,7 +24181,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
         }
       },ms);
     });
-    setTimeout(function(){ if(gen===_acimCorrectGen){_acimCorrectGen++;cleanup();} },2100);
+    setTimeout(function(){ if(gen===_acimCorrectGen){_acimCorrectGen++;cleanup();} },3800);
   }
   function clearFnLocate(){
     var old=content.querySelectorAll('.acim-fn-locate');
@@ -24146,53 +24233,59 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     hint.textContent=inNote?(noteLabel||'註 '+noteId)+' · 開啟註文並跳至內文':'點擊跳至';
     item.appendChild(hint);
     item.addEventListener('click',function(){
-      unveilBookBehindDrawer(); /* V30.11：量測前先讓書本回到版面樹 */
-      var el=en.node;if(!el || !el.isConnected)return;
-      if(inNote){
-        var def=el.closest('[id^="ftn"]');
-        /* V24 修復：徽章屬性自 V22 起為 data-fn="N"，原 data-fn-href 選擇器永不命中，
-           導致搜尋註腳結果點擊後落到通用捲動分支（跳到書末註腳而非開啟底部彈窗）。
-           由 def.id（ftnNNNN）解出編號，改查 data-fn。 */
-        var ref=null;
-        if(def){
-          var fnNum=(def.id||'').replace(/^ftn/,'');
-          ref=fnNum ? content.querySelector('sup.fn-badge[data-fn="'+fnNum+'"]') : null;
+      /* V40.3：先收抽屜（動畫與債清並行），「量測＋跳轉」放進解紗回調——
+         面紗模式下書本恢復顯示＋債清完成後座標才真實（V40.2 前同步量測
+         會在 display:none／結清中狀態下讀到 0 或漂移座標，大字級下跑偏）。 */
+      var proceed=function(){
+        var el=en.node;if(!el || !el.isConnected)return;
+        if(inNote){
+          var def=el.closest('[id^="ftn"]');
+          /* V24 修復：徽章屬性自 V22 起為 data-fn="N"，原 data-fn-href 選擇器永不命中，
+             導致搜尋註腳結果點擊後落到通用捲動分支（跳到書末註腳而非開啟底部彈窗）。
+             由 def.id（ftnNNNN）解出編號，改查 data-fn。 */
+          var ref=null;
+          if(def){
+            var fnNum=(def.id||'').replace(/^ftn/,'');
+            ref=fnNum ? content.querySelector('sup.fn-badge[data-fn="'+fnNum+'"]') : null;
+          }
+          if(ref){
+            if(fnHideTimer)clearTimeout(fnHideTimer);
+            window.__fnSkip=true;window.__fnClickOpen=true;showFn(ref);
+            highlightPopupNow(rx); /* V30.7：彈窗高亮自足，不依賴容器 mark 插入時機 */
+            /* V30.2：主畫面同步跳到內文註標位置並高亮（彈窗未開成功則不定位） */
+            if(document.body.classList.contains('fn-open')) locateFnRef(ref);
+            return;
+          }
         }
-        if(ref){
-          if(fnHideTimer)clearTimeout(fnHideTimer);
-          window.__fnSkip=true;window.__fnClickOpen=true;showFn(ref);
-          highlightPopupNow(rx); /* V30.7：彈窗高亮自足，不依賴容器 mark 插入時機 */
-          /* V30.2：主畫面同步跳到內文註標位置並高亮（彈窗未開成功則不定位） */
-          if(document.body.classList.contains('fn-open')) locateFnRef(ref);
-          if(window.innerWidth<=768)closeSidebar();return;
+        /* V30.8：量測前先強制渲染目標 section（見 acimRevealSection 註解） */
+        var _rv=acimRevealSection(el);
+        /* V30.9：materializeFirstHit 無條件呼叫——mark 路徑下命中段已有 mark
+           時函式會把首個 mark 升級為 pin；超過 300 上限而未標示的命中，點擊
+           當下補上實體 mark，維持 V30.7 起的「點擊命中可見」保證。 */
+        materializeFirstHit(el,rx);
+        var firstMark=(_nativeSearchHighlight && _searchRanges[en.id]) || el.querySelector('mark.search-hl') || el;
+        var rect=firstMark.getBoundingClientRect();if(!rect.height)rect=el.getBoundingClientRect();
+        window.__acimJump(window.scrollY+rect.top-Math.round(window.innerHeight/3));
+        /* V30.8：代次校正＋完成後還原懶渲染（見 acimSearchCorrect 註解） */
+        acimSearchCorrect(el, Math.round(window.innerHeight/3), _rv);
+        /* V30.7：小結果集（≤120 Range）於跳轉校正後整冊重貼一次註冊，
+           強制重繪讓鄰近命中也立即顯示；大集合手機重繪代價高，僅靠實體 mark。 */
+        if(_nativeSearchHighlight){
+          var _hlSet=CSS.highlights.get('acim-search');
+          if(_hlSet&&_hlSet.size<=120){
+            var _hlToken=_searchToken;
+            setTimeout(function(){
+              if(_searchToken!==_hlToken)return;
+              if(CSS.highlights.get('acim-search')!==_hlSet)return;
+              CSS.highlights.delete('acim-search');
+              CSS.highlights.set('acim-search',_hlSet);
+            },780);
+          }
         }
-      }
-      /* V30.8：量測前先強制渲染目標 section（見 acimRevealSection 註解） */
-      var _rv=acimRevealSection(el);
-      /* V30.9：materializeFirstHit 無條件呼叫——mark 路徑下命中段已有 mark
-         時函式會把首個 mark 升級為 pin；超過 300 上限而未標示的命中，點擊
-         當下補上實體 mark，維持 V30.7 起的「點擊命中可見」保證。 */
-      materializeFirstHit(el,rx);
-      var firstMark=(_nativeSearchHighlight && _searchRanges[en.id]) || el.querySelector('mark.search-hl') || el;
-      var rect=firstMark.getBoundingClientRect();if(!rect.height)rect=el.getBoundingClientRect();
-      window.__acimJump(window.scrollY+rect.top-Math.round(window.innerHeight/3));
-      /* V30.8：代次校正＋完成後還原懶渲染（見 acimSearchCorrect 註解） */
-      acimSearchCorrect(el, Math.round(window.innerHeight/3), _rv);
-      /* V30.7：小結果集（≤120 Range）於跳轉校正後整冊重貼一次註冊，
-         強制重繪讓鄰近命中也立即顯示；大集合手機重繪代價高，僅靠實體 mark。 */
-      if(_nativeSearchHighlight){
-        var _hlSet=CSS.highlights.get('acim-search');
-        if(_hlSet&&_hlSet.size<=120){
-          var _hlToken=_searchToken;
-          setTimeout(function(){
-            if(_searchToken!==_hlToken)return;
-            if(CSS.highlights.get('acim-search')!==_hlSet)return;
-            CSS.highlights.delete('acim-search');
-            CSS.highlights.set('acim-search',_hlSet);
-          },780);
-        }
-      }
+      };
       if(window.innerWidth<=768)closeSidebar();
+      if(window.__acimVeilUnveil)window.__acimVeilUnveil(false,proceed);
+      else proceed();
     });
     item.addEventListener('keydown',function(e){
       if(e.key==='Enter'||e.key===' '){e.preventDefault();item.click();}
@@ -24715,20 +24808,28 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
           var bm=bmLoad().find(function(b){return b.id===id;});
           if(!bm) return;
           closeBmPanel();
-          var target=resolveBookmark(bm);
-          if(target){
-            /* V40.2：精準還原。記錄時錨點節的視口 top（atop）於還原時重現：
-               未渲染節先強制渲染（content-visibility 佔位誤差實測可達
-               32,000px 級，是「跳回偏下」主因），代次校正 90~1700ms 釘回；
-               舊書籤無 atop 退回視口頂（原行為）。 */
-            var margin=(typeof bm.atop==='number'&&isFinite(bm.atop))?
-              Math.max(-600,Math.min(Math.round(window.innerHeight*0.8),bm.atop)):0;
-            var _rv=acimRevealSection(target);
-            window.__acimJump(window.scrollY + target.getBoundingClientRect().top - margin);
-            acimSearchCorrect(target, margin, _rv);
-            return;
-          }
-          window.__acimJump(bm.scrollY);
+          /* V40.3：解析＋量測放進解紗回調——搜尋／抽屜情境下面紗可能仍
+             掛著（書 display:none），此時 getBoundingClientRect 全為 0，
+             會把書籤跳回打回頁首；債清完成後座標才真實（治「搜尋狀況下
+             書籤帶回的位置會跑偏」）。 */
+          var go=function(){
+            var target=resolveBookmark(bm);
+            if(target){
+              /* V40.2：精準還原。記錄時錨點節的視口 top（atop）於還原時重現：
+                 未渲染節先強制渲染（content-visibility 佔位誤差實測可達
+                 32,000px 級，是「跳回偏下」主因），代次校正 90~3200ms 釘回；
+                 舊書籤無 atop 退回視口頂（原行為）。 */
+              var margin=(typeof bm.atop==='number'&&isFinite(bm.atop))?
+                Math.max(-600,Math.min(Math.round(window.innerHeight*0.8),bm.atop)):0;
+              var _rv=acimRevealSection(target);
+              window.__acimJump(window.scrollY + target.getBoundingClientRect().top - margin);
+              acimSearchCorrect(target, margin, _rv);
+              return;
+            }
+            window.__acimJump(bm.scrollY);
+          };
+          if(window.__acimVeilUnveil)window.__acimVeilUnveil(false,go);
+          else go();
         });
         el.addEventListener('keydown',function(e){
           if(e.target!==el||!(e.key==='Enter'||e.key===' ')) return;
@@ -27671,11 +27772,16 @@ function currentHeading(){
 }
 function jumpToHeading(h){
   if(!h || !window.__acimJump) return;
-  if(window.__acimVeilUnveil)window.__acimVeilUnveil(); /* V30.11：量測前先讓書本回到版面樹 */
-  var rect=h.getBoundingClientRect();
-  var margin=Math.round(window.innerHeight/3);
-  window.__acimJump(window.scrollY+rect.top-margin);
-  if(window.__acimCorrectScroll) window.__acimCorrectScroll(h,margin);
+  /* V40.3：量測移入解紗回調——面紗模式下書本恢復＋債清完成後，
+     getBoundingClientRect 座標才真實；未掛紗（桌面）保持同步語意。 */
+  var go=function(){
+    var rect=h.getBoundingClientRect();
+    var margin=Math.round(window.innerHeight/3);
+    window.__acimJump(window.scrollY+rect.top-margin);
+    if(window.__acimCorrectScroll) window.__acimCorrectScroll(h,margin);
+  };
+  if(window.__acimVeilUnveil)window.__acimVeilUnveil(false,go);
+  else go();
 }
 var _toastT=null;
 function v30toast(msg,ms){
@@ -27952,10 +28058,14 @@ function buildBottomNav(){
     b.addEventListener('click',function(){
       var el=document.getElementById(target);
       /* V40.2：先把面紗做實（書本暫離版面樹）再套用 zoom／主題，
-         全書失效零同步結算；解紗落點由面紗錨點校正負責。 */
+         全書失效零同步結算；解紗落點由面紗錨點校正負責。
+         V40.3：套用後「快選單保持開啟」——V40.2 的立即關閉會在讀者
+         點按當下觸發解紗，display:none→block 恢復＋全書結清＝實機
+         12 秒凍結（比 V40.1 更惡化）。書本在 display:none 下套用
+         zoom／主題零結算，讀者可連續按 A＋／A－／明暗反覆調整；關閉
+         快選單（點外部／再按字級鈕）時由解紗閘門確保債清完才恢復書本。 */
       if(window.__acimVeilApplyNow)window.__acimVeilApplyNow();
       if(el) el.click();
-      setSheet(false);
     });
     sheet.appendChild(b);
   }
@@ -27969,16 +28079,27 @@ function buildBottomNav(){
   bTop.appendChild(i3); bTop.appendChild(t3);
   bTop.addEventListener('click',function(){
     /* V40.1：跳頂是主動移動——以 skipRestore 解紗，
-       不做錨點還原才不會被釘回面紗前位置。 */
+       不做錨點還原才不會被釘回面紗前位置。
+       V40.3：jump(0) 移入解紗回調——債清等待下書本恢復顯示後再歸零，
+       scrollTo(0,0) 本身零結算；unveilCore 的 skipRestore 分支同步
+       scrollTo(0,0) 防恢復瞬間閃跳。 */
     if(sheet)sheet.classList.remove('open');
-    if(window.__acimUnveilNow)window.__acimUnveilNow(true);
-    if(window.__acimJump) window.__acimJump(0);
+    if(window.__acimUnveilNow){
+      window.__acimUnveilNow(true,function(){
+        if(window.__acimJump) window.__acimJump(0);
+      });
+    } else if(window.__acimJump) window.__acimJump(0);
   });
   sheet.appendChild(bTop);
   document.body.appendChild(sheet);
   document.addEventListener('click',function(e){
     if(!sheet.classList.contains('open')) return;
     if(sheet.contains(e.target)||sheetBtn.contains(e.target)) return;
+    /* V40.3：快選單套用按鈕（重用的浮動鈕）不在 sheet DOM 內——row handler
+       的 el.click() 冒泡到 document 會被本 handler 誤判為「點外部」而立即
+       關閉快選單（實測 A＋ 後 sheet 秒關、面紗秒解，等於退回 V40.2 行為）。
+       浮動鈕點擊一律交由 row handler / 字級鈕 toggle 管理。 */
+    if(e.target&&e.target.closest&&e.target.closest('#btn-fup,#btn-fdn,#btn-dark')) return;
     setSheet(false);
   });
 }
