@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.1">
+<meta name="acim-version" content="v40.2">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="595fcaa649ae7178a92fd6d30ac87df4b3d0f41c602addc0e1fa05c1c2d313b2">
+<meta name="acim-release-id" content="a4a494691232c93ebd0f5570b85fe6dd51880aa3bafc7e724c3c97426bb5e8ac">
 <meta name="acim-build" content="2026-11-04">
 <meta name="acim-build-time" content="23:39">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
@@ -80,9 +80,14 @@
   function jump(y,token){
     if(!valid(token)) return false;
     var de=document.documentElement;
-    var max=Math.max(0,(document.scrollingElement||de).scrollHeight-window.innerHeight);
     y=Math.max(0,Number(y)||0);
-    if(isFinite(max)) y=Math.min(y,max);
+    /* V40.2：y<=0（回頂）不需夾限——跳過 scrollHeight 讀取。面紗剛解開、
+       樣式全失效時，這次讀取是一次全書 layout（實測低階機 6~8 秒 long task，
+       即「回頂要等 8 秒」的主因）；scrollTo(0,0) 本身零結算。 */
+    if(y>0){
+      var max=Math.max(0,(document.scrollingElement||de).scrollHeight-window.innerHeight);
+      if(isFinite(max)) y=Math.min(y,max);
+    }
     if(!restorePending) previousScrollStyle=de.style.scrollBehavior;
     de.style.scrollBehavior='auto'; expectedY=y;
     window.scrollTo(0,y);
@@ -153,7 +158,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.1';
+var ACIM_VERSION = 'v40.2';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* Service Worker 登記：保留讀者自主套用更新，並偵測已等待的版本。 */
@@ -22753,6 +22758,17 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   };
   window.__acimSheetVeilClose=maybeUnveil;
   window.__acimUnveilNow=unveilBookBehindDrawer; /* V40.1：回頂等主動移動用（可帶 skipRestore） */
+  /* V40.2：同步掛紗——快選單 A＋／A－／明暗點擊當下先把面紗做實（書本
+     display:none）再套用樣式。原本僅 200ms 淡出排程，讀者在排程完成前
+     點按會讓 zoom／主題的全書失效發生在書本仍在版面樹時，同步結算 6~8 秒。
+     先確保錨點已記錄（veilScheduleForDrawer），再立即生效，解紗還原不缺料。 */
+  window.__acimVeilApplyNow=function(){
+    if(window.innerWidth>768)return;
+    if(_veil.on)return;
+    if(!_veil.timer)veilScheduleForDrawer();
+    if(_veil.timer){clearTimeout(_veil.timer);_veil.timer=null;}
+    veilApplyNow();
+  };
   function veilApplyNow(){
     if(_veil.timer){clearTimeout(_veil.timer);_veil.timer=null;}
     if(_veil.on)return;
@@ -22809,64 +22825,61 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       try{
         /* 已有跳轉接管（章節連結／搜尋結果先量測後關抽屜）就交給原流程；
            V40.1：skipRestore=true 時整段錨點還原跳過，僅保留淡入。
-           V40.1：display:none 期間 Chrome 會丟棄版面，重建完成前 scrollTo
-           會被夾到錯誤位置（實測 scrollHeight 只有數千 px）——落點改為
-           「等版面高度穩定且 ≥ 目標」的重試迴圈，通常 2~4 幀內完成。 */
+           V40.2：落點重寫。舊版每幀讀 scrollHeight 等「高度穩定」——面紗
+           重建＋zoom／主題失效下，每次讀取都是一次全書 layout（低階機
+           6~8 秒 long task，即「A＋／回頂要等 8 秒」「回主頁要等 2 秒」的
+           主因），重試期間畫面停在錯誤位置直到結算完。新落點只讀一次
+           scrollHeight 防夾限；zoom 變化路徑棄用比例換算（無法反映烘焙
+           高度落差，實測可達數個螢幕，多次開關即累積漂移），改為強制
+           渲染錨點節後以其實際位置落點，隨後交給 atop 校正窗口精準釘回。 */
         if(!skipRestore&&(window.scrollY||0)<=2&&y>2){
-          var tries=0,prevDh=-1;
-          var restoreOnce=function(){
-            tries++;
+          var targetY=y,aidShown=false;
+          try{
+            var dh=document.documentElement.scrollHeight||0; /* 單次結算 */
+            targetY=Math.min(y,Math.max(0,dh-window.innerHeight));
+          }catch(e){}
+          if(zoomChanged&&aid){
             try{
-              if((window.scrollY||0)>2)return; /* 已有還原／使用者已捲動，讓位 */
-              var ratio=NaN;
-              try{ ratio=parseFloat(zNow)/parseFloat(_veil.zoom); }catch(e){}
-              var targetY=(zoomChanged&&isFinite(ratio)&&ratio>0)?Math.round(y*ratio):y;
-              var dh=document.documentElement.scrollHeight||0;
-              var stable=tries>1&&Math.abs(dh-prevDh)<60;
-              prevDh=dh;
-              if(!(stable&&dh>=targetY)&&tries<90){requestAnimationFrame(restoreOnce);return;}
-              window.scrollTo(0,targetY);
-              var jumped=null,sr=null;
-              if(zoomChanged&&aid){
-                /* V40.1：比例換算無法反映「烘焙高度 vs 真實高度」的落差
-                   （實測可達數個螢幕），且錨點節未渲染前校正會跳過——
-                   仿 __acimJump 模式：把錨點節帶進視口讓它先渲染，
-                   90~260ms 的校正隨即精準釘回。 */
-                try{
-                  var ael=document.getElementById(aid);
-                  var asec=ael&&ael.closest?ael.closest('section.csec'):null;
-                  if(asec){
-                    sr=asec.getBoundingClientRect();
-                    if(sr.top>window.innerHeight*0.7||sr.bottom<-60){
-                      jumped=Math.max(0,window.scrollY+sr.top-80);
-                      window.scrollTo(0,jumped);
-                    }
-                  }
-                }catch(e){}
+              var ael=document.getElementById(aid);
+              var asec=ael&&ael.closest?ael.closest('section.csec'):null;
+              if(asec&&getComputedStyle(asec).contentVisibility!=='visible'){
+                asec.style.contentVisibility='visible'; /* 錨點節先渲染，位置立即真實 */
+                setTimeout(function(){try{asec.style.contentVisibility='';}catch(e){}},2600);
               }
-              try{window.__acimVeilDebug={y:y,zoom0:_veil.zoom,zNow:zNow,zoomChanged:zoomChanged,
-                ratio:Math.round(ratio*1000)/1000,targetY:targetY,tries:tries,dh:dh,
-                scrollAtRestore:Math.round(window.scrollY),hadAid:!!aid,hadSec:!!sr,
-                secTop:sr?Math.round(sr.top):null,secH:sr?Math.round(sr.height):null,
-                jumped:jumped&&Math.round(jumped)};}catch(e){}
-              /* 自帶輕量校正：錨點渲染完成（有真實高度）才釘回面紗前的框景；
-                 各節由烘焙高度重建為真實高度時，瀏覽器捲動錨定會先補償，
-                 本校正負責最後對位。 */
-              (zoomChanged?[90,260,700,1300,2200,3200,4500,6000]:[90,260,700,1300,2200,3200]).forEach(function(ms){
-                setTimeout(function(){
-                  if(stopped||_veil.on||_veil.gen!==gen)return;
-                  var el=aid?document.getElementById(aid):null;
-                  if(!el||atop===null)return;
-                  var r=el.getBoundingClientRect();
-                  if(!r.height)return; /* 尚未渲染（content-visibility），等下一次 */
-                  var t=window.scrollY+r.top-Math.round(atop);
-                  if(Math.abs(t-window.scrollY)>40)
-                    window.scrollTo(0,Math.max(0,t));
-                },ms);
-              });
+              if(ael){
+                var ar=ael.getBoundingClientRect();
+                if(ar.height){
+                  targetY=Math.max(0,window.scrollY+ar.top-Math.round(atop));
+                  aidShown=true;
+                }
+              }
             }catch(e){}
-          };
-          restoreOnce();
+          }
+          if(targetY>2)window.scrollTo(0,targetY);
+          try{window.__acimVeilDebug={y:y,zoom0:_veil.zoom,zNow:zNow,zoomChanged:zoomChanged,
+            targetY:targetY,aidShown:aidShown,
+            scrollAtRestore:Math.round(window.scrollY),hadAid:!!aid};}catch(e){}
+          /* 自帶輕量校正：錨點渲染完成（有真實高度）才釘回面紗前的框景；
+             各節由烘焙高度重建為真實高度時，瀏覽器捲動錨定會先補償，
+             本校正負責最後對位。 */
+          (zoomChanged?[90,260,700,1300,2200,3200,4500,6000]:[90,260,700,1300,2200,3200]).forEach(function(ms,idx,arr){
+            setTimeout(function(){
+              if(stopped||_veil.on||_veil.gen!==gen)return;
+              var el=aid?document.getElementById(aid):null;
+              if(!el||atop===null)return;
+              var r=el.getBoundingClientRect();
+              if(!r.height)return; /* 尚未渲染（content-visibility），等下一次 */
+              var t=window.scrollY+r.top-Math.round(atop);
+              if(Math.abs(t-window.scrollY)>40)
+                window.scrollTo(0,Math.max(0,t));
+              /* V40.2：儀器化——最後一個校正 pass 落定後記錄錨點殘差，
+                 供驗收（e2e）斷言「面紗錨點釘回精準度」。 */
+              if(idx===arr.length-1){
+                try{window.__acimVeilDebug.finalDrift=
+                  Math.round(el.getBoundingClientRect().top)-Math.round(atop);}catch(e){}
+              }
+            },ms);
+          });
         }
       }catch(e){}
       requestAnimationFrame(function(){
@@ -23939,9 +23952,35 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     if(!root||!root.isConnected)return;
     /* V30.9：mark 路徑下命中段已有 mark——將首個 mark 升級為 pin 後返回，
        使「收抽屜／聚焦退休」時點擊命中的螢光依舊保留（與 native 路徑的
-       pin 保證一致；V30.8 的無 native 模擬測試因 0==0 空過未抓到此缺口）。 */
+       pin 保證一致；V30.8 的無 native 模擬測試因 0==0 空過未抓到此缺口）。
+       V40.2：命中跨行內元素（u／b／span.kf）時 highlightAll 會把一個匹配
+       拆成多個 mark；只升級首個，其餘會在「收抽屜／聚焦退休」時被拆還，
+       畫面只剩前半字串被亮（讀者實報：搜「天國加速」只亮「天國」）。
+       改為：以合併文字定位首個匹配，凡與該範圍重疊的 mark 全部 pin。 */
     var _exMk=root.querySelector('mark.search-hl');
-    if(_exMk){_exMk.classList.add('search-hl-pin');return;}
+    if(_exMk){
+      var _pinned=false;
+      try{
+        var _parts=acimHlTextNodes(root);
+        if(_parts.nodes.length){
+          var _expr=new RegExp(rx.source.replace(/ /g,'\\s+'),'gi');
+          var _full=_parts.pieces.join(''),_m=_expr.exec(_full);
+          if(_m&&_m[0].length){
+            var _ms=_m.index,_me=_ms+_m[0].length,_acc=0;
+            _parts.nodes.forEach(function(_nd){
+              var _len=(_nd.nodeValue||'').length;
+              if(_acc<_me&&_acc+_len>_ms){
+                var _mk=_nd.parentElement?_nd.parentElement.closest('mark.search-hl'):null;
+                if(_mk){_mk.classList.add('search-hl-pin');_pinned=true;}
+              }
+              _acc+=_len;
+            });
+          }
+        }
+      }catch(e){}
+      if(!_pinned)_exMk.classList.add('search-hl-pin');
+      return;
+    }
     var parts=acimHlTextNodes(root);
     if(!parts.nodes.length)return;
     var expr=new RegExp(rx.source.replace(/ /g,'\\s+'),'gi');
@@ -24319,6 +24358,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
         sectionKey:cleanString(b.sectionKey,600), anchorText:cleanString(b.anchorText,160),
         path:validPath(b.path),
         scrollY:typeof b.scrollY==='number'&&isFinite(b.scrollY)?Math.max(0,Math.min(1e9,b.scrollY)):0,
+        atop:(typeof b.atop==='number'&&isFinite(b.atop))?Math.max(-600,Math.min(2000,Math.round(b.atop))):null,
         title:cleanString(b.title,80), excerpt:cleanString(b.excerpt,120),
         ts:typeof b.ts==='number'&&isFinite(b.ts)&&b.ts>=0&&b.ts<=8640000000000000?b.ts:0
       };
@@ -24426,6 +24466,15 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     function isReadingTarget(el){ return !!el&&content.contains(el)&&!el.closest('#acim-footnotes-container'); }
     function resolveBookmark(b){
       var target=null;
+      /* V40.2：id 精確匹配最優先（原列第三）——ceId 策略會把「帶
+         data-acim-parent 的包覆段落」解析成持有 data-acim-id 的內層段節，
+         元素身份漂移使還原釘回基準錯位（實測跳回偏下 ~111px）。同版內
+         el.id 穩定存在直接定位；文字吻合檢查保留，跨版失效才落後備策略。 */
+      if(b.anchor){
+        target=document.getElementById(b.anchor)||legacySearchAnchor(b.anchor);
+        if(isReadingTarget(target)&&(!b.ceId||ceIdOf(target)===b.ceId)&&
+          (!b.anchorText||anchorTextOf(target)===b.anchorText)) return target;
+      }
       if(b.ceId&&/^(?:In\.|[TWMCP]-)[A-Za-z0-9.:-]+$/.test(b.ceId)){
         target=content.querySelector('[data-acim-id="'+b.ceId+'"]');
         if(isReadingTarget(target)) return target;
@@ -24513,6 +24562,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
         ceId:ceIdOf(el),sectionKey:sectionKeyOf(el),anchorText:anchorTextOf(el),
         path:pathOf(el),
         scrollY:Math.round(window.scrollY),
+        atop:Math.round(el.getBoundingClientRect().top),
         title:title,
         excerpt:excerpt
       };
@@ -24667,8 +24717,15 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
           closeBmPanel();
           var target=resolveBookmark(bm);
           if(target){
-            window.__acimJump(window.scrollY + target.getBoundingClientRect().top);
-            window.__acimCorrectScroll(target, 0);
+            /* V40.2：精準還原。記錄時錨點節的視口 top（atop）於還原時重現：
+               未渲染節先強制渲染（content-visibility 佔位誤差實測可達
+               32,000px 級，是「跳回偏下」主因），代次校正 90~1700ms 釘回；
+               舊書籤無 atop 退回視口頂（原行為）。 */
+            var margin=(typeof bm.atop==='number'&&isFinite(bm.atop))?
+              Math.max(-600,Math.min(Math.round(window.innerHeight*0.8),bm.atop)):0;
+            var _rv=acimRevealSection(target);
+            window.__acimJump(window.scrollY + target.getBoundingClientRect().top - margin);
+            acimSearchCorrect(target, margin, _rv);
             return;
           }
           window.__acimJump(bm.scrollY);
@@ -24715,6 +24772,9 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     }
     /* V30：供底部導覽列「書籤」頁籤直接開清單 */
     window.__acimOpenBookmarks=openBmPanel;
+    /* V40.2：開合切換——底列書籤鍵需查詢清單開闔狀態並能收起 */
+    window.__acimBookmarksIsOpen=function(){ return bmOpen; };
+    window.__acimCloseBookmarks=closeBmPanel;
     function closeBmPanel(){
       var returnFocus=bmPanel.contains(document.activeElement);
       bmPanel.classList.remove('bm-open');
@@ -24749,6 +24809,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
           anchor:snap.anchor,
           path:snap.path,
           scrollY:snap.scrollY,
+          atop:snap.atop,
           title:snap.title,
           excerpt:snap.excerpt,
           ts:Date.now()
@@ -27817,8 +27878,17 @@ function buildBottomNav(){
     if(window.__acimOpenSidebar) window.__acimOpenSidebar();
   },'acim-bn-toc');
   tab('🔍','搜尋',function(){
-    if(window.__acimOpenSidebar) window.__acimOpenSidebar();
+    /* V40.2：開合切換——抽屜已開且在搜尋情境（搜尋欄聚焦／已有關鍵字）時
+       再按＝收抽屜；否則開抽屜＋聚焦搜尋欄。 */
+    var sb=document.getElementById('sidebar-toc');
     var inp=document.getElementById('toc-search-input');
+    var searching=sb&&sb.classList.contains('mobile-open')&&inp&&
+      (document.activeElement===inp||inp.value);
+    if(searching){
+      if(window.__acimCloseSidebar) window.__acimCloseSidebar();
+      return;
+    }
+    if(window.__acimOpenSidebar) window.__acimOpenSidebar();
     if(inp) setTimeout(function(){ try{ inp.focus({preventScroll:true}); }catch(e){ inp.focus(); } },320);
   },'acim-bn-search');
   /* V40.1：書籤鍵＝短按加入／移除（委派 #btn-bm 同一處理器與 toast），
@@ -27826,6 +27896,12 @@ function buildBottomNav(){
   var bmLongPress=false,bmPressTimer=null;
   var bmBtn=tab('🔖','書籤',function(){
     if(bmLongPress){bmLongPress=false;return;}
+    /* V40.2：清單已開時短按＝收起清單（開合切換；原先會再觸發一次
+       加入／移除，讀者只見「只能開不能合」）。 */
+    if(window.__acimBookmarksIsOpen&&window.__acimBookmarksIsOpen()){
+      if(window.__acimCloseBookmarks)window.__acimCloseBookmarks();
+      return;
+    }
     if(window.__acimPanelOpen&&window.__acimPanelOpen()){
       if(window.__acimOpenBookmarks)window.__acimOpenBookmarks();
       return;
@@ -27850,6 +27926,14 @@ function buildBottomNav(){
     if(sheet)setSheet(!sheet.classList.contains('open'));
   },'acim-bn-font');
   tab('⋯','更多',function(){
+    /* V40.2：開合切換——抽屜已開且設定面板已展開時再按＝收抽屜；
+       抽屜開但面板未展開＝展開面板；抽屜關＝開抽屜＋展開面板。 */
+    var sp=document.getElementById('sidebar-settings-panel');
+    var sb=document.getElementById('sidebar-toc');
+    if(sb&&sb.classList.contains('mobile-open')&&sp&&!sp.hidden){
+      if(window.__acimCloseSidebar) window.__acimCloseSidebar();
+      return;
+    }
     if(window.__acimOpenSettings) window.__acimOpenSettings();
     else if(window.__acimOpenSidebar) window.__acimOpenSidebar();
   },'acim-bn-more');
@@ -27867,6 +27951,9 @@ function buildBottomNav(){
     b.appendChild(i); b.appendChild(t);
     b.addEventListener('click',function(){
       var el=document.getElementById(target);
+      /* V40.2：先把面紗做實（書本暫離版面樹）再套用 zoom／主題，
+         全書失效零同步結算；解紗落點由面紗錨點校正負責。 */
+      if(window.__acimVeilApplyNow)window.__acimVeilApplyNow();
       if(el) el.click();
       setSheet(false);
     });
