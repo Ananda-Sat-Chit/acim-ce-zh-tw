@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.15">
+<meta name="acim-version" content="v40.16">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="c7afab4c41ebea32aeb8a42d2f7c98c50aa738858676381499190f290fbe9c0d">
+<meta name="acim-release-id" content="9923166da973285aad39525be124247ec221653e413b0f989058659185e1675a">
 <meta name="acim-build" content="2026-11-06">
-<meta name="acim-build-time" content="00:53">
+<meta name="acim-build-time" content="02:34">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -161,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.15';
+var ACIM_VERSION = 'v40.16';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* V40.9：套用新版後的首次啟動，顯示一次性「已套用」確認——讓讀者與
@@ -188,27 +188,35 @@ var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同
   });
 })();
 
-/* Service Worker 登記。V40.9 更新流程再造：
-   實證：本機 6x 節流重現 V40.8「字級面板回頂」僅 0.36 秒，而實機三版
-   （V40.6~V40.8）症狀分毫不動——裝置極可能始終未套用新版（更新提示
-   未被點到／12 秒後自動消失）。本版改為：
-   ① 啟動時若已有「等待中」的新版 worker → 自動 SKIP_WAITING 並重載一次
-     （只發生在「上次有新版未套用」的啟動，每次更新至多自動重載一次）；
-   ② 閱讀中途偵測到新版 → 維持提示點按（不打斷閱讀），文字帶上版本號；
-     未點也不會再卡版本——下一次啟動由 ① 自動套用；
-   ③ 套用後的首次啟動顯示「✅ 已套用 vX」一次性確認。 */
-/* V40.15：更新提示的版本號必須來自「等待中的新版 worker」本身。
-   實機定案（V40.15 回報截圖）：裝置還在跑舊版 index.html（如 V40.13），
-   背景 install 完 V40.14 後彈出提示——舊碼直接用頁面自己的 ACIM_VERSION
-   拼字串，結果「新版 V40.14 已就緒」錯示成「新版 V40.13 已就緒」。
-   版本來源：向等待中 worker 送 GET_VERSION，由它回報自己的 CACHE_VERSION
-   （它就是即將啟用的那份 sw.js，唯一真源）；未回（舊版 worker 無此
-   處理器或意外）→ 提示不標版本號——寧可少顯示，不可顯示錯的。
+/* Service Worker 登記。V40.9 更新流程再造（歷史）：實證本機 6x 節流重現
+   V40.8「字級面板回頂」僅 0.36 秒，而實機三版（V40.6~V40.8）症狀分毫不動
+   ——裝置極可能始終未套用新版（更新提示未被點到／12 秒後自動消失），
+   V40.9~V40.15 因此在「啟動時已有等待中新版」時自動 SKIP_WAITING＋重載。
+   V40.16 定案（實機截圖回報「我沒有按就會自動更新？」）——移除一切自動套用：
+   ① 啟動或閱讀中途偵測到新版 → 只顯示橫幅；讀者點按橫幅才 SKIP_WAITING＋
+     重載套用。未點按絕不自動重載、絕不跳版本。
+   ② 未點按也不會永久卡舊版：整個 App 完全關閉後重開，瀏覽器會在舊 worker
+     無人使用時自然啟用等待中的新版（平台標準行為，發生在兩次閱讀之間，
+     不打斷閱讀；此路徑不會出現「✅ 已套用」提示——僅點按套用者有，可據
+     此區分兩種套用路徑）。
+   ③ 套用後的首次啟動顯示「✅ 已套用 vX」一次性確認（僅點按路徑）。 */
+/* V40.15＋V40.16：橫幅版本號必須是「偵測到的新版」本身。
+   實機定案（V40.15、V40.16 兩張回報截圖）：裝置還在跑舊版 index.html 時，
+   舊碼用頁面自己的 ACIM_VERSION 拼字串——V40.14 頁面偵測到 V40.15，
+   卻錯示「新版 v40.14 已就緒」。真源依序取用：
+   ① 主源：向等待中 worker 送 GET_VERSION，由它回報自己的 CACHE_VERSION
+     （它就是即將啟用的那份 sw.js，最精準；V40.15 起的 sw.js 才有此處理器）。
+   ② 次源（V40.16 新增）：主源 1.5 秒未回（等待中 worker 是 V40.15 之前的
+     舊 sw.js、無此處理器）→ 抓線上 sw.js（no-store＋亂數參數防快取）解析
+     CACHE_VERSION——這正是「線上偵測到的新版」。
+   兩源皆不可得才不標版本號——寧可少顯示，不可顯示錯的。
    暴露為 window.__acimUpdateToastVersion 供驗收測試直接呼叫。 */
 function acimUpdateToastVersion(waiting, cb) {
-  var done = false;
+  var done = false, timer = null, netTimer = null;
   function finish(v) {
     if (done) return; done = true;
+    if (timer) clearTimeout(timer);
+    if (netTimer) clearTimeout(netTimer);
     var s = String(v || '');
     try {
       if (navigator.serviceWorker)
@@ -216,18 +224,32 @@ function acimUpdateToastVersion(waiting, cb) {
     } catch (e) {}
     cb(/^v\d/.test(s) ? s : '');
   }
-  var timer = setTimeout(function(){ finish(''); }, 1500);
   var onMsg = function(ev) {
     var d = ev && ev.data;
     if (d && d.type === 'ACIM_VERSION_INFO' && /^v\d/.test(String(d.version || ''))) {
-      clearTimeout(timer);
       finish(String(d.version));
     }
   };
+  /* 次源：線上 sw.js 本身就是「偵測到的新版」。no-store＋亂數參數，
+     確保拿到的不是 HTTP 快取裡的舊 sw.js（舊碼錯示舊版號的教訓）。 */
+  function fetchOnline() {
+    if (done) return;
+    netTimer = setTimeout(function(){ finish(''); }, 5000);
+    try {
+      fetch('sw.js?acimv=' + Date.now() + '-' + Math.random().toString(36).slice(2), {cache: 'no-store'})
+        .then(function(r) { return r && r.ok ? r.text() : ''; })
+        .then(function(t) {
+          var m = t && t.match(/CACHE_VERSION\s*=\s*'(v\d+(?:\.\d+)*)'/);
+          finish(m ? m[1] : '');
+        })
+        .catch(function() { finish(''); });
+    } catch (e) { finish(''); }
+  }
+  timer = setTimeout(fetchOnline, 1500); /* 主源逾時 → 次源接手 */
   try {
     navigator.serviceWorker.addEventListener('message', onMsg);
     waiting.postMessage({type: 'GET_VERSION'});
-  } catch (e) { clearTimeout(timer); finish(''); }
+  } catch (e) { fetchOnline(); }
 }
 window.__acimUpdateToastVersion = acimUpdateToastVersion;
 
@@ -244,17 +266,16 @@ if ('serviceWorker' in navigator) {
           reg.waiting.postMessage({type: 'SKIP_WAITING'});
           return true;
         }
-        function offerUpdate(auto) {
+        function offerUpdate() {
           if (!navigator.serviceWorker.controller || !reg.waiting ||
               document.getElementById('acim-update-toast')) return;
-          if (auto) { applyWaiting(); return; }
           var toast = document.createElement('button');
           toast.type = 'button';
           toast.id = 'acim-update-toast';
           /* V40.15：先以不帶版本號的誠實文案立即顯示，再向等待中 worker
              取得真正版本號後原地改寫（見 acimUpdateToastVersion）。
-             舊碼直接用頁面 ACIM_VERSION——裝置還在跑舊版頁面時，
-             會把新版錯示成「新版 V40.13 已就緒」。 */
+             V40.16：主源逾時由線上 sw.js 解析接手；舊碼用頁面自己的
+             ACIM_VERSION——V40.14 頁面偵測到 V40.15 仍錯示「v40.14」。 */
           toast.textContent = '📖 新版已就緒，點此套用 →';
           toast.setAttribute('aria-label', '新版本已下載，點擊套用');
           if (typeof acimUpdateToastVersion === 'function') {
@@ -299,8 +320,10 @@ if ('serviceWorker' in navigator) {
             if (next.state === 'installed') offerUpdate(false);
           });
         });
-        /* V40.9：啟動時已有等待中的新版 → 自動套用（讀者不必再記得點提示）。 */
-        offerUpdate(true);
+        /* V40.16：啟動時已有等待中的新版 → 只顯示橫幅（與閱讀中途偵測同一
+           條路），讀者點按橫幅才套用。舊版（V40.9~V40.15）此處 offerUpdate(true)
+           會自動 SKIP_WAITING＋重載——「沒有按就自動更新」的根因，移除。 */
+        offerUpdate(false);
       })
       .catch(function(err) { console.warn('[ACIM] SW 登記失敗:', err); });
   });
