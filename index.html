@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.14">
+<meta name="acim-version" content="v40.15">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="f1fcb219fd245745cf581c09c35eed2de5e27e903cb9491b68191c8955828095">
-<meta name="acim-build" content="2026-11-05">
-<meta name="acim-build-time" content="22:51">
+<meta name="acim-release-id" content="c7afab4c41ebea32aeb8a42d2f7c98c50aa738858676381499190f290fbe9c0d">
+<meta name="acim-build" content="2026-11-06">
+<meta name="acim-build-time" content="00:53">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -161,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.14';
+var ACIM_VERSION = 'v40.15';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* V40.9：套用新版後的首次啟動，顯示一次性「已套用」確認——讓讀者與
@@ -197,6 +197,40 @@ var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同
    ② 閱讀中途偵測到新版 → 維持提示點按（不打斷閱讀），文字帶上版本號；
      未點也不會再卡版本——下一次啟動由 ① 自動套用；
    ③ 套用後的首次啟動顯示「✅ 已套用 vX」一次性確認。 */
+/* V40.15：更新提示的版本號必須來自「等待中的新版 worker」本身。
+   實機定案（V40.15 回報截圖）：裝置還在跑舊版 index.html（如 V40.13），
+   背景 install 完 V40.14 後彈出提示——舊碼直接用頁面自己的 ACIM_VERSION
+   拼字串，結果「新版 V40.14 已就緒」錯示成「新版 V40.13 已就緒」。
+   版本來源：向等待中 worker 送 GET_VERSION，由它回報自己的 CACHE_VERSION
+   （它就是即將啟用的那份 sw.js，唯一真源）；未回（舊版 worker 無此
+   處理器或意外）→ 提示不標版本號——寧可少顯示，不可顯示錯的。
+   暴露為 window.__acimUpdateToastVersion 供驗收測試直接呼叫。 */
+function acimUpdateToastVersion(waiting, cb) {
+  var done = false;
+  function finish(v) {
+    if (done) return; done = true;
+    var s = String(v || '');
+    try {
+      if (navigator.serviceWorker)
+        navigator.serviceWorker.removeEventListener('message', onMsg);
+    } catch (e) {}
+    cb(/^v\d/.test(s) ? s : '');
+  }
+  var timer = setTimeout(function(){ finish(''); }, 1500);
+  var onMsg = function(ev) {
+    var d = ev && ev.data;
+    if (d && d.type === 'ACIM_VERSION_INFO' && /^v\d/.test(String(d.version || ''))) {
+      clearTimeout(timer);
+      finish(String(d.version));
+    }
+  };
+  try {
+    navigator.serviceWorker.addEventListener('message', onMsg);
+    waiting.postMessage({type: 'GET_VERSION'});
+  } catch (e) { clearTimeout(timer); finish(''); }
+}
+window.__acimUpdateToastVersion = acimUpdateToastVersion;
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'})
@@ -217,8 +251,21 @@ if ('serviceWorker' in navigator) {
           var toast = document.createElement('button');
           toast.type = 'button';
           toast.id = 'acim-update-toast';
-          toast.textContent = '📖 新版 ' + ACIM_VERSION + ' 已就緒，點此套用 →';
+          /* V40.15：先以不帶版本號的誠實文案立即顯示，再向等待中 worker
+             取得真正版本號後原地改寫（見 acimUpdateToastVersion）。
+             舊碼直接用頁面 ACIM_VERSION——裝置還在跑舊版頁面時，
+             會把新版錯示成「新版 V40.13 已就緒」。 */
+          toast.textContent = '📖 新版已就緒，點此套用 →';
           toast.setAttribute('aria-label', '新版本已下載，點擊套用');
+          if (typeof acimUpdateToastVersion === 'function') {
+            acimUpdateToastVersion(reg.waiting, function(v) {
+              var t = document.getElementById('acim-update-toast');
+              if (!t) return;
+              t.textContent = '📖 新版 ' + (v ? v + ' ' : '') + '已就緒，點此套用 →';
+              t.setAttribute('aria-label',
+                (v ? '新版本 ' + v + ' 已下載' : '新版本已下載') + '，點擊套用');
+            });
+          }
           toast.style.cssText = [
             'position:fixed;bottom:88px;left:50%;transform:translateX(-50%)',
             'background:#4B407A;color:#fff;padding:10px 20px;border:none',
@@ -2056,7 +2103,33 @@ ul{margin-bottom:0;}
    單節 >1200ms 即中止防打斷閱讀），樣式樹於 CVA 再 skip 後保留，
    回頂首幀只剩再佈局；④ 歸因補洞：新增「關面板後等待／縫隙」區間、
    long task 筆數與最大單筆、跳頂未完成偵測——若仍凍結，一張截圖
-   直接定案落點。 */
+   直接定案落點。
+   V40.15：除錯儀器退場＋更新提示版本號真源＋位置還原全面校正——
+   實機確認 12 秒凍結已根除後的收尾版：
+   ① 更新提示版本號改由「等待中 worker」回報（sw.js 新增 GET_VERSION
+     → ACIM_VERSION_INFO）：舊碼用頁面自己的 ACIM_VERSION 拼字串，裝置
+     還在跑舊版 index.html 時會把「新版 V40.14 已就緒」錯示成「V40.13」
+     （實機截圖定案）。新碼先以不帶版本號的誠實文案立即顯示，取得真
+     版本後原地改寫；取不到（舊版 worker 無此處理器）就不標版本號——
+     寧可少顯示，不可顯示錯的。
+   ② 移除回頂的兩個可見除錯 toast（「回到頂部完成 · X 秒 · V40.x」與
+     「回頂診斷：凍結X秒@落點」）——V40.9~V40.14 的實機儀器已完成
+     任務，讀者不該再看到秒數與歸因字樣；longtask／LoAF 觀測與
+     __acimTopJumpTrace 保留（不可見）供回歸驗收。
+   ③ 位置還原全面校正（E2E 矩陣：手機/桌面 × 字級 × 各面板開合／目錄
+     切換／明暗／A±／註文彈窗／閱讀分頁／回頂）：
+     ▸ 目錄連結：量測與跳轉移入解紗回調（V40.3 搜尋/書籤同構）——債清
+       未完成時舊碼在 display:none 上同步量測（座標全 0）＝跳轉落空，
+       再被解紗錨點還原彈回原位（「抽屜開著點目錄沒跳走」）。
+     ▸ unveilCore 新增 pendingJump 守衛：解紗回調帶著待執行跳轉時，
+       rAF#1 不得錨點還原（否則先釘回原位→回調跳走→90ms 後校正
+       計時器又彈回，三者互搶）。
+     ▸ 閱讀分頁：pin 時記錄錨點標題視口框景（atop，與書籤 bm.atop
+       同構），切回時精準重現（舊碼一律釘在 1/3 視口，實測漂移可達
+       數百至數千 px）；點擊目前分頁不再把 pin 位置覆寫成當下位置，
+       而是跳回 pin 的位置。
+     ▸ 校正結果：抽屜／搜尋／設定／快選單／書籤／註文／明暗／A± 開合，
+       三種字級下框景漂移全數 ≤60px；A＋→A－ 回到原框景 0px 漂移。 */
 #acim-bottomnav{
   display:none;position:fixed;left:0;right:0;bottom:0;z-index:10002;
   transition:transform 0.18s ease;
@@ -2270,7 +2343,7 @@ html.dark-mode sup.fn-badge.acim-fn-locate{
     <div id="sidebar-stage">
       <div id="sidebar-settings-panel" hidden>
         <p class="sidebar-book-title">完整加註版奇蹟課程</p>
-        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-04 23:39</span></div>
+        <div id="app-version-info" title="台灣時間 (UTC+8)">最後修正：<span id="app-version-date">2026-11-06 00:22</span></div>
         <div class="theme-setting"><label for="theme-mode">顯示模式</label>
           <select id="theme-mode" aria-label="顯示模式"><option value="auto">跟隨系統</option><option value="light">亮色</option><option value="dark">暗色</option></select>
         </div>
@@ -22974,7 +23047,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         return;
       }
       var dones=typeof done==='function'?[done]:[];
-      /* V40.11：topJump 隨等待佇列一起傳遞，_fire 時交給 unveilCore。 */
+      /* V40.11：topJump 隨等待佇列一起傳遞，_fire 時交給 unveilCore。
+         V40.15：dones 內容即「即將執行的跳轉回調」——有它在，rAF#1
+         就不得再做錨點還原（否則先釘回原位、回調再跳走、90ms 後
+         校正計時器又把讀者彈回原位，三者互搶＝搜尋／書籤／目錄
+         跳轉在債清未完成時「點了沒跳／被彈回」。） */
       _veil.waiting={dones:dones,gen:_veil.gen,skip:!!skipRestore,top:!!opts.topJump};
       try{if(window.__acimTopJumpTrace)window.__acimTopJumpTrace.gated=true;}catch(e){}
       var _fire=function(){
@@ -22983,7 +23060,7 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         if(!w||w.gen!==_veil.gen||!_veil.on)return;
         unveilCore(w.skip,function(){
           w.dones.forEach(function(cb){try{cb();}catch(e){}});
-        },w.top);
+        },w.top,w.dones.length>0);
       };
       _veil.waiting.fire=_fire;
       try{ if(window.__acimOnDischargeDone)window.__acimOnDischargeDone(_fire); }catch(e){}
@@ -23014,9 +23091,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
       _valveTimer=setTimeout(_valveTick,650);
       return;
     }
-    unveilCore(skipRestore,done,!!opts.topJump);
+    unveilCore(skipRestore,done,!!opts.topJump,typeof done==='function');
   }
-  function unveilCore(skipRestore,done,topMode){
+  function unveilCore(skipRestore,done,topMode,pendingJump){
     if(_veil.timer){clearTimeout(_veil.timer);_veil.timer=null;}
     if(!_veil.on)return;
     _veil.on=false;
@@ -23085,7 +23162,13 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         if(topMode){
           try{window.__acimVeilDebug={topMode:true,zeroWork:true,
             scrollAtRestore:Math.round(window.scrollY)};}catch(e){}
-        }else if(!skipRestore&&(window.scrollY||0)<=2&&y>2){
+        }else if(!skipRestore&&!pendingJump&&(window.scrollY||0)<=2&&y>2){
+          /* V40.15：pendingJump＝解紗回調即將執行程式跳轉（搜尋／書籤／
+             目錄連結）。此時 scrollY 仍在面紗期夾限的 0，舊條件會判定
+             「需要還原」而先行釘回原位＋註冊校正計時器，與回調的跳轉
+             互搶（計時器再於 90~3200ms 把讀者彈回原位）。有跳轉待執行
+             時整段還原讓位給回調——回調後 scrollY 已落在目標上，
+             天然跳過本分支。 */
           var targetY=y,aidShown=false;
           if(!aid){
             try{
@@ -23331,8 +23414,35 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   }catch(e){}
   var hasZoom = typeof CSS !== 'undefined' && CSS.supports && CSS.supports('zoom','1');
 
-  function applyZoom() {
+  function applyZoom(keepFrame) {
     var z = zSteps[fi];
+    /* V40.15：桌面位置保全（僅使用者主動變更字級時，keepFrame===true）——
+       桌面無面紗管線（面紗僅 ≤768 掛），zoom 直接套用＝全書重排，瀏覽器
+       捲動錨定在 CSS zoom 大文件上無法保持閱讀框景（E2E 實測 A＋ 後框景
+       段落已換位，A－ 回到原字級也回不到原段落）。套用前記錄視口內錨點
+       段落（多點探測，與面紗同一手法），套用後釘回＋短程校正（桌面書本
+       始終在版面樹上、量測隨時真實；CVA 節隨結清重新渲染的高度微調由
+       校正吸收）。行動裝置不在此處處理：A＋／A－ 由快選單先掛紗再套用，
+       解紗錨點還原管線（_veil.session）負責框景，兩者不得重複校正。
+       啟動時的初次套用（未帶 keepFrame）不啟用——避免與 buildTOC
+       的 savedY 閱讀位置還原互搶。 */
+    var _anchor=null;
+    if(keepFrame===true&&window.innerWidth>768){
+      try{
+        var _pts=[[0.5,0.35],[0.5,0.5],[0.5,0.22],[0.5,0.65],[0.3,0.4],[0.7,0.4]];
+        for(var _pi=0;_pi<_pts.length&&!_anchor;_pi++){
+          var _stack=document.elementsFromPoint?
+            document.elementsFromPoint(Math.round(window.innerWidth*_pts[_pi][0]),Math.round(window.innerHeight*_pts[_pi][1])):[];
+          for(var _si=0;_si<_stack.length;_si++){
+            var _cand=_stack[_si];
+            var _pp=_cand&&_cand.closest?_cand.closest('#content-area p,#content-area h1,#content-area h2,#content-area h3,#content-area h4,#content-area li'):null;
+            if(_pp&&_pp.getBoundingClientRect().height>0){
+              _anchor={el:_pp,top:_pp.getBoundingClientRect().top};break;
+            }
+          }
+        }
+      }catch(e){}
+    }
     if (hasZoom) {
       content.style.zoom = z;
       content.style.transform = '';
@@ -23347,6 +23457,30 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     if (u) u.style.opacity = fi >= 6 ? '0.38' : '1';
     if (d) d.style.opacity = fi <= 0 ? '0.38' : '1';
     scheduleStyleDischarge();
+    if(_anchor){
+      try{
+        var _stopped=false, _stop=function(){_stopped=true;};
+        ['wheel','touchmove','pointerdown','keydown'].forEach(function(n){
+          window.addEventListener(n,_stop,{capture:true,passive:true});
+        });
+        setTimeout(function(){
+          ['wheel','touchmove','pointerdown','keydown'].forEach(function(n){
+            window.removeEventListener(n,_stop,{capture:true,passive:true});
+          });
+        },3600);
+        var _pin=function(){
+          if(_stopped||!_anchor.el||!_anchor.el.isConnected)return;
+          var t=window.scrollY+_anchor.el.getBoundingClientRect().top-_anchor.top;
+          if(Math.abs(t-window.scrollY)>2)window.__acimJump(t);
+        };
+        requestAnimationFrame(function(){
+          _pin();
+          [90,260,700,1300,2200,3400].forEach(function(ms){
+            setTimeout(_pin,ms);
+          });
+        });
+      }catch(e){}
+    }
   }
   applyZoom();
 
@@ -23355,10 +23489,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     setTimeout(function(){ btn.classList.remove('at-limit'); }, 350);
   }
   document.getElementById('btn-fup').addEventListener('click', function(){
-    if (fi < 6){ fi++; applyZoom(); } else shake(this);
+    if (fi < 6){ fi++; applyZoom(true); } else shake(this);
   });
   document.getElementById('btn-fdn').addEventListener('click', function(){
-    if (fi > 0){ fi--; applyZoom(); } else shake(this);
+    if (fi > 0){ fi--; applyZoom(true); } else shake(this);
   });
 
   /* ── 深色模式 ── */
@@ -23613,12 +23747,20 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
         e.preventDefault();
         var el=document.getElementById(a.dataset.id);
         if(!el) return;
-        unveilBookBehindDrawer(); /* V30.11：量測前先讓書本回到版面樹 */
-        /* 捲動內文到目標 heading */
-        var rect = el.getBoundingClientRect();
-        var offset = window.scrollY + rect.top - 56;
-        window.__acimJump(offset);
-        window.__acimCorrectScroll(el, 56);
+        /* V40.15：量測與跳轉移入解紗回調（與搜尋／書籤跳回同一 V40.3 模式）。
+           舊碼在 unveil 呼叫後「同步」量測——債清未完成（開抽屜後快速點
+           連結、低階機結清中）時書本仍 display:none，getBoundingClientRect
+           全為 0 ⇒ 跳轉落空，隨後解紗錨點還原再把讀者釘回原位＝
+           「抽屜開著點目錄，沒跳走」。回調版保證在書本恢復＋版面乾淨後
+           才量測；配合 unveilCore 的 pendingJump 守衛，校正計時器不再
+           與跳轉互搶。 */
+        var go=function(){
+          var rect = el.getBoundingClientRect();
+          var offset = window.scrollY + rect.top - 56;
+          window.__acimJump(offset);
+          window.__acimCorrectScroll(el, 56);
+        };
+        unveilBookBehindDrawer(false, go); /* V30.11：量測前先讓書本回到版面樹（V40.15：量測入回調） */
         /* 展開此連結的所有直接父層（確保在已收合群組內的連結也能被看到）*/
         var p = a.parentElement;
         while(p && p !== tocWrapper){
@@ -28132,15 +28274,18 @@ function currentHeading(){
   }
   return best||heads[0];
 }
-function jumpToHeading(h){
+function jumpToHeading(h,margin){
   if(!h || !window.__acimJump) return;
   /* V40.3：量測移入解紗回調——面紗模式下書本恢復＋債清完成後，
-     getBoundingClientRect 座標才真實；未掛紗（桌面）保持同步語意。 */
+     getBoundingClientRect 座標才真實；未掛紗（桌面）保持同步語意。
+     V40.15：可選 margin——閱讀分頁切回需重現「pin 當下」的錨點框景
+     （不再是固定的 1/3 視口），與書籤還原同一語意。 */
   var go=function(){
     var rect=h.getBoundingClientRect();
-    var margin=Math.round(window.innerHeight/3);
-    window.__acimJump(window.scrollY+rect.top-margin);
-    if(window.__acimCorrectScroll) window.__acimCorrectScroll(h,margin);
+    var mg=(typeof margin==='number'&&isFinite(margin))?
+      margin:Math.round(window.innerHeight/3);
+    window.__acimJump(window.scrollY+rect.top-mg);
+    if(window.__acimCorrectScroll) window.__acimCorrectScroll(h,mg);
   };
   if(window.__acimVeilUnveil)window.__acimVeilUnveil(false,go);
   else go();
@@ -28568,68 +28713,19 @@ function buildBottomNav(){
     }catch(e){_tr.loaf=null;}
     window.__acimTopJumpTrace=_tr;
     var _report=function(){
-      try{
-        var _sec=Math.max(0,(_tnow()-_t0)/1000);
-        v30toast('回到頂部完成 · '+(_sec<10?_sec.toFixed(1):Math.round(_sec))+' 秒 · '+ACIM_VERSION.toUpperCase(),3200);
-        /* 凍結診斷延遲結算：longtask 條目在任務結束後才送達觀測器。
-           累計 ≥0.8 秒才追加診斷提示——順暢時完全靜默。 */
-        setTimeout(function(){
-          try{
-            if(_tr.obs){_tr.obs.disconnect();_tr.obs=null;}
-            if(_tr.loaf){_tr.loaf.disconnect();_tr.loaf=null;}
-            var n=_tr.longs.length,sum=0;
-            for(var i=0;i<n;i++)sum+=_tr.longs[i].d;
-            var st=0,ly=0,sc=0;
-            for(var k=0;k<_tr.lafs.length;k++){
-              st+=_tr.lafs[k].st;ly+=_tr.lafs[k].ly;sc+=_tr.lafs[k].sc;
-            }
-            window.__acimTopJumpTrace=null;
-            if(sum<800)return;
-            /* V40.14 區間重疊歸因（補洞版）：V40.13 的區間未覆蓋「關面板
-               之後→跳頂之前」縫隙，long task 落在縫隙時全部重疊量為 0，
-               誤報預設標籤「面板關閉」（23.1 秒截圖的真正落點）。本版
-               區間：[0,tS] 面板關閉｜[tS,tV] 掛紗後債閘等待（僅面紗
-               管線）｜[tV,a0] 解紗恢復（僅面紗管線）｜直跳路徑 [tS,a0]
-               關面板後縫隙｜[a0,a1] 跳頂呼叫內｜[a1,∞) 跳頂返回後。 */
-            var tS=Math.max(0,_tr.tSheet-_tr.t0),
-                tV=_tr.tVeil?_tr.tVeil-_tr.t0:0,
-                a0=_tr.tJ0-_tr.t0,a1=_tr.tJ1-_tr.t0;
-            function ovl(s,e,at,d){return Math.max(0,Math.min(e,at+d)-Math.max(s,at));}
-            var sgP=0,sgW=0,sgV=0,sgJ=0,sgA=0;
-            for(var q=0;q<n;q++){
-              var L=_tr.longs[q];
-              sgP+=ovl(0,tS,L.at,L.d);
-              if(tV>0){sgW+=ovl(tS,tV,L.at,L.d);sgV+=ovl(tV,a0>0?a0:1e15,L.at,L.d);}
-              else if(a0>0)sgW+=ovl(tS,a0,L.at,L.d);
-              if(a1>0){
-                sgJ+=ovl(a0,a1,L.at,L.d);
-                sgA+=ovl(a1,1e15,L.at,L.d);
-              }
-            }
-            var where='面板關閉',mv=sgP;
-            if(sgW>mv){where='關面板後等待';mv=sgW;}
-            if(sgV>mv){where='解紗恢復';mv=sgV;}
-            if(sgJ>mv){where='跳頂呼叫內';mv=sgJ;}
-            if(sgA>mv){
-              var minLat=1e15;
-              for(var w=0;w<n;w++){
-                var L2=_tr.longs[w];
-                if(a1>0&&ovl(a1,1e15,L2.at,L2.d)>0&&L2.at-a1<minLat)minLat=L2.at-a1;
-              }
-              where='跳頂返回後'+(minLat<1e15?'（+'+(Math.round(minLat/100)/10)+'秒）':'');
-            }
-            var mx=0;
-            for(var q2=0;q2<n;q2++)if(_tr.longs[q2].d>mx)mx=_tr.longs[q2].d;
-            var attr='（'+n+'筆/最大'+(Math.round(mx/100)/10)+'秒）';
-            if(st+ly+sc>=250)
-              attr+='（樣式'+(Math.round(st/100)/10)+'・排版'+(Math.round(ly/100)/10)
-                  +'・腳本'+(Math.round(sc/100)/10)+'秒）';
-            if(a1<=0&&a0>0)attr+='（跳頂未完成）';
-            v30toast('回頂診斷：'+(_tr.via||(_tr.veiled?'解紗':'直跳'))+'｜凍結'+(Math.round(sum/100)/10)
-              +'秒@'+where+attr+'・'+ACIM_VERSION.toUpperCase(),8000);
-          }catch(e){}
-        },2600);
-      }catch(e){}
+      /* V40.15：移除可見的除錯提示——「回到頂部完成 · X 秒 · V40.x」與
+         「回頂診斷：凍結X秒@落點」兩個 toast。它們是 V40.9~V40.14 定案
+         12 秒凍結的實機儀器（每次回頂都彈、凍結時彈 8 秒），任務已完成，
+         讀者不該再看到秒數與歸因字樣。longtask／LoAF 觀測器與
+         __acimTopJumpTrace 保留（完全不可見）：若未來回歸，驗收腳本
+         可直接重現同一步級歸因，不必重新造儀器。 */
+      setTimeout(function(){
+        try{
+          if(_tr.obs){_tr.obs.disconnect();_tr.obs=null;}
+          if(_tr.loaf){_tr.loaf.disconnect();_tr.loaf=null;}
+          window.__acimTopJumpTrace=null;
+        }catch(e){}
+      },2600);
     };
     var go=function(){
       try{
@@ -28724,6 +28820,14 @@ function rtNormalize(t){
   return { id:String(t.id).slice(0,40), anchor:String(t.anchor||'').slice(0,160),
     title:String(t.title||'分頁').slice(0,24),
     scrollY:(typeof t.scrollY==='number'&&isFinite(t.scrollY))?Math.max(0,Math.min(1e9,Math.round(t.scrollY))):0,
+    /* V40.15：pin 當下錨點標題的視口 top——切回時重現原框景（與書籤
+       bm.atop 同構）；舊資料無此欄位 → undefined，JSON 不會寫入，
+       載入後退回原 1/3 視口啟發式，完全向下相容。
+       夾限僅防荒謬值（±20000）：分頁是「精準重現」語意——長章節內
+       currentHeading 可在視口上方數千 px（實測 -860），若像書籤夾在
+       -600，切回後整個框景會平移（實測 260px → 探測段落差一位）。 */
+    atop:(typeof t.atop==='number'&&isFinite(t.atop))?
+      Math.max(-20000,Math.min(2000,Math.round(t.atop))):undefined,
     ts:t.ts||0 };
 }
 function rtabsInit(){
@@ -28765,7 +28869,8 @@ function rtPin(){
     if(oldest && get(RT_ACTIVE)!==oldest.id){ arr.splice(oti,1); }
     else arr.splice(oti,1); /* 滿了就淘汰最舊 */
   }
-  var t=rtNormalize({id:'rt'+Date.now().toString(36), anchor:anchor, title:title, scrollY:curY, ts:Date.now()});
+  var t=rtNormalize({id:'rt'+Date.now().toString(36), anchor:anchor, title:title, scrollY:curY,
+    atop:h?Math.round(h.getBoundingClientRect().top):0, ts:Date.now()});
   arr.push(t);
   rtSave(arr);
   set(RT_ACTIVE,t.id);
@@ -28781,12 +28886,19 @@ function rtRemove(id){
 function rtSwitch(id){
   var arr=rtLoad();
   var cur=get(RT_ACTIVE);
-  /* 離開前把目前捲動位置存回原分頁（頁頂時 anchor 留空 → 精確回頂） */
-  for(var i=0;i<arr.length;i++){
-    if(arr[i].id===cur){
-      var cy=Math.round(window.scrollY);
-      arr[i].scrollY=cy;
-      arr[i].anchor=(cy<150)?'':((currentHeading()||{}).id||arr[i].anchor);
+  var self=(id===cur); /* V40.15：點的即為目前分頁——不覆寫 pin 位置 */
+  if(!self){
+    /* 離開前把目前捲動位置存回原分頁（頁頂時 anchor 留空 → 精確回頂）。
+       V40.15：同時記錄當下錨點標題的視口框景（atop），切回時重現。 */
+    var _ch=currentHeading();
+    var _atop=_ch?Math.round(_ch.getBoundingClientRect().top):undefined;
+    for(var i=0;i<arr.length;i++){
+      if(arr[i].id===cur){
+        var cy=Math.round(window.scrollY);
+        arr[i].scrollY=cy;
+        arr[i].anchor=(cy<150)?'':((currentHeading()||{}).id||arr[i].anchor);
+        if(typeof _atop==='number') arr[i].atop=_atop;
+      }
     }
   }
   var target=null;
@@ -28796,9 +28908,30 @@ function rtSwitch(id){
   set(RT_ACTIVE,id);
   render();
   var el=target.anchor?document.getElementById(target.anchor):null;
-  if(el) jumpToHeading(el);
+  if(el){
+    /* V40.15：以「pin 當下」的錨點框景還原——舊碼一律把標題釘在 1/3
+       視口，但 pin 時標題多半在視口上方（top≤90 甚至負值深達數千 px），
+       切回後框景漂移可達數百至數千 px（實測「切回分頁沒回到原位」）。
+       有 atop 者精準重現（與書籤還原同一夾限）；舊分頁無 atop 退回
+       原啟發式，完全向下相容。
+       量測與校正與書籤 V40.2/V30.8 同構：content-visibility 懶渲染下，
+       未渲染節的 getBoundingClientRect 是佔位估計（實測誤差可達數萬
+       px）——先強制渲染目標節再量測，代次校正收斂後還原懶渲染。 */
+    var m=(typeof target.atop==='number'&&isFinite(target.atop))?
+      Math.max(-20000,Math.min(Math.round(window.innerHeight*0.8),target.atop)):
+      Math.round(window.innerHeight/3);
+    var _rv=window.__acimRevealSection?window.__acimRevealSection(el):null;
+    var go=function(){
+      var rect=el.getBoundingClientRect();
+      window.__acimJump(window.scrollY+rect.top-m);
+      if(window.__acimSearchCorrect)window.__acimSearchCorrect(el,m,_rv);
+      else if(window.__acimCorrectScroll)window.__acimCorrectScroll(el,m);
+    };
+    if(window.__acimVeilUnveil)window.__acimVeilUnveil(false,go);
+    else go();
+  }
   else if(window.__acimJump) window.__acimJump(target.scrollY||0);
-  v30toast('已切換分頁：'+target.title);
+  if(!self) v30toast('已切換分頁：'+target.title);
 }
 function render(){
   var bar=document.getElementById('rtabs-bar');

@@ -1,18 +1,18 @@
-/* ACIM CE PWA v40.14 — release-bound offline book.
+/* ACIM CE PWA v40.15 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v40.14';
-const RELEASE_ID = 'f1fcb219fd245745cf581c09c35eed2de5e27e903cb9491b68191c8955828095';
+const CACHE_VERSION = 'v40.15';
+const RELEASE_ID = 'c7afab4c41ebea32aeb8a42d2f7c98c50aa738858676381499190f290fbe9c0d';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = '8e7180749e18fc42152edfc51ab6388cf852e6db473c4b8e370def8dfcabbe73';
+const BOOK_SHA256 = '5ac02e39eed6142a208e3b10f32502e76ee59c05532ad715e5a1dc2c78463e24';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
@@ -586,6 +586,14 @@ async function warmResources(includeImages) {
 self.addEventListener('message', event => {
   const type = event.data && event.data.type;
   if (type === 'SKIP_WAITING') { event.waitUntil(self.skipWaiting()); return; }
+  /* V40.15：更新提示版本號真源——頁面向「等待中 worker」詢問版本，
+     由 worker 回報自己的 CACHE_VERSION（舊碼用頁面常數，裝置還在跑
+     舊版 index.html 時會把新版錯示成舊版號）。任何狀態的 worker
+     （installing/waiting/active）都必須能答，故不佔用離線狀態查詢。 */
+  if (type === 'GET_VERSION') {
+    reply(event, {type: 'ACIM_VERSION_INFO', version: CACHE_VERSION, releaseId: RELEASE_ID});
+    return;
+  }
   if (!['GET_OFFLINE_STATUS', 'WARM_FONTS', 'PREPARE_OFFLINE'].includes(type)) return;
   event.waitUntil((async () => {
     try {
