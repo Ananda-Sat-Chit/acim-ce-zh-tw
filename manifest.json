@@ -8,7 +8,7 @@
     "standalone"
   ],
   "background_color": "#FAF8F5",
-  "theme_color": "#4B407A",
+  "theme_color": "#29224A",
   "icons": [
     {
       "src": "acimce-pwa-192x192.png",

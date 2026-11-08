@@ -1,18 +1,18 @@
-/* ACIM CE PWA v40.19 — release-bound offline book.
+/* ACIM CE PWA v40.20 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v40.19';
-const RELEASE_ID = '5d71e0e0c63995b4007d6ca9a7204160bbc9ad1b0344db1ba4b5f80f256abc64';
+const CACHE_VERSION = 'v40.20';
+const RELEASE_ID = '4c6fa1e06fb77cc2724ce1a8fe4d817cc876c6b99229e31a5abce546e53d24d4';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = '713945b36edd8d22eda4251ef09f806ee5c76c21344c8e38437380620902d3ac';
+const BOOK_SHA256 = '079ffc2c90e1c413048e84eed193b8270c6972e773e0e24665564b4e6ce57266';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
@@ -56,9 +56,9 @@ const RUNTIME_MAX_ENTRIES = 24;
 const NETWORK_TIMEOUT_MS = 8000;
 const WARMUP_BUDGET_MS = 60000; /* V30：30 個切片，3 並行下載 */
 const ASSET_SHA256 = {
-  'index.htm': '60241fbe8694050be271bc1cd8d18b49eff0f530018acfc8e8ab50c936bd42d0',
-  'offline.html': 'f102e49019429b6884091b8f96b32ef23ad2bfb1bed16953156decbf0d0c34ff',
-  'manifest.json': 'd7ad62bcb47d4233637ec87b45a91c4876425093f92347e7cd85df45e2a820d0',
+  'index.htm': '9dee853b722d22d9c2320a5e3a44c30f2d446f801918e719c77fa2261cb04033',
+  'offline.html': '35195fc2a055e65a75ebbfc91676db1716cd239d3f75d3a3c996848a29959f74',
+  'manifest.json': '40981bfaa1e8ca75b6f886851810c89ab722f9e027404362a5c7664b06a7778b',
   'fonts/ntc-regular-00.woff2': 'c830483a03e982db87fc7b5faa361cbac7b0c0265b3bf51959994cfc839e7fcd',
   'fonts/ntc-regular-01.woff2': 'ae80842c86375a91f2a3d0a7ff4835f2c39667b45a9a141f734efdc7c245cb0a',
   'fonts/ntc-regular-02.woff2': '9c55164062f33e520c84bf3aac7bad90c3c7a7f5c83dc45b82ef581463236c76',
