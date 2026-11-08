@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v40.17">
+<meta name="acim-version" content="v40.18">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="8b11fbe69b59bea0c5ef581bd315cbf3a5625d1a29cd1c692e56cdaafc21c93a">
+<meta name="acim-release-id" content="898862e77faa20b97d82e32868bed1cb29219cb1b54a62d55570bbe7f7dffea6">
 <meta name="acim-build" content="2026-11-08">
-<meta name="acim-build-time" content="10:59">
+<meta name="acim-build-time" content="15:01">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -161,7 +161,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v40.17';
+var ACIM_VERSION = 'v40.18';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* V40.9：套用新版後的首次啟動，顯示一次性「已套用」確認——讓讀者與
@@ -1967,7 +1967,10 @@ ul{margin-bottom:0;}
   #content-area span[style*="font-family: 標楷體"],
   #content-area span[style*="font-family:DFKai-SB"] {
     font-family:"LXGW WenKai TC","Kaiti TC","STKaiti","DFKai-SB","標楷體",serif !important; }
-  </style>
+  
+  /* V40.18：T-3.II（給奇蹟行者的特別守則）段號顯示「N.」——純視覺樣式（::after），段落 ID、句子分享與複製文字不變。 */
+  p.acim-dotnum > b:first-child::after { content: "."; }
+</style>
 <style id="acim-settings-s1">
 /* S1 controlled layout candidate: original V27 interaction scripts stay intact.
    The two pages keep their layout boxes in a definite sidebar remainder.
@@ -3857,25 +3860,25 @@ Judgment）的真實意義。</p><p class="mn st59">
 </p><p class="mn st60">
 <br/>
 </p></section><section class="csec" style="contain-intrinsic-size:auto 628px"><h3>第二節
-給奇蹟行者的特別守則</h3><p class="mn st61">
+給奇蹟行者的特別守則</h3><p class="mn st61 acim-dotnum">
 <b>1</b>
 奇蹟讓人不再需要憂慮那些較低層次的事。²顧名思義，「奇蹟」就是一段不合邏輯或逸出常軌的時間（time
 interval），所以一般的時、空原則都不適用於奇蹟
 <sup class="fn-badge" data-fn="376">376</sup>。³我看待時間的方式與你們<u>不</u>同，我也<u>沒有</u>你們那樣的空間問題
-<sup class="fn-badge" data-fn="377">377</sup>。⁴當你行奇蹟時，我會配合需要，重新調整時空。</p><p class="mn st61">
+<sup class="fn-badge" data-fn="377">377</sup>。⁴當你行奇蹟時，我會配合需要，重新調整時空。</p><p class="mn st61 acim-dotnum">
 <b>2</b>
-分清楚「什麼來自創造、什麼來自妄造」很重要。²<u>所有</u>形式的修正（或療癒）都建立在這種對於知見層次的<u>根本</u>修正之上。</p><p class="mn st61">
+分清楚「什麼來自創造、什麼來自妄造」很重要。²<u>所有</u>形式的修正（或療癒）都建立在這種對於知見層次的<u>根本</u>修正之上。</p><p class="mn st61 acim-dotnum">
 <b>3</b>
-上一條原則的另一種說法是：<u>切莫</u>混淆了正見心志與妄見心志。²只要你<u>不以「療癒之願</u>」（或一個奇蹟）來回應<u>任何</u>形式的妄造，都表示你陷入了這種混淆。</p><p class="mn st61">
+上一條原則的另一種說法是：<u>切莫</u>混淆了正見心志與妄見心志。²只要你<u>不以「療癒之願</u>」（或一個奇蹟）來回應<u>任何</u>形式的妄造，都表示你陷入了這種混淆。</p><p class="mn st61 acim-dotnum">
 <b>4</b>
 奇蹟<u>永遠</u>是對上述錯誤的<u>否定</u>，以及對於真理的肯定。²唯有正見心志才能以有實質效果的方式創造。³從實用性來說，凡是不會產生真實結果的，就不算真的存在；⁴它產生的結果就是空無罷了。⁵而因為它本身沒有實質的內涵，所以容易被投射
-<sup class="fn-badge" data-fn="378">378</sup>。</p><p class="mn st61">
+<sup class="fn-badge" data-fn="378">378</sup>。</p><p class="mn st61 acim-dotnum">
 <b>5</b> 由奇蹟的調整層次之力，產生了正確認知，帶來療癒
 <sup class="fn-badge" data-fn="379">379</sup>。²唯有具備了正確的知見，才可能了解療癒。³除非寬恕能帶來修正之效，否則它只是一個空洞的姿態而已
-<sup class="fn-badge" data-fn="380">380</sup>；⁴若無修正之效，寬恕基本上是一種評判，而非療癒。</p><p class="mn st61">
+<sup class="fn-badge" data-fn="380">380</sup>；⁴若無修正之效，寬恕基本上是一種評判，而非療癒。</p><p class="mn st61 acim-dotnum">
 <b>6</b>
 奇蹟心志下的寬恕<span class="kf"><b>純粹是</b></span>一種修正，²完全沒有評判的成份在內。³「父啊，寬恕他們吧！因為他們不知道自己在做什麼。」這句話<u>不是</u>在<span class="kf"><b>評價</b></span>他們所做的事
-<sup class="fn-badge" data-fn="381">381</sup>，⁴而只是懇求上主<u>療癒他們的心靈</u>。⁵之所以不提他們錯誤的心念所導致的後果，⁶因為<span class="kf"><b>那</b></span>無關緊要。</p><p class="mn st61">
+<sup class="fn-badge" data-fn="381">381</sup>，⁴而只是懇求上主<u>療癒他們的心靈</u>。⁵之所以不提他們錯誤的心念所導致的後果，⁶因為<span class="kf"><b>那</b></span>無關緊要。</p><p class="mn st61 acim-dotnum">
 <b>7</b> 聖經裡「要同心一志」（be
 of one mind）的誡命，是為接受啟示作準備
 <sup class="fn-badge" data-fn="382">382</sup>。²而我自己告誡門徒要「這樣做以記念我」時，則是要求他們跟我同心協力行奇蹟
@@ -13590,7 +13593,7 @@ the Father and the Son），其平安之境也不曾遭到任何騷擾。⁵今�
 若不寬恕，我將仍是盲目的</h4></div><p class="mn st218">
 <b>1    </b>罪是攻擊的標誌。²不論我在何處看到它，都會因而受苦。³寬恕是我獲得基督慧見的唯一途徑。⁴我要接受祂的慧見顯示給我的單純真理，我便能徹底痊癒。⁵弟兄，請過來，讓我好好看看你。⁶你的可愛反映了我的可愛。⁷你的無罪本性就是我的無罪本性。⁸你被寬恕了，我也和你一樣
 <sup class="fn-badge" data-fn="2343">2343</sup>。</p><p class="mn st287">
-<b>2    </b>今天，我要這樣去看每一個人。²我的弟兄全是祢的聖子。³祢的天父身份創造了他們，他們是祢的一部分，也是我的真我的一部分；而祢將他們全都給了我。⁴今天，我要透過他們向祢致敬，好讓我在這一天認出自己的真我。</p></section><section class="csec" style="contain-intrinsic-size:auto 294px"><div class="lesson-title-box"><h4>第248課<br/>
+<b>2    </b><span class="kf"><b>今天，我要這樣去看每一個人。</b></span><span class="kf">²</span><span class="kf"><b>我的弟兄全是祢的聖子。</b></span><span class="kf">³</span><span class="kf"><b>祢的天父身份創造了他們，他們是祢的一部分，也是我的真我的一部分；而祢將他們全都給了我。</b></span><span class="kf">⁴</span><span class="kf"><b>今天，我要透過他們向祢致敬，好讓我在這一天認出自己的真我。</b></span></p></section><section class="csec" style="contain-intrinsic-size:auto 294px"><div class="lesson-title-box"><h4>第248課<br/>
 凡是會受苦的，都不屬於我</h4></div><p class="mn st218">
 <b>1    </b>我曾經否定真理。²現在，我要同樣忠實地否定虛妄。³凡是會受苦的，都不屬於我。⁴凡是會悲傷的，都不是我
 <sup class="fn-badge" data-fn="2344">2344</sup>。⁵凡是感到痛苦的，不過是我心中的幻相。⁶凡是會死亡的，從未真正活過，只是在嘲弄我的真相。⁷
@@ -13684,8 +13687,8 @@ long, O holy Son of God, how long）？</p></section><section class="csec" style
 <b>1    </b>我會與我認為的庇護所和安全保障認同。²我在哪裡感受到自己的力量，就會認為自己屬於那裡，且覺得自己處在不受侵犯的安全堡壘內。³今天，我不再去危險中尋求保障了，也不再企圖自謀害與攻擊中尋求平安。⁴我活在上主之內。⁵在祂內，我找到了自己的庇護與力量。⁶我的身份就在祂內。⁷永恆的平安就在祂內。⁸唯在祂內，我才會憶起自己真正是誰。</p><p class="mn st288">
 <b>2</b><i><b> </b></i><span class="kf"><b>我不要再追逐偶像了。</b></span>²<span class="kf"><b>天父，今天我就要返回祢的家園。</b></span>³<span class="kf"><b>我選擇成為祢所創造的我，並找回我的真我――祢所創造的那位聖子。</b></span></p></section><section class="csec" style="contain-intrinsic-size:auto 294px"><div class="lesson-title-box"><h4>第262課<br/>
 今天，我不要看見差別</h4></div><p class="mn st287">
-<b>1    </b>天父，祢只有一位聖子。²今天我要注視的就是他。³他是祢的一體造化。⁴為什麼我要在始終為「一」的生命中看到千百個形式
-<sup class="fn-badge" data-fn="2362">2362</sup>？⁵這唯一的一位只需要一個名字，為什麼我要給他千百個名字？⁶祢的聖子必然承襲了祢的聖名，因為是祢創造了他。⁷我不要再視他為天父的陌路了，他對我也不是陌生人。⁸因為他是我的一部分，我也是他的一部分，而我們都是作為源頭的祢的一部分，永遠結合在祢的聖愛之中，永遠是神聖的上主之子。</p><p class="mn st218">
+<b>1    </b><span class="kf"><b>天父，祢只有一位聖子。</b></span><span class="kf">²</span><span class="kf"><b>今天我要注視的就是他。</b></span><span class="kf">³</span><span class="kf"><b>他是祢的一體造化。</b></span><span class="kf">⁴</span><span class="kf"><b>為什麼我要在始終為「一」的生命中看到千百個形式</b></span>
+<sup class="fn-badge" data-fn="2362">2362</sup><span class="kf"><b>？</b></span><span class="kf">⁵</span><span class="kf"><b>這唯一的一位只需要一個名字，為什麼我要給他千百個名字？</b></span><span class="kf">⁶</span><span class="kf"><b>祢的聖子必然承襲了祢的聖名，因為是祢創造了他。</b></span><span class="kf">⁷</span><span class="kf"><b>我不要再視他為天父的陌路了，他對我也不是陌生人。</b></span><span class="kf">⁸</span><span class="kf"><b>因為他是我的一部分，我也是他的一部分，而我們都是作為源頭的祢的一部分，永遠結合在祢的聖愛之中，永遠是神聖的上主之子。</b></span></p><p class="mn st218">
 <b>2</b><b> </b>今天，一體的我們願看清自己的真相。²我們想回家，安息於一體之境。³因為唯獨那裡才有平安，我們是不可能在其他地方尋得平安的。</p></section><section class="csec" style="contain-intrinsic-size:auto 238px"><div class="lesson-title-box"><h4>第263課<br/>
 在我神聖的慧見中，萬物都是純潔的</h4></div><p class="mn st288">
 <b>1    </b><span class="kf"><b>天父，祢神聖的心靈創造了一切實相，祢的靈性（</b></span>Spirit<span class="kf"><b>）進入其中，祢的愛賦予了它生命。</b></span>²<span class="kf"><b>我怎會將祢的造化視為可能有罪之物？</b></span>³<span class="kf"><b>我不會想看到陰暗可怕的形象。</b></span>⁴<span class="kf"><b>瘋子的夢境不配成為我的選擇；相反地，我選擇看見你賦予造化的一切美好、純潔、喜悅，以及它在祢內永恆而寧靜的家園。</b></span></p><p class="mn st218">
@@ -13856,7 +13859,7 @@ over）著我
 <b>5    </b>時間一旦完成了聖靈的目的，祂就不再需要時間了。²現在祂只會再等待片刻，上主就會踏出祂最後的一步；時間至此消逝，一併帶走了知見，只留下本然如是的真理。³那一刻就是我們的目標，因為其中蘊含上主的記憶。⁴就在我們注視這已獲寬恕的世界時，祂正在呼喚我們，要帶我們回家，提醒著寬恕已為我們恢復的真實身份。</p></section><section class="csec" style="contain-intrinsic-size:auto 266px"><div class="lesson-title-box"><h4>第291課<br/>
 這是寂靜而平安的一天</h4></div><p class="mn st218">
 <b>1    </b>今天，基督的慧見透過我而看。²祂的眼光見到已獲寬恕而得平安的一切，並將這同樣的慧見獻給世界。³我以這眼光之名接納這慧見，既為我自己，也為了全世界。⁴今天，我們之所見何其美麗！⁵周遭的一切何其神聖！⁶我們有能力認出我們共享的神聖本質，這正是上主本身的神聖性。</p><p class="mn st288">
-<b>2</b><i><b> </b></i>今天我的心多麼沉靜，為了領受祢給我的聖念。²我接納來自祢的想法，不再聽信我自己的想法。³我並不知道通往祢的道路，但祢毫無一絲懷疑。⁴天父，引領祢的聖子踏上通往祢的寂靜之路吧<span class="kf"><b>！</b></span>⁵我要徹底寬恕，祢的記憶便會重回我心。</p></section><section class="csec" style="contain-intrinsic-size:auto 294px"><div class="lesson-title-box"><h4>第292課<br/>
+<b>2</b><i><b> </b></i><span class="kf"><b>今天我的心多麼沉靜，為了領受祢給我的聖念。</b></span><span class="kf">²</span><span class="kf"><b>我接納來自祢的想法，不再聽信我自己的想法。</b></span><span class="kf">³</span><span class="kf"><b>我並不知道通往祢的道路，但祢毫無一絲懷疑。</b></span><span class="kf">⁴</span><span class="kf"><b>天父，引領祢的聖子踏上通往祢的寂靜之路吧</b></span><span class="kf"><b>！</b></span><span class="kf">⁵</span><span class="kf"><b>我要徹底寬恕，祢的記憶便會重回我心。</b></span></p></section><section class="csec" style="contain-intrinsic-size:auto 294px"><div class="lesson-title-box"><h4>第292課<br/>
 一切肯定會有幸福的結局
 
 </h4></div><p class="mn st218">
@@ -27422,9 +27425,10 @@ html.dark-mode #acim-external-guide .acim-eg-note{color:#c4b8d2}
       if (sentEnd > sent) sentSuffix += '-' + sentEnd;
     }
 
-    /* 繁中 URL */
+    /* 繁中 URL（V40.18：分享連結不再帶 openExternalBrowser 參數，縮短網址；
+       內建瀏覽器提醒列的導流連結不受影響） */
     var zhUrl = location.origin + location.pathname +
-      '?openExternalBrowser=1#' + acimId + sentSuffix;
+      '#' + acimId + sentSuffix;
     /* 英文 acimce.app URL：支援範圍格式 :N-M */
     var enUrl = toAcimceUrl(acimId, sent, sentEnd);
 
