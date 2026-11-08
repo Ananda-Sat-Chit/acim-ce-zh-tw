@@ -11,19 +11,19 @@
   "theme_color": "#4B407A",
   "icons": [
     {
-      "src": "pwa-192x192.png",
+      "src": "acimce-pwa-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "acimce-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "acimce-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -54,7 +54,7 @@
       "url": "./",
       "icons": [
         {
-          "src": "pwa-192x192.png",
+          "src": "acimce-pwa-192x192.png",
           "sizes": "192x192",
           "type": "image/png"
         }

@@ -1,18 +1,18 @@
-/* ACIM CE PWA v40.16 — release-bound offline book.
+/* ACIM CE PWA v40.17 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v40.16';
-const RELEASE_ID = '9923166da973285aad39525be124247ec221653e413b0f989058659185e1675a';
+const CACHE_VERSION = 'v40.17';
+const RELEASE_ID = '8b11fbe69b59bea0c5ef581bd315cbf3a5625d1a29cd1c692e56cdaafc21c93a';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = 'e532876e43cb744c7a6b112605939d9a26383be9de44bd46adf1d448b2164532';
+const BOOK_SHA256 = 'a657a86375aba167216f3190b37eb045533f1b9b464a942ed36e22d241821b3f';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
@@ -51,14 +51,14 @@ const FONT_FILES = [
   'fonts/wenkai-09.woff2'
 ];
 const IMAGE_FILES = ['index.files/image001.webp', 'index.files/image002.webp', 'index.files/image003.jpg', 'index.files/ce-manuscript.webp'];
-const RUNTIME_FILES = IMAGE_FILES.concat(['icon-512.png', 'pwa-192x192.png', 'screenshot-og.png']);
+const RUNTIME_FILES = IMAGE_FILES.concat(['acimce-icon-512.png', 'acimce-pwa-192x192.png', 'screenshot-og.png']);
 const RUNTIME_MAX_ENTRIES = 24;
 const NETWORK_TIMEOUT_MS = 8000;
 const WARMUP_BUDGET_MS = 60000; /* V30：30 個切片，3 並行下載 */
 const ASSET_SHA256 = {
   'index.htm': '60241fbe8694050be271bc1cd8d18b49eff0f530018acfc8e8ab50c936bd42d0',
   'offline.html': 'f102e49019429b6884091b8f96b32ef23ad2bfb1bed16953156decbf0d0c34ff',
-  'manifest.json': '3a209276dff02d2493d528e81fadb28dc73d941eceb36e3e0c7ff1dc9403c9e3',
+  'manifest.json': 'd7ad62bcb47d4233637ec87b45a91c4876425093f92347e7cd85df45e2a820d0',
   'fonts/ntc-regular-00.woff2': 'c830483a03e982db87fc7b5faa361cbac7b0c0265b3bf51959994cfc839e7fcd',
   'fonts/ntc-regular-01.woff2': 'ae80842c86375a91f2a3d0a7ff4835f2c39667b45a9a141f734efdc7c245cb0a',
   'fonts/ntc-regular-02.woff2': '9c55164062f33e520c84bf3aac7bad90c3c7a7f5c83dc45b82ef581463236c76',
@@ -90,12 +90,12 @@ const ASSET_SHA256 = {
   'fonts/wenkai-08.woff2': 'f91c42d82bd1fccd5d986797fa1283c9f28ed85e23f810c43745bbe4c3fdd195',
   'fonts/wenkai-09.woff2': '8df48aaaa3a348d2244813440a3974bd6388d877b9d83c95f3f99546f38ef589',
   'favicon.ico': '0c3efbc9e430c0acef49275c9f6e4a5dbd8bc4ae9baf3432212cf59c87351fa4',
-  'index.files/image001.webp': '9a4295437a5cf3a57cdd3dfa73a6b1db65baf9016781643e8592b19a39fde374',
+  'index.files/image001.webp': '6b1d302a5e2a0bf35923d0739865c9eca038ac330b03ec047595897306d6e7b5',
   'index.files/image002.webp': 'c4bfe8793c7811d8a0d6f9cc7ed152c8a38da36f69ffb410aa944c9554928395',
   'index.files/image003.jpg': 'c3189d69a3c2df5250db3575e15374c72e5c8e957d8d272eab0765a50e228675',
   'index.files/ce-manuscript.webp': 'eecd7efba4c93d721f43eae8cc755a14473d76739d0ceefbe0d47be18a33c6c8',
-  'icon-512.png': 'bcebd97a9e265d97874a52da80c330271809de62caf1e26d6effcd59e8371d36',
-  'pwa-192x192.png': 'b31efb602bed26f7781fb03b6c94b9ac36a86941138f7d71c4a64690f8f36bd5',
+  'acimce-icon-512.png': '0d1f12e14131861ceef02c6d5b24aa04b3e00d22213f29afde8c85f61558261a',
+  'acimce-pwa-192x192.png': '95c27ae9b91a9a96065c9760139889ac56f9a15ed4967d0dddcf65a00a4249bc',
   'screenshot-og.png': 'ae268a06eef2abd19f4631a4131e0f90c845292f68e9763fd14524f19078d804'
 };
 let bookVerifiedInWorker = false;
