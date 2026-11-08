@@ -1,18 +1,18 @@
-/* ACIM CE PWA v40.21 — release-bound offline book.
+/* ACIM CE PWA v40.22 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v40.21';
-const RELEASE_ID = 'fa0d9b6956c01c971c9382e9755d3f7d96da16834eca4c229280b4cd1921dc62';
+const CACHE_VERSION = 'v40.22';
+const RELEASE_ID = 'cc05284bea32bf3f63db75a4712706af4910722fbf4988f806a3024de5177c8d';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = 'a70cae18452c8348be9aaf07867871fcd8a51aa316d9ce4c582a805037e6aa4d';
+const BOOK_SHA256 = '5cba8b7e31036f5ed013afdb80dc767fa77de1b060ae5dac25916aed678537f0';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
@@ -54,6 +54,7 @@ const IMAGE_FILES = ['index.files/image001.webp', 'index.files/image002.webp', '
 const RUNTIME_FILES = IMAGE_FILES.concat(['acimce-icon-512.png', 'acimce-pwa-192x192.png', 'screenshot-og.png']);
 const RUNTIME_MAX_ENTRIES = 24;
 const NETWORK_TIMEOUT_MS = 8000;
+const BOOK_TIMEOUT_MS = 45000; /* A 5.5 MB book needs a realistic slow-network budget. */
 const WARMUP_BUDGET_MS = 60000; /* V30：30 個切片，3 並行下載 */
 const ASSET_SHA256 = {
   'index.htm': '9dee853b722d22d9c2320a5e3a44c30f2d446f801918e719c77fa2261cb04033',
@@ -107,15 +108,26 @@ let offlineStatusTask = null;
 let lastWarmError = '';
 let storageError = '';
 let runtimeWriteQueue = Promise.resolve();
+/* A bounded fetch has already read the complete body. Hand that buffer to
+   its first integrity check instead of reading another cloned book body. */
+const downloadedBodies = new WeakMap();
+async function verificationBytes(response) {
+  if (downloadedBodies.has(response)) {
+    const bytes = downloadedBodies.get(response);
+    downloadedBodies.delete(response);
+    return bytes;
+  }
+  return response.clone().arrayBuffer();
+}
 
 async function responseDigest(response) {
-  const bytes = await response.clone().arrayBuffer();
+  const bytes = await verificationBytes(response);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
 }
 async function verifyBook(response) {
   if (!response || response.status !== 200) throw new Error('book-http');
-  const bytes = await response.clone().arrayBuffer();
+  const bytes = await verificationBytes(response);
   const head = new TextDecoder('utf-8').decode(new Uint8Array(bytes, 0, Math.min(bytes.byteLength, 16384)));
   const tag = head.match(/<meta\b[^>]*\bname=["']acim-version["'][^>]*>/i);
   const version = tag && tag[0].match(/\bcontent=["']([^"']+)["']/i);
@@ -144,7 +156,7 @@ function fetchBounded(request, timeoutMs = NETWORK_TIMEOUT_MS, init = {}) {
   // Include the response body, not only HTTP headers, in the timeout. A stalled
   // stream must not keep a font save or installation event alive indefinitely.
   const downloaded = fetch(request, {...init, signal: controller.signal}).then(async response => {
-    if (response && response.body) await response.clone().arrayBuffer();
+    if (response && response.body) downloadedBodies.set(response, await response.clone().arrayBuffer());
     return response;
   });
   return Promise.race([downloaded, timeout])
@@ -211,7 +223,7 @@ self.addEventListener('install', event => {
         bookVerifiedInWorker = true;
         return; // A verified identical release also reinstalls while offline.
       }
-      const book = await fetchBounded(BASE, NETWORK_TIMEOUT_MS, {cache: 'reload'});
+      const book = await fetchBounded(BASE, BOOK_TIMEOUT_MS, {cache: 'no-cache'});
       await verifyBook(book);
       const assets = await Promise.all(CORE_FILES.map(async file => {
         const response = await fetchBounded(BASE + file, NETWORK_TIMEOUT_MS, {cache: 'reload'});
@@ -394,7 +406,7 @@ async function bookNavigation(event) {
   const hit = await cachedBook();
   if (hit) return hit;
   try {
-    const response = await fetchBounded(BASE, NETWORK_TIMEOUT_MS, {cache: 'reload'});
+    const response = await fetchBounded(BASE, BOOK_TIMEOUT_MS, {cache: 'no-cache'});
     await verifyBook(response);
     event.waitUntil(storeBook(response.clone()).catch(() => false));
     return response;
@@ -501,7 +513,7 @@ async function repairShell(deadline) {
   async function download(file) {
     const remaining = deadline - Date.now();
     if (remaining <= 0) throw new Error('warmup-timeout');
-    return fetchBounded(BASE + file, Math.min(NETWORK_TIMEOUT_MS, remaining), {cache: 'reload'});
+    return fetchBounded(BASE + file, Math.min(file ? NETWORK_TIMEOUT_MS : BOOK_TIMEOUT_MS, remaining), {cache: 'no-cache'});
   }
   if (!await cachedBook(true)) {
     const response = await download('');
