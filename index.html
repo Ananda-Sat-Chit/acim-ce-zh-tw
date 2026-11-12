@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
 <meta name="acim-version" content="v50.0.6">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="f8c078d6f35b84a661b4b1bceee8057ec03dc11a900049826820ed135501c9c2">
+<meta name="acim-release-id" content="cbed0ee2f32b3a559b36a6cde02638f4834ca46f0f7f6a9cbe673f7f50258ff8">
 <meta name="acim-build" content="2026-11-12">
-<meta name="acim-build-time" content="22:50">
+<meta name="acim-build-time" content="23:10">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -28998,7 +28998,13 @@ if(!window.__acimV50WrongOrigin){
     document.addEventListener('acim-navigation',function(e){
       if(e.detail!=='hash'){recipientQueue30.invalidate();hideCiteToast();}
     });
-    function stopRecipientAuto30(){recipientQueue30.cancelAuto();}
+    function stopRecipientAuto30(event){
+      /* V50.0.6: a browser-restored scroll is not a reader gesture. Keep the
+         incoming citation while its index is building. Real wheel, touch,
+         pointer and keyboard input still cancel automatic movement. */
+      if(event&&event.type==='scroll'&&window.__acimNav&&window.__acimNav.canRestore())return;
+      recipientQueue30.cancelAuto();
+    }
     window.addEventListener('wheel',stopRecipientAuto30,{passive:true,capture:true});
     window.addEventListener('touchmove',stopRecipientAuto30,{passive:true,capture:true});
     window.addEventListener('pointerdown',stopRecipientAuto30,{passive:true,capture:true});

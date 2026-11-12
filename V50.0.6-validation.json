@@ -5,10 +5,10 @@
   "preflight": {
     "version": "v50.0.6",
     "target": "https://ananda-sat-chit.github.io/acim-ce-zh-tw/",
-    "time": "2026-11-12T14:51:27.328Z",
+    "time": "2026-11-12T15:11:05.077Z",
     "core": {
       "version": "v50.0.6",
-      "time": "2026-11-12T14:51:27.195Z",
+      "time": "2026-11-12T15:11:04.948Z",
       "passed": 18,
       "total": 18,
       "tests": [
@@ -134,10 +134,14 @@
       {
         "name": "A superseded citation cannot override a newer URL after renewal",
         "pass": true
+      },
+      {
+        "name": "Browser scroll restoration preserves the initial citation; real reader input still wins",
+        "pass": true
       }
     ],
-    "passed": 30,
-    "total": 30
+    "passed": 31,
+    "total": 31
   },
   "browser": [
     {
@@ -244,6 +248,32 @@
       "withinCentralReadingArea": true
     },
     "setup": "Local isolated fixture starts expired and delays verse indexing by 7.5 seconds; normal Continue button is pressed before the index is ready."
+  },
+  "scrollFixture": {
+    "before": {
+      "bottom": 49910.76953125,
+      "centerError": 49475.96875,
+      "pass": false,
+      "sentence": "對於佔有的恐懼",
+      "top": 49885.16796875,
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    "after": {
+      "bottom": 473.0699768066406,
+      "centerError": 38.269989013671875,
+      "marked": "T-2.I.1",
+      "pass": true,
+      "sentence": "對於佔有的恐懼",
+      "top": 447.4700012207031,
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    "setup": "Isolated local pages delay verse indexing 7.5 seconds and emulate browser scroll restoration after 2 seconds. No reading gesture is sent."
   },
   "limits": "Chromium viewport simulation; no physical phone performance benchmark. Existing trial core and book semantics retained."
 }
