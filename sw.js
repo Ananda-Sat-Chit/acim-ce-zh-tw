@@ -1,18 +1,22 @@
-/* ACIM CE PWA v40.22 — release-bound offline book.
+/* V50_SITE_BOUND_WORKER */
+{const target=new URL("https://ananda-sat-chit.github.io/acim-ce-zh-tw/"),scope=new URL(self.registration.scope),local=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(scope.hostname);
+ const hostOK=scope.origin===target.origin;
+ if((!local&&!hostOK)||scope.pathname!==target.pathname)throw new Error('Reading package origin or scope mismatch');}
+/* ACIM CE PWA v50.0.5 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v40.22';
-const RELEASE_ID = 'cc05284bea32bf3f63db75a4712706af4910722fbf4988f806a3024de5177c8d';
+const CACHE_VERSION = 'v50.0.5';
+const RELEASE_ID = 'aca638e1217dad806b169d38fa3fa4a1ca0bd904ff01df842e36696f96705b5f';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = '5cba8b7e31036f5ed013afdb80dc767fa77de1b060ae5dac25916aed678537f0';
+const BOOK_SHA256 = 'd491812d24b530ee29e9531f12f2fb89c3c455b3bd165a290c48a63eed50cc7a';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
@@ -57,47 +61,47 @@ const NETWORK_TIMEOUT_MS = 8000;
 const BOOK_TIMEOUT_MS = 45000; /* A 5.5 MB book needs a realistic slow-network budget. */
 const WARMUP_BUDGET_MS = 60000; /* V30：30 個切片，3 並行下載 */
 const ASSET_SHA256 = {
-  'index.htm': '9dee853b722d22d9c2320a5e3a44c30f2d446f801918e719c77fa2261cb04033',
-  'offline.html': '35195fc2a055e65a75ebbfc91676db1716cd239d3f75d3a3c996848a29959f74',
-  'manifest.json': '40981bfaa1e8ca75b6f886851810c89ab722f9e027404362a5c7664b06a7778b',
-  'fonts/ntc-regular-00.woff2': 'c830483a03e982db87fc7b5faa361cbac7b0c0265b3bf51959994cfc839e7fcd',
-  'fonts/ntc-regular-01.woff2': 'ae80842c86375a91f2a3d0a7ff4835f2c39667b45a9a141f734efdc7c245cb0a',
-  'fonts/ntc-regular-02.woff2': '9c55164062f33e520c84bf3aac7bad90c3c7a7f5c83dc45b82ef581463236c76',
-  'fonts/ntc-regular-03.woff2': 'e2be90fac5bab11408de5d86f0897291648cbefd9e0ca86c5b344beb02c31b29',
-  'fonts/ntc-regular-04.woff2': 'fce65ed9c1d6584dc2cb56b7e78b5ab99985f8681ee5eb5d774a309db1d6752d',
-  'fonts/ntc-regular-05.woff2': 'f20fb8e040e4a12a876c6a3192ac063bdf6e1edce5cc28789f79124f3a0fb993',
-  'fonts/ntc-regular-06.woff2': '0b6ff73029b121ff5b9bbfe3bd8f5b7b81b62b9e18d9929c1b509137132fc1a7',
-  'fonts/ntc-regular-07.woff2': 'a372ffaec24c002b57dcf01424e74358a37546b518c0b7ae9cefbf9ec93a10f9',
-  'fonts/ntc-regular-08.woff2': '1172b23d74ce2e325418ae2c0bb15c3586689b7edae30b905d36cea0c7ba0315',
-  'fonts/ntc-regular-09.woff2': '4d78b9c058360ab378fe28865d763146139b3ca2b5c1c4d154291fd3252fac7d',
-  'fonts/ntc-bold-00.woff2': 'aae41578f6715501d15fadf9456f7077bbe8ea5cdc35aba7499baaf865b2d9d2',
-  'fonts/ntc-bold-01.woff2': '496b958c3e1e1407edcc086b9270d838c414dbed86800e5d6ad9fee0589e6283',
-  'fonts/ntc-bold-02.woff2': '9143b7fcdcb8d4af89f77bc7668166b6f385c0e680e40da1a25937be6588193f',
-  'fonts/ntc-bold-03.woff2': '85041df1aeafea96d77b69f8a45996c16258637e34cff976daf7699e51bab6ea',
-  'fonts/ntc-bold-04.woff2': '8e629c514c4e497011e3ff45672abcdee06f26747de509a105f14fb80ff63c62',
-  'fonts/ntc-bold-05.woff2': 'e0c1ebe7b882fde6336ba12baa6cc87cc0b5cf9654c9fff598481e68c644a563',
-  'fonts/ntc-bold-06.woff2': '85bd0fbe6011e05077ea0674a42e45c469b1a53d2920eb678e6b631bf79a3d4e',
-  'fonts/ntc-bold-07.woff2': 'b9bf24460df9c5f6f149cec078f99a0e4c821e861d4a6def0d7b9ce0b12fb1ab',
-  'fonts/ntc-bold-08.woff2': 'f895cab9bb9efd4ee7e9f42ecd3bd2d96edfcdd3c61a61739e18ed1977ff4128',
-  'fonts/ntc-bold-09.woff2': 'b1e8ec6e69748eb3aa3ea1b5badae0e1a2e947f45dc62e8f6d1b31917a864a3a',
-  'fonts/wenkai-00.woff2': '8ef68e35904ce576f25cc9f6aa5e2417d033acb2913669fb94514cc4b92df492',
-  'fonts/wenkai-01.woff2': '454b51ad666c3e471526bf4e6d0685b08a67304a422751d98ac5ffff7ccfc883',
-  'fonts/wenkai-02.woff2': 'b0c6bb5ad62b4e02bcdedba8c6769edf2d3279e7c7203e1df50ccc0accb0c252',
-  'fonts/wenkai-03.woff2': '40a17f94b19a21ac979df46bc9554f19cd98f948f1e6b8240b8d93f6067870be',
-  'fonts/wenkai-04.woff2': '29fc7634a5d7a3b406b0a615cc81f3c4b9d1a67fec9490091eac725c1ae688a1',
-  'fonts/wenkai-05.woff2': '9580776326f96ff7a1fd5c0294bf93be6ebb7dc965d8157385924f243b34d15c',
-  'fonts/wenkai-06.woff2': 'e92ceb70c8fe435a250f1c139436b8fd63fd8cf58b62b4ab711a2af140b13bd7',
-  'fonts/wenkai-07.woff2': '7e1ab188e6e71e7eff7ba16e3f38b072f5cd04e8b32ca3d77fdef948a7b7e5c9',
-  'fonts/wenkai-08.woff2': 'f91c42d82bd1fccd5d986797fa1283c9f28ed85e23f810c43745bbe4c3fdd195',
-  'fonts/wenkai-09.woff2': '8df48aaaa3a348d2244813440a3974bd6388d877b9d83c95f3f99546f38ef589',
-  'favicon.ico': '0c3efbc9e430c0acef49275c9f6e4a5dbd8bc4ae9baf3432212cf59c87351fa4',
-  'index.files/image001.webp': '6b1d302a5e2a0bf35923d0739865c9eca038ac330b03ec047595897306d6e7b5',
-  'index.files/image002.webp': 'c4bfe8793c7811d8a0d6f9cc7ed152c8a38da36f69ffb410aa944c9554928395',
-  'index.files/image003.jpg': 'c3189d69a3c2df5250db3575e15374c72e5c8e957d8d272eab0765a50e228675',
-  'index.files/ce-manuscript.webp': 'eecd7efba4c93d721f43eae8cc755a14473d76739d0ceefbe0d47be18a33c6c8',
-  'acimce-icon-512.png': '0d1f12e14131861ceef02c6d5b24aa04b3e00d22213f29afde8c85f61558261a',
-  'acimce-pwa-192x192.png': '95c27ae9b91a9a96065c9760139889ac56f9a15ed4967d0dddcf65a00a4249bc',
-  'screenshot-og.png': 'ae268a06eef2abd19f4631a4131e0f90c845292f68e9763fd14524f19078d804'
+  "index.htm": "9dee853b722d22d9c2320a5e3a44c30f2d446f801918e719c77fa2261cb04033",
+  "offline.html": "8fd37124c69be414443fda46b6a1e5c5d939fbf3bba713dfe56cecca83b0a665",
+  "manifest.json": "98f41bd883418a82d8330d8f1907440dd1ef4091b0914d9986d2d067f07a4cc8",
+  "fonts/ntc-regular-00.woff2": "c830483a03e982db87fc7b5faa361cbac7b0c0265b3bf51959994cfc839e7fcd",
+  "fonts/ntc-regular-01.woff2": "ae80842c86375a91f2a3d0a7ff4835f2c39667b45a9a141f734efdc7c245cb0a",
+  "fonts/ntc-regular-02.woff2": "9c55164062f33e520c84bf3aac7bad90c3c7a7f5c83dc45b82ef581463236c76",
+  "fonts/ntc-regular-03.woff2": "e2be90fac5bab11408de5d86f0897291648cbefd9e0ca86c5b344beb02c31b29",
+  "fonts/ntc-regular-04.woff2": "fce65ed9c1d6584dc2cb56b7e78b5ab99985f8681ee5eb5d774a309db1d6752d",
+  "fonts/ntc-regular-05.woff2": "f20fb8e040e4a12a876c6a3192ac063bdf6e1edce5cc28789f79124f3a0fb993",
+  "fonts/ntc-regular-06.woff2": "0b6ff73029b121ff5b9bbfe3bd8f5b7b81b62b9e18d9929c1b509137132fc1a7",
+  "fonts/ntc-regular-07.woff2": "a372ffaec24c002b57dcf01424e74358a37546b518c0b7ae9cefbf9ec93a10f9",
+  "fonts/ntc-regular-08.woff2": "1172b23d74ce2e325418ae2c0bb15c3586689b7edae30b905d36cea0c7ba0315",
+  "fonts/ntc-regular-09.woff2": "4d78b9c058360ab378fe28865d763146139b3ca2b5c1c4d154291fd3252fac7d",
+  "fonts/ntc-bold-00.woff2": "aae41578f6715501d15fadf9456f7077bbe8ea5cdc35aba7499baaf865b2d9d2",
+  "fonts/ntc-bold-01.woff2": "496b958c3e1e1407edcc086b9270d838c414dbed86800e5d6ad9fee0589e6283",
+  "fonts/ntc-bold-02.woff2": "9143b7fcdcb8d4af89f77bc7668166b6f385c0e680e40da1a25937be6588193f",
+  "fonts/ntc-bold-03.woff2": "85041df1aeafea96d77b69f8a45996c16258637e34cff976daf7699e51bab6ea",
+  "fonts/ntc-bold-04.woff2": "8e629c514c4e497011e3ff45672abcdee06f26747de509a105f14fb80ff63c62",
+  "fonts/ntc-bold-05.woff2": "e0c1ebe7b882fde6336ba12baa6cc87cc0b5cf9654c9fff598481e68c644a563",
+  "fonts/ntc-bold-06.woff2": "85bd0fbe6011e05077ea0674a42e45c469b1a53d2920eb678e6b631bf79a3d4e",
+  "fonts/ntc-bold-07.woff2": "b9bf24460df9c5f6f149cec078f99a0e4c821e861d4a6def0d7b9ce0b12fb1ab",
+  "fonts/ntc-bold-08.woff2": "f895cab9bb9efd4ee7e9f42ecd3bd2d96edfcdd3c61a61739e18ed1977ff4128",
+  "fonts/ntc-bold-09.woff2": "b1e8ec6e69748eb3aa3ea1b5badae0e1a2e947f45dc62e8f6d1b31917a864a3a",
+  "fonts/wenkai-00.woff2": "8ef68e35904ce576f25cc9f6aa5e2417d033acb2913669fb94514cc4b92df492",
+  "fonts/wenkai-01.woff2": "454b51ad666c3e471526bf4e6d0685b08a67304a422751d98ac5ffff7ccfc883",
+  "fonts/wenkai-02.woff2": "b0c6bb5ad62b4e02bcdedba8c6769edf2d3279e7c7203e1df50ccc0accb0c252",
+  "fonts/wenkai-03.woff2": "40a17f94b19a21ac979df46bc9554f19cd98f948f1e6b8240b8d93f6067870be",
+  "fonts/wenkai-04.woff2": "29fc7634a5d7a3b406b0a615cc81f3c4b9d1a67fec9490091eac725c1ae688a1",
+  "fonts/wenkai-05.woff2": "9580776326f96ff7a1fd5c0294bf93be6ebb7dc965d8157385924f243b34d15c",
+  "fonts/wenkai-06.woff2": "e92ceb70c8fe435a250f1c139436b8fd63fd8cf58b62b4ab711a2af140b13bd7",
+  "fonts/wenkai-07.woff2": "7e1ab188e6e71e7eff7ba16e3f38b072f5cd04e8b32ca3d77fdef948a7b7e5c9",
+  "fonts/wenkai-08.woff2": "f91c42d82bd1fccd5d986797fa1283c9f28ed85e23f810c43745bbe4c3fdd195",
+  "fonts/wenkai-09.woff2": "8df48aaaa3a348d2244813440a3974bd6388d877b9d83c95f3f99546f38ef589",
+  "favicon.ico": "0c3efbc9e430c0acef49275c9f6e4a5dbd8bc4ae9baf3432212cf59c87351fa4",
+  "index.files/image001.webp": "6b1d302a5e2a0bf35923d0739865c9eca038ac330b03ec047595897306d6e7b5",
+  "index.files/image002.webp": "c4bfe8793c7811d8a0d6f9cc7ed152c8a38da36f69ffb410aa944c9554928395",
+  "index.files/image003.jpg": "c3189d69a3c2df5250db3575e15374c72e5c8e957d8d272eab0765a50e228675",
+  "index.files/ce-manuscript.webp": "eecd7efba4c93d721f43eae8cc755a14473d76739d0ceefbe0d47be18a33c6c8",
+  "acimce-icon-512.png": "0d1f12e14131861ceef02c6d5b24aa04b3e00d22213f29afde8c85f61558261a",
+  "acimce-pwa-192x192.png": "95c27ae9b91a9a96065c9760139889ac56f9a15ed4967d0dddcf65a00a4249bc",
+  "screenshot-og.png": "ae268a06eef2abd19f4631a4131e0f90c845292f68e9763fd14524f19078d804"
 };
 let bookVerifiedInWorker = false;
 let bookVerificationGeneration = 0;
@@ -412,12 +416,24 @@ async function bookNavigation(event) {
     return response;
   } catch (e) { return offlineFallback(); }
 }
+/* V50.0.1: keep auxiliary navigation distinct from book/offline navigation. */
+function auxiliaryOfflineNavigation() {
+  const home = BASE.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return new Response(`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>附頁目前無法連線</title><style>body{margin:0;background:#faf8f5;color:#29224a;font:17px/1.8 system-ui,"Microsoft JhengHei",sans-serif}main{max-width:620px;margin:10vh auto;padding:24px}h1{font-size:26px}a{color:#514582}p{margin:18px 0}</style><main><h1>附頁目前無法連線</h1><p>此說明或驗收頁需要連線開啟。請恢復網路後重新整理；你仍可返回已儲存的體驗閱讀器。</p><p><a href="${home}">回到體驗閱讀器</a></p></main></html>`, {
+    status: 503, statusText: 'Service Unavailable',
+    headers: {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store'}
+  });
+}
 async function otherNavigation(request) {
   try {
     const response = await fetchBounded(request);
-    if (response && response.status === 200) return response;
+    // Navigation redirects are manual: return the filtered redirect intact so
+    // the browser can follow it. Following it here would violate that mode.
+    if (response && response.type === 'opaqueredirect' && request.redirect === 'manual') return response;
+    // A genuine online HTTP error is not an offline book-navigation failure.
+    if (response && response.status >= 200 && response.status <= 599) return response;
   } catch (e) {}
-  return await cachedBook() || offlineFallback();
+  return auxiliaryOfflineNavigation();
 }
 async function shellAsset(file) {
   const cached = await readCache(SHELL_CACHE, BASE + file);
