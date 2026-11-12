@@ -1,0 +1,209 @@
+{
+  "version": "v50.0.6",
+  "target": "https://ananda-sat-chit.github.io/acim-ce-zh-tw/",
+  "stage": "Verified before upload",
+  "preflight": {
+    "version": "v50.0.6",
+    "target": "https://ananda-sat-chit.github.io/acim-ce-zh-tw/",
+    "time": "2026-11-12T14:16:17.379Z",
+    "core": {
+      "version": "v50.0.6",
+      "time": "2026-11-12T14:16:17.263Z",
+      "passed": 18,
+      "total": 18,
+      "tests": [
+        {
+          "name": "Full book HTML including Song/Kai/underline markup is byte-identical",
+          "pass": true
+        },
+        {
+          "name": "Session core is byte-identical to V50.0.5",
+          "pass": true
+        },
+        {
+          "name": "All inline JavaScript and service-worker syntax is valid",
+          "pass": true
+        },
+        {
+          "name": "Trial waits until content ready, pauses in background, resumes in foreground",
+          "pass": true
+        },
+        {
+          "name": "Expiry at 300 seconds; renewal is blocked for the original 60-second wait",
+          "pass": true
+        },
+        {
+          "name": "Reload preserves consumed time and cooldown",
+          "pass": true
+        },
+        {
+          "name": "Incorrect code cannot unlock; original demo code and reset retain behavior",
+          "pass": true
+        },
+        {
+          "name": "Unavailable local storage is reported without preventing trial",
+          "pass": true
+        },
+        {
+          "name": "Version, release identity and all manifest asset hashes agree",
+          "pass": true
+        },
+        {
+          "name": "All 30 font files and four book images retain original bytes",
+          "pass": true
+        },
+        {
+          "name": "No new external icon/font/framework dependency is introduced",
+          "pass": true
+        },
+        {
+          "name": "Service worker installs verified book and shell, rejects corrupted book",
+          "pass": true
+        },
+        {
+          "name": "Upgrade removes previous V50.0.5 caches and retains shared fonts and unrelated projects",
+          "pass": true
+        },
+        {
+          "name": "Prepared offline cache contains all fonts/images and serves the exact new book without network",
+          "pass": true
+        },
+        {
+          "name": "Complete TOC title uses one uniform text node without English splitting or truncation",
+          "pass": true
+        },
+        {
+          "name": "Mobile sidebar reserves bottom navigation and device safe area",
+          "pass": true
+        },
+        {
+          "name": "Font buttons and keyboard share the same guarded reflow path",
+          "pass": true
+        },
+        {
+          "name": "Entire trial runtime remains byte-identical to V50.0.5",
+          "pass": true
+        }
+      ]
+    },
+    "regression": [
+      {
+        "name": "Legacy mobile click would measure the still-hidden book (regression sensitivity)",
+        "pass": true
+      },
+      {
+        "name": "Mobile click performs no target measurements while the book is hidden",
+        "pass": true
+      },
+      {
+        "name": "Deferred click lands on the restored term with its own correction token",
+        "pass": true
+      },
+      {
+        "name": "Two queued terms finish on the most recently selected term",
+        "pass": true
+      },
+      {
+        "name": "Desktop click retains immediate glossary navigation",
+        "pass": true
+      },
+      {
+        "name": "Missing glossary target leaves navigation unchanged",
+        "pass": true
+      },
+      {
+        "name": "Canonical and sentence sharing base remain specific to this website",
+        "pass": true
+      },
+      {
+        "name": "Installed app identity, scope, start and shortcuts retain this site configuration",
+        "pass": true
+      },
+      {
+        "name": "Per-site cache namespace and trial storage key remain unchanged",
+        "pass": true
+      }
+    ],
+    "passed": 27,
+    "total": 27
+  },
+  "browser": [
+    {
+      "site": "github-project",
+      "phase": "preflight",
+      "device": "phone",
+      "gid": "glossary-1",
+      "label": "基督·Christ",
+      "list": {
+        "bottom": 760.6399841308594,
+        "entries": 57,
+        "top": 372.3299865722656
+      },
+      "bottom": 140.05999755859375,
+      "drawerOpen": false,
+      "screen": 844,
+      "text": "Christ 基督",
+      "top": 71.65999603271484,
+      "veiled": false,
+      "pass": true
+    },
+    {
+      "site": "github-project",
+      "phase": "preflight",
+      "device": "phone",
+      "gid": "glossary-27",
+      "label": "對上主的記憶·memory of God",
+      "list": {
+        "bottom": 760.6399841308594,
+        "entries": 57,
+        "top": 372.3299865722656
+      },
+      "bottom": 211.40999603271484,
+      "drawerOpen": false,
+      "screen": 844,
+      "text": "memory of God 對上主的記憶",
+      "top": 143.00999450683594,
+      "veiled": false,
+      "pass": true
+    },
+    {
+      "site": "github-project",
+      "phase": "preflight",
+      "device": "phone",
+      "gid": "glossary-56",
+      "label": "世界·world",
+      "list": {
+        "bottom": 760.6399841308594,
+        "entries": 57,
+        "top": 372.3299865722656
+      },
+      "bottom": 211.09000396728516,
+      "drawerOpen": false,
+      "screen": 844,
+      "text": "world 世界",
+      "top": 142.69000244140625,
+      "veiled": false,
+      "pass": true
+    },
+    {
+      "site": "github-project",
+      "phase": "preflight",
+      "device": "desktop",
+      "gid": "glossary-1",
+      "label": "基督·Christ",
+      "list": {
+        "bottom": 872.4599914550781,
+        "entries": 57,
+        "top": 458.239990234375
+      },
+      "bottom": 232.01998901367188,
+      "drawerOpen": false,
+      "screen": 900,
+      "text": "Christ 基督",
+      "top": 156.01998901367188,
+      "veiled": false,
+      "pass": true
+    }
+  ],
+  "limits": "Chromium viewport simulation; no physical phone performance benchmark. Existing trial core and book semantics retained."
+}

@@ -2,21 +2,21 @@
 {const target=new URL("https://ananda-sat-chit.github.io/acim-ce-zh-tw/"),scope=new URL(self.registration.scope),local=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(scope.hostname);
  const hostOK=scope.origin===target.origin;
  if((!local&&!hostOK)||scope.pathname!==target.pathname)throw new Error('Reading package origin or scope mismatch');}
-/* ACIM CE PWA v50.0.5 — release-bound offline book.
+/* ACIM CE PWA v50.0.6 — release-bound offline book.
    The active worker serves only its SHA-256-verified release. A newer release is
    installed in its own cache and becomes visible when its worker activates.
    activate performs local migration/cleanup only: no delay or network warmup.
    WARM_FONTS / PREPARE_OFFLINE run separately, with bounded network work and
    explicit cache status. RELEASE_ID, BOOK_SHA256 and ASSET_SHA256 are filled by
    the deterministic release builder; never hand-edit the compiled worker. */
-const CACHE_VERSION = 'v50.0.5';
-const RELEASE_ID = 'aca638e1217dad806b169d38fa3fa4a1ca0bd904ff01df842e36696f96705b5f';
+const CACHE_VERSION = 'v50.0.6';
+const RELEASE_ID = 'da37783742cc112329e52353b4dd59ab57b71b76e91da2182d6f336063a745e9';
 const PROJ = 'acimce-zh-tw';
 const SHELL_CACHE = PROJ + '-shell-' + CACHE_VERSION + '-' + RELEASE_ID;
 const RUNTIME_CACHE = PROJ + '-runtime-' + CACHE_VERSION + '-' + RELEASE_ID;
 const FONT_CACHE = PROJ + '-fonts';
 const EXPECT_VERSION = CACHE_VERSION;
-const BOOK_SHA256 = 'd491812d24b530ee29e9531f12f2fb89c3c455b3bd165a290c48a63eed50cc7a';
+const BOOK_SHA256 = 'f714f32b0a1d6a405a7b7e88848041e0f287c5cc1fb532f852bdea9b5b7b3d96';
 const BASE = new URL(self.registration.scope).pathname;
 const LEGACY_RE = /^(?:acim-(?:shell|runtime)-v(?:22|23|24)|acim-fonts(?:-v(?:22|23))?)$/;
 const OWN_RE = new RegExp('^' + PROJ + '-(?:shell|runtime)-v(\\d+(?:\\.\\d+)*)(?:-[a-f0-9]{64})?$');
@@ -63,7 +63,7 @@ const WARMUP_BUDGET_MS = 60000; /* V30：30 個切片，3 並行下載 */
 const ASSET_SHA256 = {
   "index.htm": "9dee853b722d22d9c2320a5e3a44c30f2d446f801918e719c77fa2261cb04033",
   "offline.html": "8fd37124c69be414443fda46b6a1e5c5d939fbf3bba713dfe56cecca83b0a665",
-  "manifest.json": "98f41bd883418a82d8330d8f1907440dd1ef4091b0914d9986d2d067f07a4cc8",
+  "manifest.json": "1d9c2a76a4b433c178fc7d14c63e7eb36109905f629585a90cde4028c7e6c8d8",
   "fonts/ntc-regular-00.woff2": "c830483a03e982db87fc7b5faa361cbac7b0c0265b3bf51959994cfc839e7fcd",
   "fonts/ntc-regular-01.woff2": "ae80842c86375a91f2a3d0a7ff4835f2c39667b45a9a141f734efdc7c245cb0a",
   "fonts/ntc-regular-02.woff2": "9c55164062f33e520c84bf3aac7bad90c3c7a7f5c83dc45b82ef581463236c76",

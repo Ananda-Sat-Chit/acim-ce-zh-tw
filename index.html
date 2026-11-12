@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v50.0.5">
+<meta name="acim-version" content="v50.0.6">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="aca638e1217dad806b169d38fa3fa4a1ca0bd904ff01df842e36696f96705b5f">
+<meta name="acim-release-id" content="da37783742cc112329e52353b4dd59ab57b71b76e91da2182d6f336063a745e9">
 <meta name="acim-build" content="2026-11-12">
-<meta name="acim-build-time" content="21:17">
+<meta name="acim-build-time" content="22:13">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -29,7 +29,7 @@
 <meta name="twitter:image:alt" content="完整加註版奇蹟課程 ACIM CE 繁體中文版分享預覽圖">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#29224A">
-<title>完整加註版奇蹟課程｜V50.0.5 五分鐘試讀版</title>
+<title>完整加註版奇蹟課程｜V50.0.6 五分鐘試讀版</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="acimce-pwa-192x192.png">
@@ -419,7 +419,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v50.0.5';
+var ACIM_VERSION = 'v50.0.6';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* V40.9：套用新版後的首次啟動，顯示一次性「已套用」確認——讓讀者與
@@ -2638,7 +2638,7 @@ html.dark-mode sup.fn-badge.acim-fn-locate{
 </style>
 <style id="acim-backup291-style">#acim-backup291-status{font-size:12px;line-height:1.7;overflow-wrap:anywhere;margin:8px 0}.acim-backup291-preview{border:1px solid var(--c-border);border-radius:8px;padding:12px;margin:10px 0;background:var(--c-bg);color:var(--c-text);font-size:13px;line-height:1.7}.acim-backup291-preview h3{margin:0 0 8px;font-size:15px}.acim-backup291-preview select{display:block;max-width:100%;width:100%;white-space:normal;font:inherit;color:var(--c-text);background:var(--c-bg);padding:6px}.acim-backup291-actions{display:flex;gap:8px;flex-wrap:wrap}.acim-backup291-actions button,.acim-backup291-previous{font:inherit;min-height:40px;padding:6px 9px;border:1px solid var(--c-border);border-radius:6px;background:var(--c-sidebar);color:var(--c-accent);cursor:pointer}.acim-backup291-preview [hidden],.acim-backup291-previous[hidden]{display:none!important}.acim-backup291-actions button:focus-visible,.acim-backup291-previous:focus-visible{outline:2px solid var(--c-accent);outline-offset:2px}</style>
 <style id="acim-v5004-art">
-/* V50.0.5: presentation only. Original book markup and interaction pipelines are retained. */
+/* V50.0.6: presentation only. Original book markup and interaction pipelines are retained. */
 :root{
  --c-bg:#FAF8F5;--c-page:#FAF8F5;--c-sidebar:#F4F2F8;
  --c-text:#302D3D;--c-muted:#625A74;--c-accent:#29224A;--c-accent2:#625A74;
@@ -23388,7 +23388,7 @@ if(!window.__acimV50WrongOrigin){
      抽屜滑入後將 #content-area display:none，這筆結算從結構上消失；
      關閉抽屜時恢復書本、以「暫存錨點＋自帶輕量校正」還原捲動位置，
      重新附著的樣式債交給 V30.10 背景結清排程器。 */
-/* V50.0.5: retain a visible character across reflow. No full-book geometry scan. */
+/* V50.0.6: retain a visible character across reflow. No full-book geometry scan. */
 function createReadingFrameV5005(){
   var active=null,session=null;
   function root(){return document.getElementById('content-area');}
@@ -24491,10 +24491,16 @@ function createReadingFrameV5005(){
           a.addEventListener('click', function(e){
             e.preventDefault();
             var t=document.getElementById(this.dataset.gid); if(!t) return;
-            unveilBookBehindDrawer(); /* V30.11：量測前先讓書本回到版面樹 */
-            window.__acimJump(window.scrollY + t.getBoundingClientRect().top - 72);
-            window.__acimCorrectScroll(t, 72);
-            t.classList.remove('glossary-flash'); void t.offsetWidth; t.classList.add('glossary-flash');
+            /* V50.0.6: glossary entries use the same deferred navigation as
+               chapter links. The mobile book may still be hidden while the
+               drawer's style work finishes; measure only inside this callback.
+               A pending jump also suppresses restoration of the old passage. */
+            var go=function(){
+              var token=window.__acimJump(window.scrollY + t.getBoundingClientRect().top - 72);
+              window.__acimCorrectScroll(t, 72, token);
+              t.classList.remove('glossary-flash'); void t.offsetWidth; t.classList.add('glossary-flash');
+            };
+            unveilBookBehindDrawer(false, go);
             var self=this;
             childWrap.querySelectorAll('a').forEach(function(x){ x.classList.remove('toc-g-active'); });
             self.classList.add('toc-g-active');
