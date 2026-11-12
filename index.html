@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
 <meta name="acim-version" content="v50.0.6">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="da37783742cc112329e52353b4dd59ab57b71b76e91da2182d6f336063a745e9">
+<meta name="acim-release-id" content="f8c078d6f35b84a661b4b1bceee8057ec03dc11a900049826820ed135501c9c2">
 <meta name="acim-build" content="2026-11-12">
-<meta name="acim-build-time" content="22:13">
+<meta name="acim-build-time" content="22:50">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -27589,6 +27589,12 @@ if(!window.__acimV50WrongOrigin){
   }
 
   /* V50_INTEGRATION_START */
+  /* V50.0.6: keep an incoming citation through an early trial renewal.
+     The verse index may not exist yet when the reader presses Continue. */
+  function v50RememberBlockedReference(hash){
+    var session=window.__acimV50;
+    if(hash&&session&&session.isBlocked())session.deferHash(hash);
+  }
   var v50ReadyPending=false;
   function v50ReadingReady(target,rectOfTarget,token){
     var session=window.__acimV50;if(!session||v50ReadyPending||session.state().ready)return;
@@ -29000,6 +29006,7 @@ if(!window.__acimV50WrongOrigin){
     window.addEventListener('keydown',function(e){
       if(/^(ArrowUp|ArrowDown|ArrowLeft|ArrowRight|PageUp|PageDown|Home|End| |Tab|Escape|Enter)$/.test(e.key))stopRecipientAuto30();
     },true);
+    v50RememberBlockedReference(location.hash);
     var nav30=window.__acimNav;
     /* A begin before this module initialized is an explicit navigation, even if
        a later touch canceled its job. A gesture alone only suppresses scrolling. */
@@ -29021,6 +29028,7 @@ if(!window.__acimV50WrongOrigin){
     }
     setTimeout(run,0);
     window.addEventListener('hashchange',function(){
+      v50RememberBlockedReference(location.hash);
       recipientQueue30.request(location.hash,true);
     });
     /* V50_INTEGRATION_START */

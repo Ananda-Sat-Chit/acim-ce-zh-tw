@@ -5,10 +5,10 @@
   "preflight": {
     "version": "v50.0.6",
     "target": "https://ananda-sat-chit.github.io/acim-ce-zh-tw/",
-    "time": "2026-11-12T14:16:17.379Z",
+    "time": "2026-11-12T14:51:27.328Z",
     "core": {
       "version": "v50.0.6",
-      "time": "2026-11-12T14:16:17.263Z",
+      "time": "2026-11-12T14:51:27.195Z",
       "passed": 18,
       "total": 18,
       "tests": [
@@ -122,10 +122,22 @@
       {
         "name": "Per-site cache namespace and trial storage key remain unchanged",
         "pass": true
+      },
+      {
+        "name": "Initial and changed incoming links are remembered while the trial is blocked",
+        "pass": true
+      },
+      {
+        "name": "Early renewal before the verse index is ready still delivers the incoming sentence",
+        "pass": true
+      },
+      {
+        "name": "A superseded citation cannot override a newer URL after renewal",
+        "pass": true
       }
     ],
-    "passed": 27,
-    "total": 27
+    "passed": 30,
+    "total": 30
   },
   "browser": [
     {
@@ -205,5 +217,33 @@
       "pass": true
     }
   ],
+  "citationFixture": {
+    "before": {
+      "bottom": 50423.77734375,
+      "centerError": 49988.978515625,
+      "pass": false,
+      "sentence": "對於佔有的恐懼",
+      "top": 50398.1796875,
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "withinCentralReadingArea": false
+    },
+    "after": {
+      "bottom": 472.7999877929687,
+      "centerError": 37.99998474121094,
+      "marked": "T-2.I.1",
+      "pass": true,
+      "sentence": "對於佔有的恐懼",
+      "top": 447.1999816894531,
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "withinCentralReadingArea": true
+    },
+    "setup": "Local isolated fixture starts expired and delays verse indexing by 7.5 seconds; normal Continue button is pressed before the index is ready."
+  },
   "limits": "Chromium viewport simulation; no physical phone performance benchmark. Existing trial core and book semantics retained."
 }
