@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v50.0.6">
+<meta name="acim-version" content="v50.1.1">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="cbed0ee2f32b3a559b36a6cde02638f4834ca46f0f7f6a9cbe673f7f50258ff8">
-<meta name="acim-build" content="2026-11-12">
-<meta name="acim-build-time" content="23:10">
+<meta name="acim-release-id" content="b2a8e15c819e523f8a4a77dabaef55dab6c3863abb04dda8d2db1c7aa17c532b">
+<meta name="acim-build" content="2026-11-13">
+<meta name="acim-build-time" content="04:18">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -29,7 +29,8 @@
 <meta name="twitter:image:alt" content="完整加註版奇蹟課程 ACIM CE 繁體中文版分享預覽圖">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#29224A">
-<title>完整加註版奇蹟課程｜V50.0.6 五分鐘試讀版</title>
+<meta name="apple-mobile-web-app-title" content="奇蹟課程CE">
+<title>完整加註版奇蹟課程｜V50.1.1</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="acimce-pwa-192x192.png">
@@ -57,12 +58,174 @@ window.__acimIcon=(function(){var icons={"menu":"<svg class=\"acim-icon acim-men
 </script>
 <script id="acim-v50-session">
 if(!window.__acimV50WrongOrigin){
+/* ═══════════════════════════════════════════════════════════════════
+   V50.0.10 變更記錄（追查指南）——二段確認鈕面文字簡化＋手機搜尋點選
+   來回震盪修正＋桌機視窗標題移除「五分鐘試讀版」
+   ═══════════════════════════════════════════════════════════════════
+   【讀者回報】(1) 試讀對話框的二段確認按鈕，鈕面文字簡化為「清除閱讀碼」
+   與「再次按下確認，清除閱讀碼」即可。(2) 手機 mode 使用搜尋，點選結果後
+   主畫面跳到命中處、又彈回原處、再跳回命中處，來回震盪；電腦 mode 不會。
+   (3) 桌機 mode 最上方視窗標題的「五分鐘試讀版」字樣請移除。
+
+   【鈕面文字】首次鈕面「清除閱讀碼」（原「重新試讀五分鐘」）、武裝鈕面
+   「再次按下確認，清除閱讀碼」（原「再次按下確認：只重設試讀時間與閱讀碼
+   啟用狀態」）。行為不變：V50.0.8 的顯示條件（僅已啟用閱讀碼時顯示）與
+   6 秒未按自動解除武裝全部保留。
+
+   【搜尋震盪根因】手機開抽屜會掛面紗（veilScheduleForDrawer 僅 ≤768px；
+   桌機不掛紗，所以只有手機會震盪）。搜尋結果點擊的舊順序：
+     ① closeSidebar() → maybeUnveil() 以「無跳轉回調」解紗
+       （unveilCore pendingJump=false）→ rAF#1 立即
+       readingFrame.restore(面紗前框景)＋[90,260,700,1400,2600,4300,6500]ms
+       pin 校正＋ResizeObserver——把畫面釘回抽屜開啟前的「原位置」；
+     ② 緊接著 __acimVeilUnveil(false,proceed) 到達時 _veil.on 已為 false，
+       proceed 同步執行＝跳到「命中處」＋acimSearchCorrect
+       [90,220,450,800,1200,1700,2400,3200]ms 校正。
+   兩套校正系統互搶捲軸 3~8 秒＝讀者看到的來回震盪。V40.15 的 pendingJump
+   讓位機制原本就存在，但「先 closeSidebar 才帶回調解紗」的順序讓第一個
+   （無回調）解紗呼叫搶先啟動還原，讓位機制沒有機會生效。
+
+   【修法】把 closeSidebar() 移入解紗回調：由「帶跳轉回調」的
+   __acimVeilUnveil(false,go) 啟動解紗（unveilCore pendingJump=true，
+   rAF#1 錨點還原整段讓位），回調 go 內先收抽屜再量測＋跳轉——全程只剩
+   acimSearchCorrect 一套校正。債清等待路徑（V40.3 閘門）行為不變。
+   另於 readingFrame.restore 的 pin() 加距離守衛：首次成功量測即視為
+   完成還原（run.pinned）；之後若捕獲框景離當前視口逾 2 個視窗高
+   （讀者已被程式跳轉或手勢帶離），pin 是「拉人」不是「校正」，整組
+   取消讓位——任何時序下殘存的 pin 迴圈都不再與搜尋校正互搶捲軸
+   （合法校正如樣式結清長高、字型交換的漂移遠小於 2 個視窗，不受
+   影響；面紗還原的首次釘回在守衛生效前完成，行為不變）。
+
+   【視窗標題】<title> 改為「完整加註版奇蹟課程｜V50.1.1」——桌機 PWA
+   視窗標題列與瀏覽器分頁都不再出現「五分鐘試讀版」；版本號保留供讀者
+   對版。對話框內「繼續試讀五分鐘」等試讀機制文字屬功能說明，不在清除
+   範圍。
+
+   【驗收】(1) unlocked 開框：鈕面「清除閱讀碼」；按一次變「再次按下確認，
+   清除閱讀碼」；6 秒未按自動還原；按第二次清除閱讀碼回 trial。(2) 手機
+   （≤768px）開抽屜搜尋、點選結果：跳到命中處後不再彈回原位置（與桌機
+   行為一致）。(3) 桌機 document.title 無「五分鐘試讀版」。(4) 舊版行為
+   回歸：trial 開框看不到按鈕、跨分頁同步、expired 冷卻無法繞過、抽屜
+   單純關閉（無跳轉）後閱讀位置仍精準還原。
+   位置：render() resetButton 區、mount() resetButton 建立、搜尋結果
+   item click（makeItem 內 proceed 呼叫處）、readingFrame.restore
+   pin()（createReadingFrameV5005）、<title>。
+   ═══════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════
+   V50.0.9 變更記錄（追查指南）——PWA 名稱固定化＋新版更新提示對話框化
+   ═══════════════════════════════════════════════════════════════════
+   【讀者回報】(1) 桌機／手機安裝後的 App 圖示名稱要分別改為「完整加註
+   版奇蹟課程」／「奇蹟課程CE」。(2) 版本進版偵測得到，卻沒有套出新版
+   通知讓讀者決定是否更新。
+
+   【名稱】manifest.json name=完整加註版奇蹟課程（桌機捷徑名）、
+   short_name=奇蹟課程CE（手機主畫面名），新增 apple-mobile-web-app-title
+   meta（iOS 加主畫面名）。名稱不再內嵌版本號——圖示名稱是「安裝當下」
+   的快照（平台行為，改 manifest 不會回頭改名），內嵌版本號等於每次改版
+   都要重裝才會改名；固定名稱一次到位。已安裝讀者需解除安裝後重新安裝
+   才會看到新名稱。
+
+   【更新通知根因】sw.js 自 V40.16 起刻意不自動 skipWaiting（等讀者點按
+   套用），但「更新檢查→下載全書→安裝完成」需時；讀者在安裝期間關閉
+   App 時，安裝於背景完成進入等待，下次冷啟動瀏覽器會在舊 worker 無人
+   使用下「自動啟用」等待新版（Service Worker 平台標準行為，頁面無從
+   攔截）——V40.21 橫幅只在「App 開著且等到安裝完成」的短時間窗出現，
+   實務上極易整段錯過，讀者因此全程未被詢問。
+
+   【修法】(1) offerUpdate() 由底部橫幅升級為對話框：「📖 偵測到新版
+   vX」＋〔稍後〕〔立即更新〕雙鈕，啟動時已有等待新版或閱讀中途安裝
+   完成都會彈出、持續顯示到讀者選擇為止；僅按「立即更新」才 SKIP_WAITING
+   ＋重載（V40.16「絕不自動重載」原則不變）。(2) 冷啟動被平台靜默套用
+   後的首次啟動，比對 localStorage acim-last-version 顯示一次性「✅ 已自
+   動更新至 vX」告知（點按套用路徑維持原「✅ 已套用」，以 sessionStorage
+   acim-sw-applied 區隔不重複）。(3) 加固：applyWaiting／offerUpdate 的
+   worker 取得改 waiting||installed-installing 雙來源；updatefound 附加
+   監聽後立即補查一次狀態，避免事件時序漏問。
+
+   【驗收】(1) 無等待新版時不彈窗。(2) 有等待新版：啟動即彈、閱讀中途
+   裝完即彈；按「稍後」不重載、本頁不再打擾，下次啟動仍有等待新版會再
+   問。(3) 按「立即更新」→ 重載後版本更新、無 JS 錯誤。(4) 冷啟動靜默
+   套用後首次啟動顯示「已自動更新至 vX」一次。(5) 名稱：解除安裝重裝後
+   桌機捷徑＝完整加註版奇蹟課程、手機主畫面＝奇蹟課程CE。
+   位置：offerUpdate()／applyWaiting()／updatefound（Service Worker 登記
+   區）、靜默套用告知 IIFE（V40.9「已套用」提示之前）、manifest.json。
+   ═══════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════
+   V50.0.8 變更記錄（追查指南）——「重新試讀五分鐘」按鈕顯示條件反轉
+   ═══════════════════════════════════════════════════════════════════
+   【症狀】讀者回報：輸入閱讀碼啟用後，試讀對話框最下方的「重新試讀
+   五分鐘」按鈕（含其「再次按下確認：只重設試讀時間與閱讀碼啟用狀態」
+   確認態）整組失蹤；反而是尚未輸入閱讀碼的試讀／冷卻狀態看得到按鈕。
+
+   【根因】render() 一行寫反：if(resetButton.hidden!==unlocked)
+   resetButton.hidden=unlocked——把「已啟用閱讀碼」當成隱藏條件。
+   語意上，這顆按鈕的作用是 core.reset()＝清除閱讀碼（unlocked→fresh
+   trial）並重置試讀時鐘，只有「已啟用閱讀碼」的人需要它：自行決定
+   是否放棄閱讀碼、回到沒有閱讀碼的五分鐘倒數機制。未輸入閱讀碼時
+   試讀本來就在倒數軸上，顯示這顆按鈕只會造成困惑；expired 狀態下
+   舊版甚至能藉它繞過 60 秒冷卻（reset() 不檢查 waitUntil）。
+
+   【修法】hidden 條件反轉為 !unlocked（trial/expired 隱藏、unlocked
+   顯示）；按鈕被隱藏的當下同步解除確認武裝（resetArmed→false、
+   清 resetTimer、還原鈕面文字），避免跨分頁 storage 同步（ingest）
+   把狀態拉回 trial 後按鈕重現時殘留「再次按下確認」字樣。
+   按鈕本體與 core.reset() 行為不變（引擎見本檔尾 createSessionV50）。
+
+   【驗收】(1) 全新訪客（trial）：對話框內看不到「重新試讀五分鐘」。
+   (2) 輸入閱讀碼啟用後重開對話框：按鈕出現在最下方。(3) 按第一次→
+   鈕面變「再次按下確認：…」，逾 6 秒未按自動還原；按第二次→閱讀碼
+   清除、回到 trial 倒數、按鈕隱藏、閱讀碼表單重新出現。(4) unlocked
+   狀態下由另一分頁 reset（storage 事件 ingest）→本分頁按鈕即時隱藏
+   且不殘留確認文字。(5) expired 狀態：按鈕隱藏，只能等冷卻或輸入碼。
+   位置：render()（本檔，搜「V50.0.8」）。
+   ═══════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════
+   V50.0.7 變更記錄（追查指南）——試讀對話框「點輸入欄卡數秒」修正
+   ═══════════════════════════════════════════════════════════════════
+   【症狀】行動裝置開啟試讀對話框後，點「閱讀碼」輸入欄，鍵盤彈出後
+   畫面凍結數秒才能輸入；倒數秒數顯示亦同。
+
+   【根因鏈】本對話框是全站唯一「軟鍵盤彈出時整本書仍在版面樹上」的路徑：
+   1. V30.11 起書本面紗（html.acim-book-veiled #content-area{display:none}）
+     只接了目錄抽屜與字級快選單；本對話框的 lockReader() 只做
+     overflow/inert 鎖定，未掛紗（G1，結構性缺口）。
+   2. 點輸入欄 → 聚焦 → 鍵盤彈出 → visualViewport 連發 resize/scroll。
+   3. 瀏覽器為回應 viewport 變化需要「最新版面」→ 同步結算當下全部
+     樣式失效＝開框新失效（G2：根節點 overflow/scrollbar-gutter 改寫）
+     ＋歷史全書樣式債（799 個 content-visibility:auto 未渲染節承接的
+     全書失效，見主腳本 V30.10 註解）＝實機數秒單一 long task。
+   4. 放大器：fitDialog 每事件重寫 6 個版面屬性（G3）、每秒 render()
+     無條件重寫對話框 DOM（G4）、樣式債結清僅由 visualViewport resize
+     事後觸發、互動前無預清（G5）。
+
+   【修法】
+   A（結構性）行動裝置（≤768px）開框即掛「書本面紗」——共用 V40.1 的
+     共享資源設計，計數持有旗標 window.__acimV50DialogHold 計入主腳本
+     acimPanelOpen()，抽屜／快選單／對話框全關才解紗；關框經 maybeUnveil
+     的解紗債閘門＋閱讀錨點還原（見主腳本 unveilBookBehindDrawer）。
+   B 開框即預結清一次樣式債（window.__acimScheduleStyleDischarge）。
+   C fitDialog / render 逐屬性值比對守衛：內容未變不寫 DOM。
+   D 對話框期間取消閱讀錨點校正（主腳本 restore→pin 檢查 isDialogOpen）。
+
+   【驗收】行動裝置：開對話框→documentElement 應含 acim-book-veiled
+   class；點輸入欄到可輸入 <300ms、最大 long task <200ms；關對話框→
+   面紗解除、閱讀位置還原。桌面（>768px）行為不變（不掛紗）。
+   相關程式碼：v50VeilHold / openDialog / closeDialog / fitDialog /
+   render（本檔）；acimPanelOpen / __acimScheduleStyleDischarge /
+   restore→pin（主腳本 V40 面紗區）。
+
+   【歷史對照】V30＝全書級樣式結算（聚焦搜尋欄卡 6~8 秒）→ 樣式債背景
+   分片結清＋書本面紗。V40＝字級面板 12 秒凍結（scroll-behavior:smooth
+   全書逐幀排版＋display:none 移除與 scrollTo 同任務）→ 面紗管線強化＋
+   解紗債閘門。V50＝本條（對話框未接面紗）。三代同一病根：
+   「鍵盤 / viewport 事件強制同步結算整本書」，追查時先看面紗接線。
+   ═══════════════════════════════════════════════════════════════════ */
 /* V50_SESSION_START */
 (function sessionRuntimeV50(createCore){
   'use strict';
   if(window.__acimV50WrongOrigin||window.__acimV50)return;
   var KEY='acim-v50-github-project-session-v1',pendingHash=null,mounted=false,dialogOpen=false,lastBlocked=false,wasBlocked=false,resetArmed=false,resetTimer=null;
-  var hud,overlay,card,title,intro,status,renewButton,closeButton,codeInput,feedback,resetButton,persistNotice,codeDetails,previousFocus=null,lockedElements=[],bodyObserver=null,scrollLock=null;
+  var hud,overlay,card,title,intro,status,renewButton,closeButton,codeInput,feedback,resetButton,persistNotice,codeDetails,previousFocus=null,lockedElements=[],bodyObserver=null,scrollLock=null,veilHeld=false; /* V50.0.7（方案 A）：對話框是否持有面紗（計數持有旗標之一） */
   function emit(type,detail){document.dispatchEvent(new CustomEvent(type,{detail:detail}));}
   function load(){var raw=localStorage.getItem(KEY);return raw?JSON.parse(raw):null;}
   function changed(s,reason){
@@ -94,20 +257,94 @@ if(!window.__acimV50WrongOrigin){
     if(scrollLock){var old=scrollLock;scrollLock=null;document.documentElement.style.overflow=old.overflow;document.documentElement.style.scrollbarGutter=old.gutter;window.scrollTo(old.x,old.y);}
     if(previousFocus&&previousFocus.isConnected&&previousFocus.focus)try{previousFocus.focus({preventScroll:true});}catch(e){}previousFocus=null;
   }
-  function fitDialog(){if(!dialogOpen||!window.visualViewport)return;var viewport=window.visualViewport;overlay.style.top=viewport.offsetTop+'px';overlay.style.left=viewport.offsetLeft+'px';overlay.style.width=viewport.width+'px';overlay.style.height=viewport.height+'px';overlay.style.bottom='auto';card.style.maxHeight=Math.max(80,viewport.height-32)+'px';}
-  function openDialog(){if(!mounted)return;check();if(dialogOpen)return;dialogOpen=true;overlay.hidden=false;hud.hidden=true;lockReader();fitDialog();render(core.snapshot());setTimeout(function(){if(dialogOpen)(core.snapshot().status==='expired'?card:closeButton).focus({preventScroll:true});},0);}
-  function closeDialog(force){if(!dialogOpen)return;if(!force&&core.snapshot().status==='expired')return;dialogOpen=false;overlay.hidden=true;hud.hidden=false;unlockReader();render(core.snapshot());}
+  /* V50.0.7（方案 C，G3）：fitDialog 值比對守衛。鍵盤彈出／收合動畫期間 visualViewport 每幀連發 resize/scroll（實機每秒可達數十次），舊版每次無條件重寫 overlay 六個版面屬性＋card.maxHeight——即使數值完全沒變，每次寫入都讓 overlay/card 重吃樣式失效，與每秒 render() 的 DOM 寫入疊加。改為逐屬性比對，僅在數值真變時寫入；數值未變時本函式為純讀取、零樣式失效。 */
+  var fitFrame5010=null;
+  function scheduleFitDialog5010(){if(!dialogOpen||fitFrame5010!==null)return;fitFrame5010=requestAnimationFrame(function(){fitFrame5010=null;fitDialog();});}
+  function fitDialog(){if(!dialogOpen||!window.visualViewport)return;var viewport=window.visualViewport;var t=viewport.offsetTop+'px',l=viewport.offsetLeft+'px',w=viewport.width+'px',h=viewport.height+'px',mh=Math.max(80,viewport.height-32)+'px';if(overlay.style.top!==t)overlay.style.top=t;if(overlay.style.left!==l)overlay.style.left=l;if(overlay.style.width!==w)overlay.style.width=w;if(overlay.style.height!==h)overlay.style.height=h;if(overlay.style.bottom!=='auto')overlay.style.bottom='auto';if(card.style.maxHeight!==mh)card.style.maxHeight=mh;}
+  /* V50.0.7（方案 A）：v50VeilHold——試讀對話框接入「書本面紗」共享機制。
+     症狀與根因（追查起點）：手機點閱讀碼輸入欄→聚焦→鍵盤彈出→
+     visualViewport 連發→瀏覽器需最新版面→同步結清「開框新失效＋全書 799 節
+     content-visibility 樣式債」＝實機數秒單一 long task。結構性原因：對話框
+     是全站唯一「鍵盤彈出時整本書仍在版面樹上」的路徑——V30.11 面紗只接了
+     目錄抽屜與字級快選單，沒接本對話框（G1）。
+     修法：行動裝置（≤768px，與抽屜／快選單同門檻）開框先掛紗——乾淨版面上
+     由 veilScheduleForDrawer 捕獲閱讀錨點與捲動位置，再 display:none 整本書；
+     關框經 maybeUnveil 的解紗債閘門還原——與抽屜／快選單共用同一個 _veil
+     狀態機、同一把鎖（window.__acimV50DialogHold 計入主腳本 acimPanelOpen()，
+     兩面板全關才解紗）。面紗期間背景結清排程器自動以大分片清債（方案 B 一併
+     達成），鍵盤彈出時已無債可結。桌面（>768px）不掛紗：無軟鍵盤、結算成本低，
+     維持原行為。 */
+  function v50VeilHold(on){
+    if(on){
+      if(window.innerWidth>768)return;
+      if(veilHeld)return;
+      veilHeld=true;
+      try{window.__acimV50DialogHold=true;}catch(e){}
+      /* 先掛紗再 lockReader：veilScheduleForDrawer 需在版面乾淨時捕獲錨點
+         （lockReader 改根 overflow 會弄髒版面）；掛紗同時啟動背景結清。 */
+      try{if(window.__acimVeilApplyNow)window.__acimVeilApplyNow();}catch(e){}
+    }else{
+      if(!veilHeld)return;
+      veilHeld=false;
+      try{window.__acimV50DialogHold=false;}catch(e){}
+      /* 經 maybeUnveil 解紗：檢查抽屜／快選單是否仍開（共享資源，全關才解），
+         並走 unveilBookBehindDrawer 的債閘門＋錨點還原，不帶傷恢復。 */
+      try{if(window.__acimSheetVeilClose)window.__acimSheetVeilClose();}catch(e){}
+    }
+  }
+  function openDialog(){
+    if(!mounted)return;check();if(dialogOpen)return;
+    /* V50.0.7（方案 B，G5）：開框即預結清一次樣式債——桌面不掛紗也補一趟
+       背景走訪；行動裝置由 veilApplyNow 內的 scheduleStyleDischarge 已含，
+       此處再呼叫亦安全（排程器有 V40.5 restart 防風暴，重複呼叫只續 timer）。 */
+    try{if(window.__acimScheduleStyleDischarge)window.__acimScheduleStyleDischarge();}catch(e){}
+    /* V50.0.7（方案 A）：先掛紗（錨點捕獲需乾淨版面、且需在 overlay 顯示前
+       探測書本段落），再開框鎖滾動。 */
+    try{v50VeilHold(true);}catch(e){}
+    dialogOpen=true;overlay.hidden=false;hud.hidden=true;lockReader();fitDialog();render(core.snapshot());setTimeout(function(){if(dialogOpen)(core.snapshot().status==='expired'?card:closeButton).focus({preventScroll:true});},0);}
+  function closeDialog(force){
+    if(!dialogOpen)return;
+    if(!force&&core.snapshot().status==='expired')return;
+    dialogOpen=false;overlay.hidden=true;hud.hidden=false;unlockReader();render(core.snapshot());
+    /* V50.0.7（方案 A）：關框釋放面紗持有；抽屜／快選單已全關時由債閘門
+       擇時解紗並還原閱讀錨點（等待期間書區短暫空白，換取零凍結——同 V40.3
+       抽屜解紗設計）。桌面未掛紗時 v50VeilHold 為無動作。 */
+    try{v50VeilHold(false);}catch(e){}
+  }
+  /* V50.0.7（方案 C，G4）：render 值比對守衛。render 由 setInterval(check,1000)
+     每秒無條件呼叫（對話框開或關都一樣），舊版每次重寫 hud/title/intro/status
+     等 10+ 個節點的文字與 hidden/disabled 屬性——「內容完全沒變」的輪詢也讓
+     對話框子樹每秒吃一次樣式失效，鍵盤彈出期間與 fitDialog 的連環寫入疊加。
+     倒數計時文字每秒本來就會變，照常更新；此守衛只消除「無變化輪詢」的寫入。 */
   function render(s){
     var expired=s.status==='expired',unlocked=s.status==='unlocked';
-    hud.textContent=unlocked?'已啟用閱讀碼':!s.ready?'準備閱讀中':expired?'本輪試讀已結束':'試讀剩餘 '+time(s.remainingMs);
-    hud.setAttribute('aria-label',hud.textContent+'；開啟閱讀控制');
-    title.textContent=unlocked?'已啟用閱讀碼':'繼續你的閱讀';
-    intro.textContent=expired?'這一輪五分鐘試讀已告一段落。閱讀位置已為你保留，歡迎從這裡繼續。':unlocked?'閱讀碼已啟用，可繼續閱讀。':!s.ready?'內容與定位準備完成後，即可開始五分鐘試讀。':'可繼續本輪試讀，也可以輸入閱讀碼。';
-    status.textContent=expired?(s.waitRemainingMs>0?'再等 '+time(s.waitRemainingMs)+'，即可繼續試讀。':'可以繼續下一輪五分鐘試讀了。'):unlocked?'已啟用閱讀碼。':!s.ready?'正在準備內容與定位，尚未開始計時。':'本輪試讀剩餘 '+time(s.remainingMs);
-    renewButton.hidden=!expired;renewButton.disabled=expired&&s.waitRemainingMs>0;renewButton.textContent=expired&&s.waitRemainingMs>0?'稍候再試讀五分鐘（'+time(s.waitRemainingMs)+'）':'繼續試讀五分鐘';
-    closeButton.hidden=expired;resetButton.hidden=!unlocked;
-    codeInput.closest('form').hidden=unlocked;codeDetails.hidden=unlocked;
-    persistNotice.hidden=s.persistent;
+    var hudText=unlocked?'已啟用閱讀碼':!s.ready?'準備閱讀中':expired?'本輪試讀已結束':'試讀剩餘 '+time(s.remainingMs);
+    if(hud.textContent!==hudText){hud.textContent=hudText;hud.setAttribute('aria-label',hudText+'；開啟閱讀控制');}
+    var titleText=unlocked?'已啟用閱讀碼':'繼續你的閱讀';
+    if(title.textContent!==titleText)title.textContent=titleText;
+    var introText=expired?'這一輪五分鐘試讀已告一段落。閱讀位置已為你保留，歡迎從這裡繼續。':unlocked?'閱讀碼已啟用，可繼續閱讀。':!s.ready?'內容與定位準備完成後，即可開始五分鐘試讀。':'可繼續本輪試讀，也可以輸入閱讀碼。';
+    if(intro.textContent!==introText)intro.textContent=introText;
+    var statusText=expired?(s.waitRemainingMs>0?'再等 '+time(s.waitRemainingMs)+'，即可繼續試讀。':'可以繼續下一輪五分鐘試讀了。'):unlocked?'已啟用閱讀碼。':!s.ready?'正在準備內容與定位，尚未開始計時。':'本輪試讀剩餘 '+time(s.remainingMs);
+    if(status.textContent!==statusText)status.textContent=statusText;
+    var renewHidden=!expired;if(renewButton.hidden!==renewHidden)renewButton.hidden=renewHidden;
+    var renewDisabled=expired&&s.waitRemainingMs>0;if(renewButton.disabled!==renewDisabled)renewButton.disabled=renewDisabled;
+    var renewText=renewDisabled?'稍候再試讀五分鐘（'+time(s.waitRemainingMs)+'）':'繼續試讀五分鐘';
+    if(renewButton.textContent!==renewText)renewButton.textContent=renewText;
+    if(closeButton.hidden!==expired)closeButton.hidden=expired;
+    /* V50.0.8（讀者回報）：「重新試讀五分鐘」按鈕顯示條件寫反——V50.0.7（含）以前為
+       hidden=unlocked，變成「未輸入閱讀碼的試讀／冷卻狀態看得到按鈕、輸入閱讀碼
+       啟用後反而消失」。按鈕的作用是 core.reset()＝清除閱讀碼（unlocked→fresh
+       trial）並重置試讀時鐘，只有已啟用閱讀碼的人需要它（自行決定是否放棄閱讀碼、
+       回到沒有閱讀碼的五分鐘倒數機制）；未輸入閱讀碼時顯示只會造成困惑，expired
+       狀態下還能藉它繞過 60 秒冷卻。修正為 hidden=!unlocked；且按鈕因狀態同步
+       （跨分頁 storage→ingest）被隱藏的當下解除確認武裝，避免重現時殘留
+       「再次按下確認」鈕面文字。詳見本檔 V50.0.8 變更記錄。 */
+    var resetHidden=!unlocked;
+    if(resetButton.hidden!==resetHidden){resetButton.hidden=resetHidden;if(resetHidden&&resetArmed){resetArmed=false;clearTimeout(resetTimer);resetButton.textContent='清除閱讀碼';}}
+    var formEl=codeInput.closest('form');
+    if(formEl.hidden!==unlocked)formEl.hidden=unlocked;
+    if(codeDetails.hidden!==unlocked)codeDetails.hidden=unlocked;
+    var noticeHidden=!!s.persistent;if(persistNotice.hidden!==noticeHidden)persistNotice.hidden=noticeHidden;
   }
   function make(tag,id,text){var el=document.createElement(tag);if(id)el.id=id;if(text)el.textContent=text;return el;}
   function mount(){
@@ -186,9 +423,12 @@ html.dark-mode #acim-v50-dialog{--v50-paper:#302A40;--v50-ink:#E8E2D6;--v50-mute
     codeInput=make('input','acim-v50-code');codeInput.type='text';codeInput.maxLength=80;codeInput.autocomplete='off';codeInput.spellcheck=false;codeInput.setAttribute('autocapitalize','characters');codeInput.placeholder='請貼上慧軍老師提供的閱讀碼';form.appendChild(codeInput);
     var submit=make('button','acim-v50-unlock','啟用並繼續閱讀');submit.type='submit';form.appendChild(submit);
     feedback=make('p','acim-v50-feedback');feedback.setAttribute('role','status');form.appendChild(feedback);
-    form.onsubmit=function(e){e.preventDefault();if(core.unlock(codeInput.value)){codeInput.value='';codeInput.removeAttribute('aria-invalid');feedback.textContent='';}else{codeDetails.open=true;feedback.textContent='閱讀碼不正確，請核對後再試一次。';codeInput.setAttribute('aria-invalid','true');codeInput.focus();}};
+    var codeComposing5010=false;
+    codeInput.addEventListener('compositionstart',function(){codeComposing5010=true;});
+    codeInput.addEventListener('compositionend',function(){codeComposing5010=false;});
+    form.onsubmit=function(e){e.preventDefault();if(codeComposing5010||e.isComposing)return;if(core.unlock(codeInput.value)){codeInput.value='';codeInput.removeAttribute('aria-invalid');feedback.textContent='';}else{codeDetails.open=true;feedback.textContent='閱讀碼不正確，請核對後再試一次。';codeInput.setAttribute('aria-invalid','true');codeInput.focus();}};
     codeInput.setAttribute('aria-describedby','acim-v50-feedback acim-v50-code-note');
-    codeInput.addEventListener('input',function(){codeInput.removeAttribute('aria-invalid');feedback.textContent='';});
+    codeInput.addEventListener('input',function(){if(codeInput.hasAttribute('aria-invalid'))codeInput.removeAttribute('aria-invalid');if(feedback.textContent)feedback.textContent='';});
     var note=make('p','acim-v50-code-note','閱讀碼啟用狀態會保存在目前使用的瀏覽器。');form.appendChild(note);
     var info=make('section','acim-v50-info');info.setAttribute('aria-label','聯絡慧軍老師');
     info.appendChild(make('h3','','與慧軍老師聯繫'));
@@ -214,9 +454,13 @@ html.dark-mode #acim-v50-dialog{--v50-paper:#302A40;--v50-ink:#E8E2D6;--v50-mute
     card.appendChild(make('p','acim-v50-share-note','歡迎分享閱讀網址，讓更多人先來試讀。'));
 
     persistNotice=make('p','acim-v50-persistence','此環境無法持續保存體驗狀態；目前仍可試讀與輸入閱讀碼，重開後可能需要再次輸入。');persistNotice.hidden=true;card.appendChild(persistNotice);
-    resetButton=make('button','acim-v50-reset','重新試讀五分鐘');resetButton.type='button';resetButton.onclick=function(){if(!resetArmed){resetArmed=true;resetButton.textContent='再次按下確認：只重設試讀時間與閱讀碼啟用狀態';clearTimeout(resetTimer);resetTimer=setTimeout(function(){resetArmed=false;resetButton.textContent='重新試讀五分鐘';},6000);return;}resetArmed=false;resetButton.textContent='重新試讀五分鐘';core.reset();};card.appendChild(resetButton);
+    /* V50.0.10（讀者回報）：二段確認鈕面文字簡化——「清除閱讀碼」／
+       「再次按下確認，清除閱讀碼」（原「重新試讀五分鐘」／「再次按下確認：
+       只重設試讀時間與閱讀碼啟用狀態」）。行為不變：顯示條件（僅已啟用
+       閱讀碼時顯示）與 6 秒未按自動解除武裝見 V50.0.8 變更記錄。 */
+    resetButton=make('button','acim-v50-reset','清除閱讀碼');resetButton.type='button';resetButton.onclick=function(){if(!resetArmed){resetArmed=true;resetButton.textContent='再次按下確認，清除閱讀碼';clearTimeout(resetTimer);resetTimer=setTimeout(function(){resetArmed=false;resetButton.textContent='清除閱讀碼';},6000);return;}resetArmed=false;resetButton.textContent='清除閱讀碼';core.reset();};card.appendChild(resetButton);
     overlay.appendChild(card);document.body.appendChild(hud);document.body.appendChild(overlay);
-    if(window.visualViewport){window.visualViewport.addEventListener('resize',fitDialog,{passive:true});window.visualViewport.addEventListener('scroll',fitDialog,{passive:true});}
+    if(window.visualViewport){window.visualViewport.addEventListener('resize',scheduleFitDialog5010,{passive:true});window.visualViewport.addEventListener('scroll',scheduleFitDialog5010,{passive:true});}
     function blockOutside(e){if(!dialogOpen||overlay.contains(e.target))return;if(e.cancelable)e.preventDefault();e.stopImmediatePropagation();}
     ['click','dblclick','pointerdown','touchstart','wheel','touchmove','contextmenu'].forEach(function(type){window.addEventListener(type,blockOutside,{capture:true,passive:false});});
     window.addEventListener('keydown',function(e){
@@ -229,7 +473,7 @@ html.dark-mode #acim-v50-dialog{--v50-paper:#302A40;--v50-ink:#E8E2D6;--v50-mute
     setInterval(check,1000);
   }
   window.__acimV50={
-    storageKey:KEY,canRead:function(){var s=core.check();return s.ready&&s.status!=='expired';},isBlocked:function(){return core.check().status==='expired';},
+    storageKey:KEY,canRead:function(){var s=core.check();return s.ready&&s.status!=='expired';},isBlocked:function(){return core.check().status==='expired';},/* V50.0.7（方案 D）：對話框開啟狀態，供閱讀錨點校正（主腳本 pin）暫停判斷 */isDialogOpen:function(){return dialogOpen;},
     markReady:function(){return core.markReady();},check:check,state:function(){return core.check();},openControls:openDialog,
     deferHash:function(hash){pendingHash=typeof hash==='string'?hash.slice(0,1000):null;},takePendingHash:function(){var h=pendingHash;pendingHash=null;return h;},
     prepareNavigation:function(hash){if(core.check().status==='expired'){if(typeof hash==='string')pendingHash=hash.slice(0,1000);openDialog();return false;}return true;}
@@ -347,13 +591,8 @@ if(!window.__acimV50WrongOrigin){
       var max=Math.max(0,(document.scrollingElement||de).scrollHeight-window.innerHeight);
       if(isFinite(max)) y=Math.min(y,max);
     }
-    if(!restorePending) previousScrollStyle=de.style.scrollBehavior;
-    de.style.scrollBehavior='auto'; expectedY=y;
-    window.scrollTo(0,y);
-    if(!restorePending){
-      restorePending=true;
-      requestAnimationFrame(function(){ de.style.scrollBehavior=previousScrollStyle; restorePending=false; });
-    }
+    expectedY=y;
+    window.scrollTo({left:0,top:y,behavior:'instant'});
     return true;
   }
   function remember(token,el,margin,rectOfTarget){
@@ -419,8 +658,40 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v50.0.6';
+var ACIM_VERSION = 'v50.1.1';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
+
+/* V50.0.9：冷啟動「平台靜默套用」告知。新版在 App 關閉期間裝好進入等待
+   後，下次冷啟動瀏覽器會在舊 worker 無人使用時直接啟用新版（Service
+   Worker 平台標準行為，頁面無從攔截，因此沒有機會先問）——此路徑原本
+   完全無聲，讀者只知道「版本偵測到了，怎沒套出通知」。改為比對
+   localStorage 上次執行版本（acim-last-version），首次以新版本啟動且非
+   「點按套用」路徑時，顯示一次性「✅ 已自動更新至 vX」；點按套用路徑
+   仍由下方 V40.9 IIFE 顯示「✅ 已套用」，以 sessionStorage acim-sw-applied
+   區隔，不重複顯示。 */
+(function(){
+  var lastSeen=null, appliedClick=null;
+  try{ lastSeen=window.__acimStorage.get('acim-last-version'); }catch(e){}
+  try{ appliedClick=sessionStorage.getItem('acim-sw-applied'); }catch(e){}
+  try{ window.__acimStorage.set('acim-last-version', ACIM_VERSION); }catch(e){}
+  if(appliedClick) return;
+  if(lastSeen===null||lastSeen===ACIM_VERSION) return;
+  window.addEventListener('DOMContentLoaded', function(){
+    try{
+      var t=document.createElement('div');
+      t.textContent='✅ 已自動更新至 '+ACIM_VERSION;
+      t.setAttribute('role','status');
+      t.style.cssText='position:fixed;left:50%;transform:translateX(-50%);'
+        +'bottom:calc(var(--acim-nav-h,64px) + env(safe-area-inset-bottom,0px) + 14px);'
+        +'background:#29224A;color:#fff;padding:9px 20px;border-radius:22px;'
+        +'font-size:13px;z-index:999999;box-shadow:0 4px 16px rgba(0,0,0,.35);'
+        +'opacity:0;transition:opacity .3s;white-space:nowrap;';
+      document.body.appendChild(t);
+      requestAnimationFrame(function(){ t.style.opacity='1'; });
+      setTimeout(function(){ t.style.opacity='0'; setTimeout(function(){ if(t.parentNode)t.parentNode.removeChild(t); },380); },2800);
+    }catch(e){}
+  });
+})();
 
 /* V40.9：套用新版後的首次啟動，顯示一次性「已套用」確認——讓讀者與
    開發者都能一眼確認裝置真正運行的版本（對照字級面板內的版本標籤）。 */
@@ -457,7 +728,9 @@ var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同
      無人使用時自然啟用等待中的新版（平台標準行為，發生在兩次閱讀之間，
      不打斷閱讀；此路徑不會出現「✅ 已套用」提示——僅點按套用者有，可據
      此區分兩種套用路徑）。
-   ③ 套用後的首次啟動顯示「✅ 已套用 vX」一次性確認（僅點按路徑）。 */
+   ③ 套用後的首次啟動顯示「✅ 已套用 vX」一次性確認（僅點按路徑）。
+   ④ V50.0.9：平台靜默套用（冷啟動自動啟用）路徑補上「已自動更新至
+   vX」一次性告知（見上方 V50.0.9 IIFE），不再完全無聲。 */
 /* V40.15＋V40.16：橫幅版本號必須是「偵測到的新版」本身。
    實機定案（V40.15、V40.16 兩張回報截圖）：裝置還在跑舊版 index.html 時，
    舊碼用頁面自己的 ACIM_VERSION 拼字串——V40.14 頁面偵測到 V40.15，
@@ -516,46 +789,70 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'})
       .then(function(reg) {
         function applyWaiting() {
-          if (!reg.waiting) return false;
+          /* V50.0.9：worker 取得改雙來源——waiting 優先，其次「已 installed
+             的 installing」，避免瀏覽器在 statechange 派發當下 registration
+             .waiting 尚未換人時漏套用。 */
+          var waiting = reg.waiting ||
+            (reg.installing && reg.installing.state === 'installed' ? reg.installing : null);
+          if (!waiting) return false;
           try { sessionStorage.setItem('acim-sw-applied', ACIM_VERSION); } catch(e) {}
           navigator.serviceWorker.addEventListener('controllerchange', function() {
             window.location.reload();
           }, {once: true});
-          reg.waiting.postMessage({type: 'SKIP_WAITING'});
+          waiting.postMessage({type: 'SKIP_WAITING'});
           return true;
         }
+        /* V50.0.9（讀者回報「版本偵測到了，怎沒有套出新版通知讓我決定」）：
+           底部橫幅升級為「偵測到新版」對話框。根因——V40.21 橫幅只在
+           「App 開著且等到安裝完成」的短時間窗出現；讀者在安裝（下載全書
+           需時）期間關閉 App 時，安裝於背景完成進入等待，下次冷啟動瀏覽器
+           會在舊 worker 無人使用下自動啟用新版（Service Worker 平台標準
+           行為，頁面無從攔截），全程沒有機會被詢問。修法——
+           ① 啟動時已有等待新版、或閱讀中途安裝完成 → 一律彈出對話框：
+             「📖 偵測到新版 vX」＋〔稍後〕〔立即更新〕，持續顯示到讀者選擇
+             為止；僅按「立即更新」才 SKIP_WAITING＋重載，維持 V40.16
+             「絕不自動重載」原則不變。
+           ② 冷啟動被平台靜默套用 → 首次啟動顯示一次性「已自動更新至 vX」
+             告知（見 V40.9「已套用」提示前的 V50.0.9 IIFE），套用了就一定
+             說。
+           ③ worker 取得改 waiting||installed-installing 雙來源；updatefound
+             監聽掛上後立即補查一次狀態，避免事件時序漏問。 */
         function offerUpdate() {
-          if (!navigator.serviceWorker.controller || !reg.waiting ||
+          var waiting = reg.waiting ||
+            (reg.installing && reg.installing.state === 'installed' ? reg.installing : null);
+          if (!navigator.serviceWorker.controller || !waiting ||
               document.getElementById('acim-update-toast')) return;
-          var toast = document.createElement('button');
-          toast.type = 'button';
-          toast.id = 'acim-update-toast';
-          /* V40.15：先以不帶版本號的誠實文案立即顯示，再向等待中 worker
-             取得真正版本號後原地改寫（見 acimUpdateToastVersion）。
-             V40.16：主源逾時由線上 sw.js 解析接手；舊碼用頁面自己的
-             ACIM_VERSION——V40.14 頁面偵測到 V40.15 仍錯示「v40.14」。 */
-          toast.textContent = '📖 新版已就緒，點此套用 →';
-          toast.setAttribute('aria-label', '新版本已下載，點擊套用');
+          var dlg = document.createElement('div');
+          dlg.id = 'acim-update-toast'; /* 沿用舊 id：去重守衛與驗收掛點不變 */
+          dlg.setAttribute('role', 'dialog');
+          dlg.setAttribute('aria-label', '新版本已下載，是否立即套用');
+          /* V40.15：先以不帶版本號的誠實文案立即顯示，再向等待中 worker 取得
+             真正版本號後原地改寫（見 acimUpdateToastVersion）；V40.16：主源
+             逾時由線上 sw.js 解析接手。 */
+          dlg.innerHTML =
+            '<div id="acim-update-title">📖 偵測到新版</div>' +
+            '<div id="acim-update-desc">新版已下載完成，是否立即套用？套用會重新載入一次，閱讀位置、閱讀碼與設定都會保留。</div>' +
+            '<div id="acim-update-actions">' +
+            '<button type="button" id="acim-update-later">稍後</button>' +
+            '<button type="button" id="acim-update-apply">立即更新</button></div>';
           if (typeof acimUpdateToastVersion === 'function') {
-            acimUpdateToastVersion(reg.waiting, function(v) {
-              var t = document.getElementById('acim-update-toast');
+            acimUpdateToastVersion(waiting, function(v) {
+              var t = document.getElementById('acim-update-title');
               if (!t) return;
-              t.textContent = '📖 新版 ' + (v ? v + ' ' : '') + '已就緒，點此套用 →';
-              t.setAttribute('aria-label',
-                (v ? '新版本 ' + v + ' 已下載' : '新版本已下載') + '，點擊套用');
+              t.textContent = '📖 偵測到新版' + (v ? ' ' + v : '');
+              dlg.setAttribute('aria-label',
+                (v ? '新版本 ' + v : '新版本') + '已下載，是否立即套用');
             });
           }
-          toast.style.cssText = [
-            'position:fixed;bottom:calc(var(--acim-nav-h,64px) + env(safe-area-inset-bottom,0px) + 14px);left:50%;transform:translateX(-50%)',
-            'background:#29224A;color:#fff;padding:10px 20px;border:none',
-            'border-radius:24px;font-size:14px;cursor:pointer',
-            'z-index:999999;box-shadow:0 4px 16px rgba(0,0,0,.35)',
-            'max-width:calc(100vw - 32px);white-space:normal;text-align:center;line-height:1.5;user-select:none',
-            'animation:acimFadeIn .3s ease'
-          ].join(';');
-          toast.onclick = function() {
+          dlg.querySelector('#acim-update-later').onclick = function() {
+            /* V40.16 原則不變：稍後＝本頁面先不套用；下次啟動若仍有等待中
+               新版會再度詢問；App 完全關閉後重開可能由平台自然套用（見上方
+               根因說明），套用後首次啟動會顯示「已自動更新至 vX」告知。 */
+            dlg.remove();
+          };
+          dlg.querySelector('#acim-update-apply').onclick = function() {
             applyWaiting();
-            toast.remove();
+            dlg.remove();
           };
           if (!document.getElementById('acim-toast-style')) {
             var style = document.createElement('style');
@@ -563,23 +860,39 @@ if ('serviceWorker' in navigator) {
             style.textContent = '@keyframes acimFadeIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
             document.head.appendChild(style);
           }
-          document.body.appendChild(toast);
-          /* V40.21：橫幅不再 12 秒自動消失——實測手機讀者常錯過時限，
-             新版下載完成後遲遲未套用（「手機要等很久才會更新」根因之一）。
-             改為持續顯示直到點按套用；是否套用仍由讀者主動點按決定，
-             維持 V40.16「絕不自動重載」原則。 */
+          var st = document.createElement('style');
+          st.id = 'acim-update-dlg-style';
+          st.textContent = '#acim-update-title{font-size:15px;font-weight:700;margin:0 0 4px}'
+            + '#acim-update-desc{font-size:13px;opacity:.92;margin:0 0 10px}'
+            + '#acim-update-actions{display:flex;gap:10px;justify-content:flex-end}'
+            + '#acim-update-actions button{font:inherit;font-size:14px;min-height:38px;border-radius:19px;padding:6px 16px;cursor:pointer;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5)}'
+            + '#acim-update-apply{background:#fff;color:#29224A;border-color:#fff;font-weight:700}'
+            + '@media(pointer:coarse){#acim-update-actions button{min-height:42px}}';
+          document.head.appendChild(st);
+          dlg.style.cssText = [
+            'position:fixed;bottom:calc(var(--acim-nav-h,64px) + env(safe-area-inset-bottom,0px) + 14px);left:50%;transform:translateX(-50%)',
+            'background:#29224A;color:#fff;padding:14px 18px;border-radius:14px',
+            'z-index:999999;box-shadow:0 6px 24px rgba(0,0,0,.4)',
+            'max-width:calc(100vw - 32px);text-align:left;line-height:1.55',
+            'animation:acimFadeIn .3s ease'
+          ].join(';');
+          document.body.appendChild(dlg);
         }
         reg.addEventListener('updatefound', function() {
           var next = reg.installing;
           if (!next) return;
           next.addEventListener('statechange', function() {
-            if (next.state === 'installed') offerUpdate(false);
+            if (next.state === 'installed') offerUpdate();
           });
+          /* V50.0.9：監聽掛上前 worker 可能已達 installed（例如背景安裝
+             完成後才走到這裡的時序）→ 附加監聽後立即補查一次，避免漏問。 */
+          if (next.state === 'installed') offerUpdate();
         });
         /* V40.16：啟動時已有等待中的新版 → 只顯示橫幅（與閱讀中途偵測同一
-           條路），讀者點按橫幅才套用。舊版（V40.9~V40.15）此處 offerUpdate(true)
-           會自動 SKIP_WAITING＋重載——「沒有按就自動更新」的根因，移除。 */
-        offerUpdate(false);
+           條路），讀者點「立即更新」才套用（V50.0.9 起為對話框）。舊版
+           （V40.9~V40.15）此處 offerUpdate(true) 會自動 SKIP_WAITING＋重載——
+           「沒有按就自動更新」的根因，移除。 */
+        offerUpdate();
         /* V40.21：更新檢查節奏補強——瀏覽器僅在導航時自動檢查 SW 更新，
            手機 PWA 常駐記憶體，閱讀中途與「從背景喚回」都不會檢查，
            新版感知因此遲滯。改為：
@@ -2747,6 +3060,103 @@ html.dark-mode #rtabs-bar .rtab.rtab-on{background:#3B324B;color:#CBB27B;box-sha
  #sidebar-navigation>#toc-wrapper{min-height:0;overscroll-behavior:contain;}
 }
 </style>
+<style id="acim-v5010-fixes">
+/* V50.1.1: app chrome only; original Song/Kai/underline meanings are retained. */
+#rtabs-bar{display:flex;min-height:34px;max-width:min(60vw,700px);box-sizing:border-box;border-radius:12px;}
+#rtabs-bar .rtab{padding:0;gap:0;flex-shrink:0;max-width:190px;border-radius:8px;}
+#rtabs-bar .rtab-select{display:flex;align-items:center;min-height:34px;max-width:146px;background:none;border:0;padding:5px 8px;color:inherit;font:inherit;cursor:pointer;}
+#rtabs-bar .rtab .rtab-x,#rtabs-bar .rtab.rtab-on .rtab-x{display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:34px;padding:0;opacity:1;border:0;background:none;color:inherit;font:18px/1 system-ui;cursor:pointer;}
+#rtabs-bar .rtab-add{width:34px;height:34px;position:sticky;left:0;z-index:2;background:var(--art-panel);}
+#rtabs-bar .rtab-empty{font:12px/1.4 system-ui;color:var(--c-muted);white-space:nowrap;padding-right:6px;}
+#rtabs-bar button:focus-visible{outline:2px solid var(--c-gold);outline-offset:-2px;border-radius:6px;}
+#tts-pause-btn,#tts-stop-btn{background:#29224A!important;color:#FAF8F5!important;border:1px solid #625574!important;min-height:36px;}
+html.dark-mode #tts-pause-btn,html.dark-mode #tts-stop-btn{background:#3B324B!important;color:#E8E2D6!important;border-color:#7A6B89!important;}
+#tts-engine-status{font:12px/1.5 system-ui;color:var(--c-muted);flex-basis:100%;text-align:center;}
+#tts-engine-status:empty{display:none;}
+#tts-bar{max-width:calc(100vw - 24px);box-sizing:border-box;}
+#tts-bar-label{white-space:normal;overflow-wrap:anywhere;}
+#content-area .tts-btn{opacity:1;transition:none;border-color:var(--c-muted);color:var(--c-accent);}
+#content-area .tts-btn::before{width:18px;height:18px;}
+#footnote-bar{display:flex;flex-direction:column;padding:0;overflow:hidden;max-height:min(52dvh,480px);border-radius:14px 14px 0 0;}
+#fn-header{display:flex;align-items:center;flex-shrink:0;gap:12px;padding:6px 14px;border-bottom:1px solid var(--c-border);background:var(--art-panel);}
+#fn-header #fn-actions{display:flex;gap:4px;flex-shrink:0;}
+#fn-header #fn-context{margin:0;font:12px/1.5 system-ui;min-width:0;overflow-wrap:anywhere;}
+#fn-engine-status5010{font:12px/1.4 system-ui;color:var(--c-muted);}
+#fn-engine-status5010:empty{display:none;}
+#fn-header #fn-actions button{width:40px;height:40px;min-width:40px;color:var(--c-muted);}
+#fn-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;max-height:calc(min(52dvh,480px) - 60px);padding:12px 16px 16px;box-sizing:border-box;scrollbar-gutter:stable;}
+#fn-inner{display:block;}
+#fn-num{float:left;min-width:0;margin:0 .5em 0 0;font:600 calc(16px * var(--acim-reading-scale,1))/1.85 system-ui;color:var(--c-gold);}
+#fn-text{font-size:calc(17px * var(--acim-reading-scale,1));line-height:1.85;overflow-wrap:anywhere;min-width:0;}
+#fn-text p{font-size:inherit!important;line-height:inherit!important;}
+.acim-note-ref5010{display:inline;border:1px solid var(--c-border);background:var(--c-bg);color:var(--c-accent);font:inherit;line-height:inherit;border-radius:4px;padding:0 3px;cursor:pointer;}
+#acim-note-return5010{position:fixed;left:50%;transform:translateX(-50%);bottom:80px;z-index:10005;border:1px solid var(--c-gold);border-radius:8px;background:var(--art-panel);color:var(--c-accent);padding:10px 16px;font:14px/1.5 system-ui;max-width:calc(100vw - 30px);cursor:pointer;}
+#acim-note-return5010[hidden]{display:none;}
+.acim-table-scroll5010{overflow-x:auto;max-width:100%;overscroll-behavior-x:contain;scrollbar-width:thin;}
+.acim-table-scroll5010>table{min-width:640px;max-width:none!important;margin:0!important;}
+.acim-table-hint5010{font:12px/1.5 system-ui;color:var(--c-muted);margin:5px 0;}
+#acim-reader-actions5010{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-bottom:1px solid var(--c-border);}
+#acim-reader-actions5010 button{width:100%;min-height:44px;border:1px solid var(--c-border);border-radius:7px;background:var(--art-panel);color:var(--c-accent);font:14px/1.4 system-ui;cursor:pointer;}
+@media(min-width:769px) and (max-height:620px){
+ #pwa-tools{bottom:10px;max-height:calc(100dvh - 64px);overflow-y:auto;gap:4px;padding:2px;scrollbar-width:thin;}
+ body.fn-open #pwa-tools{bottom:10px;right:8px;}
+ #pwa-tools .pwa-btn{width:40px;height:40px;flex-shrink:0;}
+ #pwa-tools .pwa-btn-wrap{flex-shrink:0;}
+}
+@media(max-width:768px){
+ #rtabs-bar{top:42px;max-width:calc(100vw - 20px);}
+ #chapter-crumb{height:40px;box-sizing:border-box;}
+ #crumb-tts{display:inline-flex!important;align-items:center;justify-content:center;min-width:38px;min-height:36px;flex-shrink:0;border:0;background:transparent;color:var(--c-accent);padding:4px;cursor:pointer;}
+ #chapter-crumb #crumb-text{min-width:0;flex:1;}
+ #sidebar-header{padding:8px 12px 10px;}
+ #sidebar-header .sidebar-topline{min-height:68px;align-items:flex-end;}
+ #sidebar-header h3,#sidebar-header #app-version-tag{align-self:center;}
+ #sidebar-header #sidebar-settings-toggle{min-height:34px;height:34px;margin-top:34px;padding:4px 8px;font-size:12px;}
+ #footnote-bar.open,#footnote-bar.fn-visible{bottom:calc(var(--acim-nav-h) + env(safe-area-inset-bottom,0px));}
+ #fn-header{gap:8px;padding:4px 10px;}
+ #fn-body{padding:10px 12px 14px;}
+ #content-area .tts-btn{font-size:16px;margin:0 0 0 .3em;width:calc(44px / var(--acim-reading-scale,1));height:calc(44px / var(--acim-reading-scale,1));min-width:calc(44px / var(--acim-reading-scale,1));min-height:calc(44px / var(--acim-reading-scale,1));}
+}
+@media print{#rtabs-bar,.acim-table-hint5010,#acim-note-return5010{display:none!important;}.acim-table-scroll5010{overflow:visible;}.acim-table-scroll5010>table{min-width:0;}}
+
+</style>
+<style id="acim-v5011-fixes">
+/* Navigation owns reading position. Keep root styles stable during section realization. */
+html{overflow-anchor:none;scroll-behavior:auto;}
+/* Keep lazy rendering without Chromium's automatic display-lock transitions. */
+#content-area.acim-render-controlled5011 section.csec{content-visibility:hidden;contain:layout style paint;}
+#content-area.acim-render-controlled5011 section.csec.acim-render5011{content-visibility:visible;}
+@media print{#content-area.acim-render-controlled5011 section.csec{content-visibility:visible!important;contain:none!important;contain-intrinsic-size:none!important;}}
+/* Reading controls keep a fixed visual size instead of scaling with the book. */
+#tts-options-toggle5011{display:none;}
+#tts-options5011{display:contents;}
+@media(max-width:768px){
+ #content-area .tts-btn{position:relative;box-sizing:border-box;width:calc(26px / var(--acim-reading-scale,1));height:calc(26px / var(--acim-reading-scale,1));min-width:calc(26px / var(--acim-reading-scale,1));min-height:calc(26px / var(--acim-reading-scale,1));margin:0 0 0 .3em;padding:0;font-size:calc(14px / var(--acim-reading-scale,1));vertical-align:middle;}
+ #content-area .tts-btn::before{width:calc(16px / var(--acim-reading-scale,1));height:calc(16px / var(--acim-reading-scale,1));}
+ #content-area .tts-btn::after{content:"";position:absolute;inset:calc(-7px / var(--acim-reading-scale,1));border-radius:50%;}
+ #tts-bar{left:10px;right:10px;width:auto;max-width:none;min-height:46px;height:46px;max-height:46px;padding:4px 7px;gap:5px;border-radius:24px;flex-wrap:nowrap;align-items:center;overflow:visible;transform:none;}
+ #tts-bar-label{flex:1 1 auto;width:0;max-width:none;min-width:0;font-size:12px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ #tts-bar #tts-pause-btn,#tts-bar #tts-stop-btn,#tts-bar #tts-options-toggle5011{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;min-width:36px;min-height:36px;padding:0;border-radius:50%;font-size:0;line-height:1;}
+ #tts-pause-btn::before{content:"Ⅱ";font:18px/1 system-ui;}
+ #tts-pause-btn[aria-label^="繼續"]::before{content:"▶";font-size:15px;}
+ #tts-stop-btn::before{content:"■";font:14px/1 system-ui;}
+ #tts-bar #tts-options-toggle5011{font:19px/1 system-ui;color:var(--c-accent);background:var(--art-panel);border-color:var(--c-border);}
+ #tts-engine-status{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%);white-space:nowrap!important;flex-basis:auto!important;}
+ #tts-bar[data-engine-state="preparing"] #tts-bar-label,#tts-bar[data-engine-state="waiting"] #tts-bar-label,#tts-bar[data-engine-state="empty"] #tts-bar-label{display:none;}
+ #tts-bar[data-engine-state="preparing"] #tts-engine-status,#tts-bar[data-engine-state="waiting"] #tts-engine-status,#tts-bar[data-engine-state="empty"] #tts-engine-status{position:static!important;order:-1;flex:1 1 auto!important;width:0!important;min-width:0;height:auto!important;max-height:34px!important;margin:0!important;clip-path:none;white-space:normal!important;text-align:left;font:12px/1.35 system-ui;}
+ #tts-options5011{display:none;position:absolute;right:0;bottom:54px;box-sizing:border-box;max-width:calc(100vw - 20px);width:280px;padding:12px;gap:14px;border:1px solid var(--c-border);border-radius:12px;background:var(--art-panel);color:var(--c-text);box-shadow:0 4px 14px #1d1a2826;white-space:normal;}
+ #tts-options5011.open{display:flex;flex-direction:column;}
+ #tts-options5011 #tts-gender-wrap,#tts-options5011 #tts-rate-wrap{border:0;padding:0;gap:9px;}
+ #tts-options5011 #tts-gender-label,#tts-options5011 #tts-rate-label{display:inline;font-size:12px;opacity:1;}
+ #tts-options5011 .tts-gender-btn{min-width:36px;min-height:32px;font-size:16px;color:var(--c-accent);}
+ #tts-options5011 #tts-rate-slider{width:120px;min-height:24px;}
+ #tts-options5011 #tts-rate-val{font-size:12px;}
+}
+@media(max-width:768px) and (max-height:480px){
+ #tts-options5011{flex-direction:row;flex-wrap:wrap;width:auto;min-width:280px;gap:10px;padding:8px 12px;}
+}
+
+</style>
 </head>
 
 <body>
@@ -2762,7 +3172,7 @@ html.dark-mode #rtabs-bar .rtab.rtab-on{background:#3B324B;color:#CBB27B;box-sha
 
 <div id="chapter-crumb">
   <span aria-hidden="true"><svg class="acim-icon acim-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
-  <span id="crumb-text">目錄</span>
+  <span id="crumb-text">目錄</span><button id="crumb-tts" type="button" title="朗讀目前整節" aria-label="朗讀目前整節"><svg class="acim-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/></svg></button>
 </div>
 
 <div id="book-container">
@@ -23059,6 +23469,69 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 我們把附錄四放在網路上<span class="st378"><u><a href="https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli=1">https://drive.google.com/file/d/1z4t54On1IbLX0F_pcnoGKdxNIbQ39fL8/view?pli=1</a></u></span>
 
 </p></div></div></section></div></main>
+<script id="acim-render5011">
+(function(){
+ 'use strict';
+ var root=document.getElementById('content-area');
+ if(!root||!window.IntersectionObserver||!window.ResizeObserver||!('onbeforematch' in root))return;
+ var sections=Array.from(root.querySelectorAll('section.csec')),indexes=new Map();
+ sections.forEach(function(sec,index){indexes.set(sec,index);});
+ var active=new Set(),near=new Set(),forced=new Set(),pending=new Set(),leases=new Map(),frame=null;
+ function held(sec){return sec.classList.contains('acim-reference-section30')||sec.style.contentVisibility==='visible';}
+ function update(){
+  frame=null;
+  pending.forEach(function(sec){
+   var retain=near.has(sec)||held(sec)||leases.has(sec);
+   if(retain&&!active.has(sec)){
+    active.add(sec);sec.removeAttribute('hidden');sec.classList.add('acim-render5011');sizes.observe(sec);
+   }else if(!retain&&active.has(sec)){
+    active.delete(sec);sizes.unobserve(sec);sec.setAttribute('hidden','until-found');sec.classList.remove('acim-render5011');
+   }
+  });pending.clear();
+ }
+ function schedule(sec){pending.add(sec);if(frame===null)frame=requestAnimationFrame(update);}
+ var sizes=new ResizeObserver(function(entries){
+  entries.forEach(function(entry){
+   var sec=entry.target;if(!active.has(sec))return;
+   var boxes=entry.borderBoxSize,h=boxes&&boxes[0]?boxes[0].blockSize:entry.contentRect.height;
+   if(h>0){var value=(Math.round(h*64)/64)+'px';if(sec.style.containIntrinsicSize!==value)sec.style.containIntrinsicSize=value;}
+  });
+ });
+ var viewport=new IntersectionObserver(function(entries){
+  entries.forEach(function(entry){if(entry.isIntersecting)near.add(entry.target);else near.delete(entry.target);schedule(entry.target);});
+ },{rootMargin:'1200px 0px'});
+ var changes=new MutationObserver(function(records){
+  records.forEach(function(record){
+   var sec=record.target;if(!sec.matches('section.csec'))return;
+   var value=held(sec);if(value===forced.has(sec))return;
+   if(value)forced.add(sec);else forced.delete(sec);schedule(sec);
+  });
+ });
+ root.classList.add('acim-render-controlled5011');
+ sections.forEach(function(sec){sec.setAttribute('hidden','until-found');viewport.observe(sec);});
+ changes.observe(root,{subtree:true,attributes:true,attributeFilter:['class','style']});
+ /* Restore only the saved section. Never realize the whole book for a glyph. */
+ window.__acimEnsureSection5011=function(el,neighbors){
+  var sec=el&&el.closest?el.closest('section.csec'):null;if(!sec)return;
+  var index=indexes.get(sec),radius=neighbors?2:0;
+  sections.slice(Math.max(0,index-radius),index+radius+1).forEach(function(item){
+   var previous=leases.get(item);if(previous)clearTimeout(previous);
+   leases.set(item,setTimeout(function(){leases.delete(item);schedule(item);},1000));
+   pending.add(item);
+  });update();
+ };
+ /* Native Find/fragment navigation reveals skipped text through the standard
+    beforematch path, while ordinary reading still realizes nearby sections only. */
+ root.addEventListener('beforematch',function(event){
+  if(window.__acimNav)window.__acimNav.begin('browser-find');
+  window.__acimEnsureSection5011(event.target,true);
+ });
+ document.addEventListener('acim-navigation',function(){
+  leases.forEach(function(timer,sec){clearTimeout(timer);schedule(sec);});leases.clear();
+ });
+})();
+
+</script>
 </div><!-- #book-container -->
 
 <!-- PWA 安裝提示條（beforeinstallprompt 觸發後顯示）-->
@@ -23113,15 +23586,11 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
 
 <!-- 註腳彈出列 -->
 <div id="footnote-bar" role="region" aria-label="註文">
-  <div id="fn-context"></div>
-  <div id="fn-inner">
-    <span id="fn-num"></span>
-    <div id="fn-text"></div>
-    <div id="fn-actions">
+  <div id="fn-header"><div id="fn-actions">
       <button id="fn-tts-btn" class="fn-action-btn" title="朗讀此腳注" aria-label="朗讀此腳注"><svg class="acim-icon acim-speaker" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 5 6 9H3v6h3l5 4Z"/><path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/></svg></button>
       <button id="fn-close" title="關閉" aria-label="關閉">✕</button>
-    </div>
-  </div>
+</div><div id="fn-context"></div></div>
+  <div id="fn-body" tabindex="0" aria-label="註文內容"><div id="fn-inner"><span id="fn-num"></span><div id="fn-text"></div></div></div>
 </div>
 
 <div id="sidebar-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:10000; opacity:0; transition:opacity 0.25s"></div>
@@ -23351,6 +23820,12 @@ if(!window.__acimV50WrongOrigin){
   var settingsPanel=document.getElementById('sidebar-settings-panel');
   function setSidebarSettings(open,restoreFocus){
     if(!settingsToggle||!settingsPanel)return;
+    var settingsFrame5011=null;
+    if(window.innerWidth>768&&readingFrame){
+      if(open&&settingsPanel.hidden)window.__acimSettingsReadingFrame5011=readingFrame.capture();
+      else if(!open&&!settingsPanel.hidden)settingsFrame5011=window.__acimSettingsReadingFrame5011;
+    }
+    if(!open)window.__acimSettingsReadingFrame5011=null;
     /* V30.4: identical state needs no writes; native/keyboard focus is retained. */
     if(settingsPanel.hidden!==!open)settingsPanel.hidden=!open;
     var expanded=open?'true':'false';
@@ -23359,6 +23834,7 @@ if(!window.__acimV50WrongOrigin){
     if(results.hidden!==open)results.hidden=open;
     if(badge.hidden!==open)badge.hidden=open;
     if(!open&&restoreFocus&&document.activeElement!==settingsToggle)settingsToggle.focus({preventScroll:true});
+    if(settingsFrame5011)readingFrame.restore(settingsFrame5011,false);
   }
   if(settingsToggle&&settingsPanel){
     settingsToggle.addEventListener('click',function(event){
@@ -23390,7 +23866,7 @@ if(!window.__acimV50WrongOrigin){
      重新附著的樣式債交給 V30.10 背景結清排程器。 */
 /* V50.0.6: retain a visible character across reflow. No full-book geometry scan. */
 function createReadingFrameV5005(){
-  var active=null,session=null;
+  var active=null,session=null,viewportFrame5010=null,frameTimer5010=null,resizeTimer5010=null,frameWidth5010=window.innerWidth,resizePending5011=false,resizeGeneration5011=0;
   function root(){return document.getElementById('content-area');}
   function eligible(node){
     return !!(node&&node.nodeType===3&&node.length&&node.parentElement&&
@@ -23415,6 +23891,7 @@ function createReadingFrameV5005(){
   }
   function rect(frame){
     if(!frame.block||!frame.block.isConnected)return null;
+    if(frame.block.checkVisibility&&!frame.block.checkVisibility({contentVisibilityAuto:true}))return null;
     if(resolve(frame)){
       var range=frame.range||document.createRange();frame.range=range;
       var start=Math.max(0,Math.min(frame.offset,frame.node.length-1));
@@ -23430,28 +23907,36 @@ function createReadingFrameV5005(){
     run.timers.forEach(clearTimeout);
     if(run.observer)run.observer.disconnect();
     run.events.forEach(function(v){v[0].removeEventListener(v[1],v[2],v[3]);});
-    if(run.section)run.section.style.contentVisibility=run.sectionVisibility;
-    if(run.root)run.root.style.overflowAnchor=run.overflowAnchor;
+    cacheViewport5010();
   }
-  function forget(){session=null;cancel();}
+  function forget(event){if(event&&event.target&&event.target.closest&&event.target.closest('#sidebar-toc,#pwa-tools,#acim-bottomnav,#acim-quick-sheet'))return;window.__acimSettingsReadingFrame5011=null;session=null;viewportFrame5010=null;resizePending5011=false;resizeGeneration5011++;clearTimeout(resizeTimer5010);cancel();cacheViewport5010();}
   /* Font controls retain one character across repeated presses. Reading gestures,
      navigation and a viewport change start a new reading position. */
-  ['wheel','touchmove','resize','pagehide'].forEach(function(name){window.addEventListener(name,forget,{passive:true,capture:true});});
-  document.addEventListener('acim-navigation',forget);
+  ['wheel','touchmove','pagehide'].forEach(function(name){window.addEventListener(name,forget,{passive:true,capture:true});});
+  document.addEventListener('acim-navigation',function(){window.__acimReadingFocus5010=null;forget();});
+  ['wheel','touchmove','pagehide'].forEach(function(name){window.addEventListener(name,function(){window.__acimReadingFocus5010=null;},{passive:true,capture:true});});
   window.addEventListener('pointerdown',function(e){
     var el=e.target;
-    if(!el||!el.closest||!el.closest('#btn-fup,#btn-fdn,#acim-bn-font,#acim-quick-sheet'))forget();
+    if(!el||!el.closest||!el.closest('#btn-fup,#btn-fdn,#acim-bn-font,#acim-quick-sheet,#theme-mode,#btn-dark,#sidebar-settings-toggle,#sidebar-toc,#pwa-tools,#acim-bottomnav,#rtabs-bar'))forget();
   },{passive:true,capture:true});
   window.addEventListener('keydown',function(e){
-    if((e.ctrlKey||e.metaKey)&&(e.key==='['||e.key===']'))return;
-    if(e.key==='Enter'||e.key===' '){var el=e.target;if(el&&el.closest&&el.closest('#btn-fup,#btn-fdn,#acim-bn-font,#acim-quick-sheet'))return;}
+    if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ','Spacebar'].indexOf(e.key)<0)return;
+    var el=e.target;
+    if(el&&el.closest&&el.closest('input,textarea,select,button,[contenteditable="true"],#sidebar-toc,#acim-quick-sheet,#pwa-tools,#acim-bottomnav,#rtabs-bar'))return;
     forget();
   },{capture:true});
-  function capture(){
-    cancel();
+  function capture(passive){
+    var pendingFrame=!passive&&active?active.frame:null;
+    if(!passive)cancel();
     var content=root();if(!content||document.documentElement.classList.contains('acim-book-veiled'))return null;
-    if(window.__acimNav)window.__acimNav.cancel();
-    if(session){
+    if(!passive&&window.__acimNav)window.__acimNav.cancel();
+    if(pendingFrame&&pendingFrame.block&&pendingFrame.block.isConnected){session=pendingFrame;return pendingFrame;}
+    var focus5010=window.__acimReadingFocus5010;
+    if(focus5010&&focus5010.block&&focus5010.block.isConnected){
+      var focused={block:focus5010.block,node:focus5010.node,offset:focus5010.offset,textOffset:focus5010.textOffset,range:null,top:0};
+      try{var fr=rect(focused);if(fr&&fr.top>=84&&fr.bottom<window.innerHeight-60){focused.top=fr.top;if(!passive)session=focused;return focused;}}catch(e){}
+    }
+    if(!passive&&session){
       try{var retained=rect(session);if(retained&&retained.height&&Math.abs(retained.top-session.top)<=Math.max(4,retained.height*.5))return session;}catch(e){}
       session=null;
     }
@@ -23481,46 +23966,103 @@ function createReadingFrameV5005(){
       frame.node=node;frame.offset=Math.max(0,Math.min(offset,node.length-1));
       frame.textOffset=offsetInBlock(block,node,frame.offset);
       var r=rect(frame);
-      if(r&&r.height&&r.top<window.innerHeight&&r.bottom>0){frame.top=r.top;session=frame;return frame;}
+      if(r&&r.height&&r.top<window.innerHeight&&r.bottom>0){frame.top=r.top;if(!passive)session=frame;return frame;}
     }
-    session=fallback;return fallback;
+    if(!passive)session=fallback;return fallback;
   }
-  function restore(frame,immediate){
+  function restore(frame,immediate,viewportChange){
     cancel();if(!frame||!frame.block||!frame.block.isConnected)return;
+    if(window.__acimEnsureSection5011)window.__acimEnsureSection5011(frame.block);
     var content=root();if(!content)return;
     var run={frame:frame,root:content,overflowAnchor:content.style.overflowAnchor,section:frame.block.closest('section.csec'),sectionVisibility:'',observer:null,raf:null,timers:[],events:[]};
+    run.viewportChange=!!viewportChange;
+    run.navigationRevision5010=window.__acimNav?window.__acimNav.revision():0;
     active=run;
-    content.style.overflowAnchor='none';
-    if(run.section){run.sectionVisibility=run.section.style.contentVisibility;run.section.style.contentVisibility='visible';}
+    /* Render the section naturally before measuring a descendant. */
     function listen(target,name,fn,options){target.addEventListener(name,fn,options);run.events.push([target,name,fn,options]);}
     function pin(){
       run.raf=null;
       if(active!==run)return;
       if(document.documentElement.classList.contains('acim-book-veiled')){cancel();return;}
-      if(window.__acimV50&&window.__acimV50.isBlocked()){cancel();return;}
+      /* V50.0.7（方案 D）：對話框開啟期間暫停閱讀錨點校正——鍵盤彈出的
+         visualViewport 連發會驅動 pin() 的 rAF 迴圈，每次 getBoundingClientRect
+         與可能的 acimScrollNow 都是強制版面；書本已離版面樹（面紗）時本就
+         無座標可校，直接取消讓位給對話框。 */
+      if(window.__acimV50&&(window.__acimV50.isBlocked&&window.__acimV50.isBlocked()||window.__acimV50.isDialogOpen&&window.__acimV50.isDialogOpen())){cancel();return;}
       var r;try{r=rect(frame);}catch(e){cancel();return;}
       if(!r||!r.height)return;
+      /* V50.0.10（讀者回報）距離守衛：pin 的職責是「把已還原的閱讀位置
+         釘在結清長高／字型交換的漂移上」，不是把已前往新位置的讀者拉回
+         舊位。首次成功量測即視為完成還原（run.pinned）；之後若捕獲框景
+         離當前視口逾 2 個視窗高（讀者已被程式跳轉或手勢帶離——如手機
+         搜尋點選後 acimSearchCorrect 已接管），整組取消讓位，不再與
+         目標端校正互搶捲軸＝「跳到命中處→彈回原處」來回震盪的幫兇。
+         合法漂移遠小於 2 個視窗；面紗還原的首次釘回在守衛生效前完成。
+         詳見本檔開頭 V50.0.10 變更記錄。 */
+      if(window.__acimNav&&window.__acimNav.revision()!==run.navigationRevision5010){cancel();return;}
+      run.pinned=true;
       var drift=r.top-frame.top;
       if(Math.abs(drift)>1.5)acimScrollNow(0,Math.max(0,window.scrollY+drift));
     }
     function queue(){if(active===run&&run.raf===null)run.raf=requestAnimationFrame(pin);}
-    ['wheel','touchmove','pointerdown','keydown'].forEach(function(name){listen(window,name,cancel,{capture:true,passive:true});});
+    ['wheel','touchmove'].forEach(function(name){listen(window,name,cancel,{capture:true,passive:true});});
     ['acim-navigation','acim-v50-block'].forEach(function(name){listen(document,name,cancel,false);});
     listen(window,'pagehide',cancel,false);listen(window,'resize',queue,{passive:true});
     if(window.visualViewport)listen(window.visualViewport,'resize',queue,{passive:true});
     if(document.fonts&&document.fonts.addEventListener){listen(document.fonts,'loadingdone',queue,false);listen(document.fonts,'loadingerror',queue,false);}
-    if(window.ResizeObserver){
-      run.observer=new ResizeObserver(queue);
-      [frame.block,run.section,content.firstElementChild].forEach(function(el){if(el)run.observer.observe(el);});
-    }
+    /* Bounded timers and font events replace a whole-book layout observer. */
     [90,260,700,1400,2600,4300,6500].forEach(function(ms){run.timers.push(setTimeout(queue,ms));});
     run.timers.push(setTimeout(function(){if(active===run)cancel();},8000));
-    if(immediate)pin();else queue();
+    function warmThenPin(){
+      if(active!==run)return;
+      if(run.section){
+        var sectionBox=run.section.getBoundingClientRect();
+        if(sectionBox.bottom<0||sectionBox.top>window.innerHeight)
+          acimScrollNow(0,Math.max(0,window.scrollY+sectionBox.top-Math.min(frame.top,92)));
+      }
+      queue();
+    }
+    if(immediate)warmThenPin();
+    else run.raf=requestAnimationFrame(function(){run.raf=null;warmThenPin();});
   }
-  return {capture:capture,restore:restore,cancel:cancel,forget:forget};
+  /* Cache at rest, before a rotation changes geometry; keyboard height alone never restores. */
+  function cacheViewport5010(){
+    clearTimeout(frameTimer5010);
+    frameTimer5010=setTimeout(function(){
+      if(document.hidden||active||resizePending5011||window.innerWidth!==frameWidth5010)return;
+      if(document.documentElement.classList.contains('acim-book-veiled'))return;
+      if(window.__acimV50&&window.__acimV50.isDialogOpen())return;
+      viewportFrame5010=capture(true);
+    },220);
+  }
+  window.addEventListener('scroll',cacheViewport5010,{passive:true});
+  window.addEventListener('resize',function(){
+    var width=window.innerWidth;if(Math.abs(width-frameWidth5010)<8)return;
+    frameWidth5010=width;clearTimeout(frameTimer5010);clearTimeout(resizeTimer5010);
+    var frame=viewportFrame5010;if(!frame){cacheViewport5010();return;}
+    resizePending5011=true;var resizeGeneration=++resizeGeneration5011;
+    resizeTimer5010=setTimeout(function(){
+      if(resizeGeneration!==resizeGeneration5011)return;
+      if(frame!==viewportFrame5010||document.documentElement.classList.contains('acim-book-veiled')){resizePending5011=false;return;}
+      if(window.__acimV50&&window.__acimV50.isDialogOpen()){resizePending5011=false;return;}
+      frame.top=Math.max(92,Math.min(window.innerHeight-110,frame.top));
+      var revision=window.__acimNav?window.__acimNav.revision():0;
+      function resumeViewport(){
+        if(resizeGeneration!==resizeGeneration5011||frame!==viewportFrame5010||window.innerWidth!==width)return;
+        if(window.__acimNav&&window.__acimNav.revision()!==revision)return;
+        resizePending5011=false;session=frame;restore(frame,false,true);
+      }
+      if(window.__acimStyleDebtPending&&window.__acimStyleDebtPending()&&window.__acimOnDischargeDone)window.__acimOnDischargeDone(resumeViewport);
+      else resumeViewport();
+    },140);
+  },{passive:true});
+  document.addEventListener('acim:reading-ready',cacheViewport5010);
+  setTimeout(cacheViewport5010,1200);
+  return {capture:capture,restore:restore,cancel:cancel,forget:forget,rect:rect};
 }
 
   var readingFrame=createReadingFrameV5005();
+  window.__acimMeasureTextFrame5010=readingFrame.rect;
   var _veil={on:false,timer:null,y:0,zoom:'',aid:null,aidOrig:null,atop:null,gen:0,waiting:null,
     session:null,frame:null}; /* V40.4：session＝字級連調錨點（同段落＋同框景跨週期沿用） */
   /* V40.1：面紗為「共享資源」——抽屜或字級快選單任一開啟即掛紗，
@@ -23528,7 +24070,14 @@ function createReadingFrameV5005(){
   function acimPanelOpen(){
     if(sidebar.classList.contains('mobile-open'))return true;
     var sh=document.getElementById('acim-quick-sheet');
-    return !!(sh&&sh.classList.contains('open'));
+    if(sh&&sh.classList.contains('open'))return true;
+    /* V50.0.7（方案 A）：試讀對話框持有面紗期間視同「面板開啟」——面紗是
+       共享資源（V40.1 設計），抽屜／快選單／對話框任一開著都不解紗；
+       持有旗標由 v50 session runtime 的 v50VeilHold() 掛卸（G1 修正）。
+       追查：若對話框關閉後書本沒有回來，先查 _veil.waiting 債閘門與
+       window.__acimV50DialogHold 是否確實歸 false。 */
+    if(window.__acimV50DialogHold===true)return true;
+    return false;
   }
   function maybeUnveil(){ if(acimPanelOpen())return; unveilBookBehindDrawer(); }
   window.__acimPanelOpen=acimPanelOpen;
@@ -23578,10 +24127,7 @@ function createReadingFrameV5005(){
      未來任何樣式變動若重新引入 smooth，程式捲動也不會被動畫接管、
      更不會反過來吞掉後續的瞬跳指令。 */
   function acimScrollNow(x,y){
-    var de=document.documentElement,prev='';
-    try{prev=de.style.scrollBehavior;de.style.scrollBehavior='auto';}catch(e){}
-    try{window.scrollTo(x,y);}catch(e){}
-    requestAnimationFrame(function(){try{de.style.scrollBehavior=prev;}catch(e){}});
+    try{window.scrollTo({left:x,top:y,behavior:'instant'});}catch(e){window.scrollTo(x,y);}
   }
   function unveilBookBehindDrawer(skipRestore,done,opts){
     opts=opts||{};
@@ -23623,7 +24169,7 @@ function createReadingFrameV5005(){
          就不得再做錨點還原（否則先釘回原位、回調再跳走、90ms 後
          校正計時器又把讀者彈回原位，三者互搶＝搜尋／書籤／目錄
          跳轉在債清未完成時「點了沒跳／被彈回」。） */
-      _veil.waiting={dones:dones,gen:_veil.gen,skip:!!skipRestore,top:!!opts.topJump};
+      _veil.waiting={dones:dones,gen:_veil.gen,skip:!!skipRestore,top:!!opts.topJump,restoreReading:!!opts.restoreReading};
       try{if(window.__acimTopJumpTrace)window.__acimTopJumpTrace.gated=true;}catch(e){}
       var _fire=function(){
         var w=_veil.waiting;
@@ -23631,7 +24177,7 @@ function createReadingFrameV5005(){
         if(!w||w.gen!==_veil.gen||!_veil.on)return;
         unveilCore(w.skip,function(){
           w.dones.forEach(function(cb){try{cb();}catch(e){}});
-        },w.top,w.dones.length>0);
+        },w.top,w.dones.length>0&&!w.restoreReading);
       };
       _veil.waiting.fire=_fire;
       try{ if(window.__acimOnDischargeDone)window.__acimOnDischargeDone(_fire); }catch(e){}
@@ -23662,12 +24208,12 @@ function createReadingFrameV5005(){
       _valveTimer=setTimeout(_valveTick,650);
       return;
     }
-    unveilCore(skipRestore,done,!!opts.topJump,typeof done==='function');
+    unveilCore(skipRestore,done,!!opts.topJump,typeof done==='function'&&!opts.restoreReading);
   }
   function unveilCore(skipRestore,done,topMode,pendingJump){
     if(_veil.timer){clearTimeout(_veil.timer);_veil.timer=null;}
     if(!_veil.on)return;
-    _veil.on=false;
+    _veil.on=false;window.__acimViewReady5010=false;
     try{document.documentElement.classList.remove('acim-book-veiled');}catch(e){}
     /* V40.10：移除 skipRestore 路徑的同步 acimScrollNow(0,0)——V40.3~V40.9
        六版回頂 12 秒凍結的真兇。window.scrollTo 需要最新版面，在「display:none
@@ -23816,11 +24362,13 @@ function createReadingFrameV5005(){
            章節 pill 等呼叫端把「量測＋跳轉」放進本回調。 */
         try{if(window.__acimTopJumpTrace&&!window.__acimTopJumpTrace.tRestore)
           window.__acimTopJumpTrace.tRestore=(window.performance&&performance.now)?performance.now():0;}catch(e){}
+        window.__acimViewReady5010=true;
         try{if(typeof done==='function')done();}catch(e){}
       });
     });
   }
   window.__acimVeilUnveil=unveilBookBehindDrawer;
+  window.__acimBookReadyForSpeech5010=function(){return !_veil.on&&!_veil.timer&&!_veil.waiting&&window.__acimViewReady5010!==false;};
   function veilScheduleForDrawer(){
     if(_veil.on||_veil.timer)return;
     _veil.gen++;
@@ -23926,6 +24474,7 @@ function createReadingFrameV5005(){
   window.__acimVeilOnNavJump=function(){ _veil.session=null; };
   var sidebarHideTimer=null,sidebarOpenFrame=null;
   function openSidebar(){
+    if(window.innerWidth>768)return;
     if(sidebarHideTimer!==null){clearTimeout(sidebarHideTimer);sidebarHideTimer=null;}
     if(sidebar.classList.contains('mobile-open')&&overlay.style.display==='block')return;
     if(window.innerWidth<=768)veilScheduleForDrawer();
@@ -23936,10 +24485,10 @@ function createReadingFrameV5005(){
       if(sidebar.classList.contains('mobile-open'))overlay.style.opacity='1';
     });
   }
-  function closeSidebar(){
+  function closeSidebar(afterReadingRestore){
     setSidebarSettings(false,false);
     if(sidebarOpenFrame!==null){cancelAnimationFrame(sidebarOpenFrame);sidebarOpenFrame=null;}
-    if(!sidebar.classList.contains('mobile-open')&&overlay.style.display==='none')return;
+    if(!sidebar.classList.contains('mobile-open')&&overlay.style.display==='none'){if(typeof afterReadingRestore==='function')unveilBookBehindDrawer(false,afterReadingRestore,{restoreReading:true});return;}
     /* V30.8：手機收起抽屜＝進入閱讀模式，退休全文高亮（pin 保留），
        下次點搜尋欄／鍵盤彈出不再背負高亮重算。 */
     retireSearchHighlights();
@@ -23952,11 +24501,19 @@ function createReadingFrameV5005(){
     },280);
     /* V40.1：解紗時機移到收 class 之後——若字級快選單仍開著，
        面紗由它續用（共享資源，全關才解紗）。 */
-    try{maybeUnveil();}catch(e){}
+    try{if(typeof afterReadingRestore==='function'&&!acimPanelOpen())unveilBookBehindDrawer(false,afterReadingRestore,{restoreReading:true});else maybeUnveil();}catch(e){}
   }
   /* V30：供底部導覽列使用 */
   window.__acimOpenSidebar=openSidebar;
   window.__acimCloseSidebar=closeSidebar;
+  var sidebarMobile5010=window.matchMedia('(max-width:768px)');
+  sidebarMobile5010.addEventListener('change',function(){
+    closeSidebar();
+    if(sidebarHideTimer!==null){clearTimeout(sidebarHideTimer);sidebarHideTimer=null;}
+    sidebar.classList.remove('mobile-open');overlay.style.opacity='0';overlay.style.display='none';
+    if(sidebarOpenFrame!==null){cancelAnimationFrame(sidebarOpenFrame);sidebarOpenFrame=null;}
+    maybeUnveil();
+  });
   window.__acimOpenSettings=function(){
     /* 桌面：側欄常駐，只展開設定面板；手機：先開抽屜再展開面板
        （桌面呼叫 openSidebar 會鋪滿全螢幕 overlay，必須避開） */
@@ -23982,7 +24539,7 @@ function createReadingFrameV5005(){
   var content = document.getElementById('content-area');
   /* V40.22: measure section boxes, never offscreen heading descendants.
      content-visibility can keep the other 798 section subtrees skipped. */
-  var readingSections=null, readingOwnHeads=null, readingPreviousHeads=null;
+  var readingSections=null, readingOwnHeads=null, readingPreviousHeads=null,readingStandaloneHeads5010=null;
   window.__acimCurrentHeading=function(margin){
     if(document.documentElement.classList.contains('acim-book-veiled')){
       var id=window.__acimReadingHeading&&window.__acimReadingHeading.get();
@@ -23991,6 +24548,7 @@ function createReadingFrameV5005(){
     if(!readingSections){
       readingSections=Array.from(content.querySelectorAll('section.csec'));
       readingOwnHeads=[];readingPreviousHeads=[];
+      readingStandaloneHeads5010=Array.from(content.querySelectorAll('h1,h2,h3,h4')).filter(function(h){return !h.closest('section.csec');});
       var previous=null;
       readingSections.forEach(function(sec){
         var h=sec.querySelector('h1,h2,h3,h4');
@@ -24004,9 +24562,11 @@ function createReadingFrameV5005(){
       if(readingSections[mid].getBoundingClientRect().top<=y){best=mid;lo=mid+1;}
       else hi=mid-1;
     }
-    if(best<0)return null;
-    var own=readingOwnHeads[best];
-    return own&&own.getBoundingClientRect().top<=y?own:readingPreviousHeads[best];
+    var own=best>=0?readingOwnHeads[best]:null;
+    var chosen=own&&own.getBoundingClientRect().top<=y?own:(best>=0?readingPreviousHeads[best]:null);
+    var chosenTop=chosen?chosen.getBoundingClientRect().top:-Infinity;
+    readingStandaloneHeads5010.forEach(function(h){var top=h.getBoundingClientRect().top;if(top<=y&&top>chosenTop){chosen=h;chosenTop=top;}});
+    return chosen;
   };
   var zSteps = [0.78, 0.89, 1.0, 1.12, 1.24, 1.38, 1.54];
   var fi = 2;
@@ -24028,6 +24588,8 @@ function createReadingFrameV5005(){
       content.style.transformOrigin = 'top left';
       content.style.width = (100/z)+'%';
     }
+    content.style.setProperty('--acim-reading-scale',z);
+    var fnScale5010=document.getElementById('footnote-bar');if(fnScale5010)fnScale5010.style.setProperty('--acim-reading-scale',z);
     try{ window.__acimStorage.set('acim-fs', fi); }catch(e){} /* V25（I19）*/
     var u = document.getElementById('btn-fup'), d = document.getElementById('btn-fdn');
     if (u) u.style.opacity = fi >= 6 ? '0.38' : '1';
@@ -24065,12 +24627,14 @@ function createReadingFrameV5005(){
     if(themeMode) themeMode.value=saved===null?'auto':saved==='1'?'dark':'light';
   }
   function setThemeMode(mode){
+    var themeFrame5010=window.innerWidth>768&&!document.documentElement.classList.contains('acim-book-veiled')?(window.__acimSettingsReadingFrame5011||readingFrame.capture()):null;
     if(mode==='auto') window.__acimStorage.remove('acim-dark');
     else window.__acimStorage.set('acim-dark',mode==='dark'?'1':'0');
     var mq=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');
     document.documentElement.classList.toggle('dark-mode',mode==='auto'?!!(mq&&mq.matches):mode==='dark');
     syncDark();
     scheduleStyleDischarge();
+    if(themeFrame5010)readingFrame.restore(themeFrame5010,false);
   }
   syncDark();
   if(themeMode) themeMode.addEventListener('change',function(){ setThemeMode(themeMode.value); });
@@ -24078,7 +24642,7 @@ function createReadingFrameV5005(){
     var _acimMq=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');
     if(_acimMq&&_acimMq.addEventListener) _acimMq.addEventListener('change',function(e){
       if(window.__acimStorage.get('acim-dark')===null){
-        document.documentElement.classList.toggle('dark-mode',e.matches); syncDark(); scheduleStyleDischarge();
+        setThemeMode('auto');
       }
     });
   }catch(err){}
@@ -24189,6 +24753,48 @@ function createReadingFrameV5005(){
      跨裝置與調整字型後位置才能精準對齊。     */
   var savedY = Math.max(0,parseInt(window.__acimStorage.get('acim-scroll')||'0',10)||0);
   var savedAnchor = window.__acimStorage.get('acim-anchor');
+  var savedTextFrame5010=window.__acimStorage.get('acim-reading-frame-v1');
+  /* V50.1.1: a section heading is only a fallback, never a replacement for
+     a saved mid-section position. Old clients supply the pixel/heading pair;
+     this release additionally stores one bounded semantic text checkpoint. */
+  function readingRestorePlan5010(y,anchor,raw,bookmarksRaw){
+    var plan={kind:y>100?'offset':'heading',y:y,anchor:anchor};
+    try{
+      var v=JSON.parse(raw||'null');
+      if(v&&v.schema===1&&Number.isFinite(v.y)&&Math.abs(v.y-y)<=2&&
+         (v.anchor||'')===(anchor||'')&&Number.isFinite(v.top)&&v.top>=-600&&v.top<=2000&&
+         (v.textOffset===null||(Number.isInteger(v.textOffset)&&v.textOffset>=0&&v.textOffset<=100000))&&
+         typeof v.id==='string'&&v.id.length<=160&&/^[A-Za-z0-9_.:-]*$/.test(v.id)&&
+         typeof v.ceId==='string'&&v.ceId.length<=160&&/^[A-Za-z0-9_.:-]*$/.test(v.ceId)&&
+         (v.id||v.ceId)){
+        plan.kind='text';plan.frame=v;
+      }
+    }catch(e){}
+    if(plan.kind!=='text'&&y>100){
+      try{
+        var bookmarks5010=JSON.parse(bookmarksRaw||'[]'),closest5010=null,distance5010=97;
+        if(Array.isArray(bookmarks5010))bookmarks5010.slice(0,50).forEach(function(b){
+          if(!b||!Number.isFinite(b.scrollY)||!Number.isFinite(b.atop)||b.atop<-600||b.atop>2000)return;
+          var id=typeof b.anchor==='string'?b.anchor:'',ceId=typeof b.ceId==='string'?b.ceId:'';
+          if(!/^[A-Za-z0-9_.:-]{0,160}$/.test(id)||!/^[A-Za-z0-9_.:-]{0,160}$/.test(ceId)||(!id&&!ceId))return;
+          var distance=Math.abs(b.scrollY-y);if(distance>=distance5010)return;
+          distance5010=distance;closest5010={id:id,ceId:ceId,textOffset:null,top:b.atop-(y-b.scrollY)};
+        });
+        if(closest5010){plan.kind='bookmark';plan.frame=closest5010;}
+      }catch(e){}
+    }
+    return plan;
+  }
+  function saveReadingText5010(anchor,y){
+    try{
+      var f=readingFrame.capture(true);if(!f||!f.block||!f.block.isConnected)return;
+      var id=f.block.id||'',ceId=f.block.getAttribute('data-acim-id')||'';
+      if(!id&&!ceId)return;
+      window.__acimStorage.set('acim-reading-frame-v1',JSON.stringify({schema:1,id:id,ceId:ceId,
+        textOffset:f.textOffset,top:f.top,y:Math.round(y),anchor:anchor||'',width:window.innerWidth}));
+    }catch(e){}
+  }
+  var restoreTries5010=0;
   var progressRestored = false; /* 旗標：防止 buildTOC 多次呼叫重複跳位 */
   /* V30.4: cache known reading headings using existing work; never measure here. */
   window.__acimReadingHeading=(function(){
@@ -24222,7 +24828,7 @@ function createReadingFrameV5005(){
           var h=section.querySelector('h1,h2,h3,h4,h5,h6');
           id=h?resolve(h.id):(section===main.querySelector('section.csec')?first:null);
         }
-        if(id)record(id,'navigation',now());
+        if(id){record(id,'navigation',now());if(window.__acimSyncCrumb5010)window.__acimSyncCrumb5010(id);}
       },
       observe:function(id,time){
         var at=typeof time==='number'&&isFinite(time)?time:now();
@@ -24274,6 +24880,7 @@ function createReadingFrameV5005(){
     var heading=window.__acimCurrentHeading(80),best=heading?heading.id:null;
     if(best){ try{ window.__acimStorage.set('acim-anchor',best); }catch(e){} } /* V25（I19）*/
     if(window.__acimReadingHeading)window.__acimReadingHeading.saved(best);
+    saveReadingText5010(best,window.scrollY);
   }
   var saveT;
   window.addEventListener('scroll', function(){
@@ -24327,10 +24934,8 @@ function createReadingFrameV5005(){
            才量測；配合 unveilCore 的 pendingJump 守衛，校正計時器不再
            與跳轉互搶。 */
         var go=function(){
-          var rect = el.getBoundingClientRect();
-          var offset = window.scrollY + rect.top - 56;
-          window.__acimJump(offset);
-          window.__acimCorrectScroll(el, 56);
+          if(window.__acimNavigateTarget5010)window.__acimNavigateTarget5010(el,72,'toc');
+          else {var reveal=acimRevealSection(el);window.__acimJump(window.scrollY+el.getBoundingClientRect().top-72);acimSearchCorrect(el,72,reveal);}
         };
         unveilBookBehindDrawer(false, go); /* V30.11：量測前先讓書本回到版面樹（V40.15：量測入回調） */
         /* 展開此連結的所有直接父層（確保在已收合群組內的連結也能被看到）*/
@@ -24496,8 +25101,8 @@ function createReadingFrameV5005(){
                drawer's style work finishes; measure only inside this callback.
                A pending jump also suppresses restoration of the old passage. */
             var go=function(){
-              var token=window.__acimJump(window.scrollY + t.getBoundingClientRect().top - 72);
-              window.__acimCorrectScroll(t, 72, token);
+              if(window.__acimNavigateTarget5010)window.__acimNavigateTarget5010(t,92,'glossary');
+              else {var reveal=acimRevealSection(t);window.__acimJump(window.scrollY+t.getBoundingClientRect().top-92);acimSearchCorrect(t,92,reveal);}
               t.classList.remove('glossary-flash'); void t.offsetWidth; t.classList.add('glossary-flash');
             };
             unveilBookBehindDrawer(false, go);
@@ -24519,12 +25124,14 @@ function createReadingFrameV5005(){
         else row.insertBefore(arr, link);
         link.classList.add('toc-glossary-heading');
         group.appendChild(childWrap);
+        if(loadTocState(gHead.id)){childWrap.classList.add('open');arr.textContent='▼';arr.setAttribute('aria-expanded','true');arr.setAttribute('aria-label','收合術語詞彙');}
         var toggle=function(){
           var open=childWrap.classList.contains('open');
           childWrap.classList.toggle('open',!open);
           arr.textContent=open?'▶':'▼';
           arr.setAttribute('aria-label',open?'展開術語詞彙':'收合術語詞彙');
           arr.setAttribute('aria-expanded',open?'false':'true');
+          saveTocState(gHead.id,!open);
         };
         arr.addEventListener('click',function(e){ e.stopPropagation(); toggle(); });
         arr.addEventListener('keydown',function(e){
@@ -24542,6 +25149,7 @@ function createReadingFrameV5005(){
       });
     });
 
+    window.__acimSyncCrumb5010=function(id){var anc=headingAncestors[id],ct=document.getElementById('crumb-text');if(!anc||!ct)return;var parts=[];if(anc.h1)parts.push(anc.h1);if(anc.lv>=2&&anc.h2)parts.push(anc.h2);if(anc.lv>=3&&anc.h3)parts.push(anc.h3);ct.textContent=parts.join(' › ');};
     /* IntersectionObserver 高亮 + breadcrumb */
     if('IntersectionObserver' in window){
       var links={};
@@ -24586,6 +25194,49 @@ function createReadingFrameV5005(){
            原還原排程（fonts.ready+80ms）必然晚於金句模組的 hash 跳轉
            （setTimeout 0），有閱讀紀錄時會蓋掉分享連結的定位。 */
         if (location.hash && location.hash.length > 1) return;
+        var plan5010=readingRestorePlan5010(savedY,savedAnchor,savedTextFrame5010,window.__acimStorage.get('acim-bookmarks'));
+        document.documentElement.setAttribute('data-acim-restore-mode',plan5010.kind);
+        if(plan5010.kind!=='heading'){
+          var savedBlock5010=null;
+          if(plan5010.kind==='text'||plan5010.kind==='bookmark'){
+            var sv5010=plan5010.frame;
+            savedBlock5010=sv5010.id?document.getElementById(sv5010.id):null;
+            if(!savedBlock5010&&sv5010.ceId)savedBlock5010=content.querySelector('[data-acim-id="'+sv5010.ceId+'"]');
+            if(savedBlock5010&&!content.contains(savedBlock5010))savedBlock5010=null;
+            if(!savedBlock5010&&restoreTries5010++<20){setTimeout(doRestore,120);return;}
+          }
+          function pinSavedFrame5010(frame,token){
+            if(!frame)return;
+            readingFrame.restore(frame,true);
+            window.__acimCorrectScroll(frame.block,frame.top,token,function(){return readingFrame.rect(frame)||frame.block.getBoundingClientRect();});
+          }
+          if(savedBlock5010){
+            var savedToken5010=window.__acimNav.begin('restore-text');
+            pinSavedFrame5010({block:savedBlock5010,node:null,offset:0,textOffset:sv5010.textOffset,range:null,
+              top:plan5010.kind==='bookmark'||!Number.isFinite(sv5010.width)||Math.abs(sv5010.width-window.innerWidth)<8?sv5010.top:Math.max(window.innerWidth<=768?94:64,Math.min(window.innerHeight-110,sv5010.top))},savedToken5010);
+            return;
+          }
+          /* Legacy pixels include the realized height of nearby sections.
+             Warm the known section before interpreting that old coordinate.
+             New navigation/gestures cancel this finite migration job. */
+          var legacyHeading5010=savedAnchor?document.getElementById(savedAnchor):null;
+          if(legacyHeading5010&&window.__acimNavigateTarget5010){
+            window.__acimNavigateTarget5010(legacyHeading5010,72,'restore-legacy');
+            var legacyToken5010=window.__acimNav.current();
+            setTimeout(function(){
+              if(!window.__acimNav.valid(legacyToken5010)||document.hidden)return;
+              var sec=legacyHeading5010.closest('section.csec'),rect=sec?sec.getBoundingClientRect():null;
+              var top=rect?window.scrollY+rect.top:0,bottom=rect?top+rect.height:0;
+              if(!rect||savedY<top-96||savedY>bottom-32){document.documentElement.setAttribute('data-acim-restore-mode','legacy-chapter-fallback');return;}
+              window.__acimJump(savedY,legacyToken5010);
+              pinSavedFrame5010(readingFrame.capture(true),legacyToken5010);
+              document.documentElement.setAttribute('data-acim-restore-mode','legacy-offset-done');
+            },3500);
+            return;
+          }
+          window.__acimJump(savedY);
+          return;
+        }
         if (savedAnchor) {
           var el = document.getElementById(savedAnchor);
           if (el) {
@@ -24909,6 +25560,10 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     if(!_disCbs)_disCbs=[];
     _disCbs.push(cb);
   };
+  /* V50.0.7（方案 B，G5）：供 V50 試讀對話框開啟時預結清樣式債（見該檔
+     openDialog / v50VeilHold 註解）。排程器自身有 V40.5 restart 防風暴，
+     重複呼叫安全：走訪中只續 timer，不歸零進度。 */
+  window.__acimScheduleStyleDischarge=scheduleStyleDischarge;
   if(window.visualViewport&&visualViewport.addEventListener)
     visualViewport.addEventListener('resize',scheduleStyleDischarge,{passive:true});
   function afterPresentation(fn){
@@ -25219,7 +25874,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
       _acimCorrectReveal.sec.style.contentVisibility=_acimCorrectReveal.prev;
     }
     if(reveal)_acimCorrectReveal=reveal;
-    var gen=_acimCorrectGen;
+    var gen=_acimCorrectGen,navToken=window.__acimNav.current();
     var stops=['wheel','touchmove','pointerdown','keydown'];
     function restoreReveal(){
       if(reveal&&_acimCorrectReveal===reveal){
@@ -25243,16 +25898,14 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     [90,220,450,800,1200,1700,2400,3200].forEach(function(ms){
       setTimeout(function(){
         if(gen!==_acimCorrectGen)return;
+        if(!window.__acimNav.valid(navToken)){stop();return;}
         if(!el||!el.isConnected)return;
         var t=window.scrollY+el.getBoundingClientRect().top-margin;
         var de=document.documentElement;
         var max=Math.max(0,(document.scrollingElement||de).scrollHeight-window.innerHeight);
         t=Math.max(0,Math.min(t,max));
         if(Math.abs(t-window.scrollY)>40){
-          var prev=de.style.scrollBehavior;
-          de.style.scrollBehavior='auto';
-          window.scrollTo(0,t);
-          requestAnimationFrame(function(){ de.style.scrollBehavior=prev; });
+          window.scrollTo({left:0,top:t,behavior:'instant'});
         }
       },ms);
     });
@@ -25367,9 +26020,20 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
           }
         }
       };
-      if(window.innerWidth<=768)closeSidebar();
-      if(window.__acimVeilUnveil)window.__acimVeilUnveil(false,proceed);
-      else proceed();
+      /* V50.0.10（讀者回報）：手機點搜尋結果「跳到命中處→彈回原處→又跳回」
+         震盪（桌機正常）——舊順序先 closeSidebar()（其 maybeUnveil 以無回調
+         解紗，pendingJump=false → rAF#1 readingFrame.restore＋pin 校正把畫面
+         釘回抽屜開啟前位置），再 __acimVeilUnveil(false,proceed) 時面紗已解，
+         proceed 同步跳到命中處＋acimSearchCorrect 校正——兩套校正互搶捲軸
+         3~8 秒。修正：由帶跳轉回調的解紗啟動（pendingJump=true，V40.15 讓位
+         機制生效），closeSidebar 移入回調——解紗完成後先收抽屜再量測跳轉，
+         全程只剩 acimSearchCorrect 一套校正。詳見本檔開頭 V50.0.10 變更記錄。 */
+      var go=function(){
+        if(window.innerWidth<=768)closeSidebar();
+        proceed();
+      };
+      if(window.__acimVeilUnveil)window.__acimVeilUnveil(false,go);
+      else go();
     });
     item.addEventListener('keydown',function(e){
       if(e.key==='Enter'||e.key===' '){e.preventDefault();item.click();}
@@ -25399,6 +26063,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     sr.innerHTML='';sr.classList.remove('visible');sb.style.display='none';_shownCount=0;
     _lastResults=[];_lastRx=null;stats.query=k;stats.resultCount=0;
     if(k.length<2){
+      if(k.length){sb.style.display='block';sb.textContent='請輸入至少兩個字，例如「寬恕」。';}
       stats.searchState='idle';sb.dataset.searchState='idle';sr.setAttribute('aria-busy','false');
       clearHighlight(function(){if(token===_searchToken)document.dispatchEvent(new Event('acim:search-cleared'));});
       return;
@@ -26180,11 +26845,15 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
       l.forEach(function(n){n.nodeValue=n.nodeValue.replace(/\[\d+\]/g,'');});
     })(clone);
     fnText.innerHTML=clone.innerHTML.trim();
+    var noteBody5010=document.getElementById('fn-body');if(noteBody5010)noteBody5010.scrollTop=0;
+    if(window.__acimLinkNoteReferences5010)window.__acimLinkNoteReferences5010(fnText,ref);
     document.dispatchEvent(new Event('acim:footnote-rendered'));
     fnBar.classList.add('open'); document.body.classList.add('fn-open'); activeRef=ref; lastFnTrigger=ref;
     /* 無障礙：將 focus 移入腳注列，讓鍵盤/螢幕閱讀器使用者可直接閱讀 */
     fnBar.setAttribute('tabindex','-1'); fnBar.focus({preventScroll:true});
   }
+  window.__acimShowFootnote5010=showFn;
+  window.__acimHideFootnote5010=hideFn;
   var lastFnTrigger=null; /* V25（I04）：記錄觸發來源，關閉時可回復焦點 */
   function hideFn(restoreFocus){
     var wasFnOpen292=fnBar.classList.contains('open');
@@ -26636,7 +27305,7 @@ function createTtsText292(env){
   function makeRange(maps){var a=null,b=null;for(var i=0;i<maps.length;i++)if(maps[i]){if(!a)a=maps[i].start;b=maps[i].end;}if(!a||!b||!doc||!doc.createRange)return null;try{var r=doc.createRange();r.setStart(a.node,a.offset);r.setEnd(b.node,b.offset);return r;}catch(e){return null;}}
   function queueFrom(data,language){
     var out=[],chars='',maps=[];
-    function flush(){var trim=chars.match(/^\s*/),start=trim?trim[0].length:0,end=chars.replace(/\s+$/,'').length;if(end>start){var text=chars.slice(start,end),source=maps.slice(start,end);segmentMixedLanguage(text,language).forEach(function(seg){var clean=seg.text.trim();if(!clean)return;var lead=seg.text.indexOf(clean),pos=seg.start+lead,max=seg.lang==='en-US'?240:160;while(clean){var cut=Math.min(max,clean.length);if(cut<clean.length&&seg.lang==='en-US'){var space=clean.lastIndexOf(' ',cut);if(space>40)cut=space;}var part=clean.slice(0,cut).trim();if(/[\p{L}\p{N}]/u.test(part)){var count=part.length,range=makeRange(source.slice(pos,pos+count));out.push({text:part,lang:seg.lang,pause:0,range:range});}pos+=cut;clean=clean.slice(cut);var leading=clean.match(/^\s+/);if(leading){pos+=leading[0].length;clean=clean.slice(leading[0].length);}}});}chars='';maps=[];}
+    function flush(){var trim=chars.match(/^\s*/),start=trim?trim[0].length:0,end=chars.replace(/\s+$/,'').length;if(end>start){var text=chars.slice(start,end),source=maps.slice(start,end);segmentMixedLanguage(text,language).forEach(function(seg){var clean=seg.text.trim();if(!clean)return;var lead=seg.text.indexOf(clean),pos=seg.start+lead,max=seg.lang==='en-US'?240:160;while(clean){var cut=Math.min(max,clean.length);if(cut<clean.length&&seg.lang==='en-US'){var space=clean.lastIndexOf(' ',cut);if(space>40)cut=space;}var part=clean.slice(0,cut).trim();if(/[\p{L}\p{N}]/u.test(part)){var count=part.length,range=makeRange(source.slice(pos,pos+count));out.push({text:part,lang:seg.lang,inlineEnglish:seg.lang==='en-US'&&!/^en(?:[-_]|$)/i.test(language||''),pause:0,range:range});}pos+=cut;clean=clean.slice(cut);var leading=clean.match(/^\s+/);if(leading){pos+=leading[0].length;clean=clean.slice(leading[0].length);}}});}chars='';maps=[];}
     function pause(level){flush();if(!out.length)return;var last=out[out.length-1];if(last.pause)last.pause=Math.max(last.pause,level);else out.push({text:'',pause:level,lang:language||'zh-TW',range:null});}
     for(var i=0;i<data.text.length;i++){
       var c=data.text[i],prev=data.text[i-1]||'',next=data.text[i+1]||'';
@@ -26743,15 +27412,22 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     var best=Infinity;candidates.forEach(function(v){best=Math.min(best,rank(v));});
     return candidates.filter(function(v){return rank(v)===best;});
   }
+  var voiceList5010=[];
+  function refreshVoices5010(){try{voiceList5010=synth.getVoices()||[];}catch(e){voiceList5010=[];}return voiceList5010;}
+  refreshVoices5010();
+  if(synth.addEventListener)synth.addEventListener('voiceschanged',refreshVoices5010);
   function pickZhVoice(language){
-    var voices = synth.getVoices();
+    var voices = voiceList5010.length?voiceList5010:refreshVoices5010();
     if(!voices.length) return null;
     /* V27.1：保留舊呼叫介面；標明英文的詞彙定義只選英文聲音。
        沒有英文聲音時不強制指定中文 voice，由引擎依 utterance.lang 選擇。 */
     if(/^en(?:[-_]|$)/i.test(language || '')){
       var english = voices.filter(function(v){ return /^en(?:[-_]|$)/i.test(v.lang || ''); });
-      var preferred = english.find(function(v){ return v.default; });
-      return preferred || english.find(function(v){ return /^en[-_]US$/i.test(v.lang); }) || english[0] || null;
+      english.sort(function(a,b){
+        function score(v){return (v.localService===true?0:100)+(/^en[-_]US$/i.test(v.lang)?0:10)+(v.default?0:1);}
+        return score(a)-score(b);
+      });
+      return english[0]||null;
     }
 
     /* 過濾出中文語音（優先 zh-TW，接受所有 zh-* 及含 Chinese 的名稱）*/
@@ -26760,6 +27436,8 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     });
     /* V27.1：缺少中文聲音時，不將英文聲音強制套用到中文。 */
     if(!zhVoices.length) return null;
+    var localZh5010=zhVoices.filter(function(v){return v.localService===true;});
+    if(localZh5010.length)zhVoices=localZh5010;
     zhVoices=mandarinVoices292(zhVoices);
     if(!zhVoices.length)return null;
 
@@ -26834,7 +27512,11 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
   var _ttsAttempt = 0;
   var _ttsCurrentUnit = null;
   var _ttsPendingStart = null;
-  var _ttsSilenceTimer = null;
+  var _ttsSilenceTimer = null,_ttsStartWatch5010=null,_ttsLabel5010='';
+  var ttsStats5010=window.__acimTtsState5010={state:'idle',voice:'',local:null,startDelayMs:null};
+  var ttsStatus5010=document.createElement('span');ttsStatus5010.id='tts-engine-status';ttsStatus5010.setAttribute('role','status');ttsStatus5010.setAttribute('aria-live','polite');ttsBar.appendChild(ttsStatus5010);
+  function ttsState5010(state,text){ttsStats5010.state=state;ttsStatus5010.textContent=text||'';ttsBar.dataset.engineState=state;var noteStatus=document.getElementById('fn-engine-status5010');if(noteStatus)noteStatus.textContent=window.__fnTtsSpeaking?text||'':'';}
+  function clearStartWatch5010(){if(_ttsStartWatch5010!==null){clearTimeout(_ttsStartWatch5010);_ttsStartWatch5010=null;}}
   var _ttsFootnoteSource292=null,_ttsFootnoteContent292=null,_ttsDeferredWrap292=new Set();
 
   function updatePauseControl(){
@@ -26844,13 +27526,15 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     pauseBtn.setAttribute('aria-label', paused ? '繼續朗讀，會重讀目前分句' : '暫停朗讀，繼續時會重讀目前分句');
   }
   function clearTtsTimers(clearPending){
+    clearStartWatch5010();
     if(_speakTimer!==null){ clearTimeout(_speakTimer); _speakTimer=null; }
     if(_ttsSilenceTimer!==null){ clearTimeout(_ttsSilenceTimer); _ttsSilenceTimer=null; }
     if(clearPending) _ttsPendingStart=null;
   }
   function scheduleTtsStart(action,job){
-    /* V50_INTEGRATION */ if(window.__acimV50&&!window.__acimV50.canRead())return;
     if(_ttsStopped || job!==_ttsGeneration || _ttsAppPaused) return;
+    _ttsPendingStart=action;
+    /* V50_INTEGRATION */ if(window.__acimV50&&!window.__acimV50.canRead())return;
     if(_speakTimer!==null) clearTimeout(_speakTimer);
     _ttsPendingStart=action;
     if(document.hidden){ suspendAppTTS(); return; }
@@ -26882,6 +27566,7 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     clearTtsTimers(false);
     if(_secTimer!==null){clearTimeout(_secTimer);_secTimer=null;} /* Retain pending next action, retire its competing gap timer. */
     synth.cancel();
+    ttsState5010('paused','已暫停；按繼續重讀目前分句。');
     updatePauseControl();
   }
   function resumeAppTTS(){
@@ -26902,9 +27587,10 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     pauseAppTTS();
   }
   function speakTtsUnit(unit,job){
-    /* V50_INTEGRATION */ if(window.__acimV50&&!window.__acimV50.canRead())return;
     if(_ttsStopped || job!==_ttsGeneration || _ttsAppPaused) return;
+    /* canRead emits block synchronously: retain the next unit BEFORE it pauses us. */
     _ttsCurrentUnit=unit;
+    /* V50_INTEGRATION */ if(window.__acimV50&&!window.__acimV50.canRead())return;
     if(document.hidden){ suspendAppTTS(); return; }
     var attempt=++_ttsAttempt, finished=false;
     function valid(){
@@ -26913,7 +27599,7 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     }
     function finish(error){
       if(!valid() || finished) return;
-      finished=true; _ttsCurrentUnit=null;
+      finished=true;clearStartWatch5010(); _ttsCurrentUnit=null;
       if(_ttsSilenceTimer!==null){ clearTimeout(_ttsSilenceTimer); _ttsSilenceTimer=null; }
       /* Any real engine error stops this job for an explicit retry. A failed
          unit is neither silently skipped nor recursively replayed. Retired
@@ -26934,9 +27620,22 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     var u=new SpeechSynthesisUtterance(unit.item.text);
     u.lang=unit.item.lang || 'zh-TW';
     u.rate=getCurrentRate(); u.pitch=getCurrentPitch();
-    var voice=pickZhVoice(u.lang); if(voice) u.voice=voice;
-    if(!unit.item.pause) setTtsHighlightRange(unit.range);
-    u.onstart=function(){ if(!valid() || finished) return; updatePauseControl(); };
+    var voice=pickZhVoice(u.lang);
+    /* Inline English must not start a remote second engine between Chinese words.
+       Standalone English paragraphs still use an English voice. No text is changed. */
+    if(unit.item.inlineEnglish&&(!voice||voice.localService!==true)){
+      var zh=pickZhVoice('zh-TW');if(zh){voice=zh;u.lang=zh.lang||'zh-TW';}
+    }
+    if(voice)u.voice=voice;
+    ttsStats5010.voice=voice?voice.name:'';ttsStats5010.local=voice?voice.localService===true:null;
+    var requestedAt5010=performance.now();ttsState5010('preparing','準備朗讀…');clearTtsHighlight();
+    clearStartWatch5010();
+    _ttsStartWatch5010=setTimeout(function(){
+      if(!valid()||finished)return;
+      if(window.__fnTtsSpeaking){stopTTS();var noteWait=document.getElementById('fn-engine-status5010');if(noteWait)noteWait.textContent='語音尚未回應，請再按朗讀重試。';return;}
+      pauseAppTTS();ttsState5010('waiting','語音引擎尚未回應，請按繼續重試。');
+    },8000);
+    u.onstart=function(){if(!valid()||finished)return;clearStartWatch5010();ttsStats5010.startDelayMs=Math.round(performance.now()-requestedAt5010);ttsState5010('speaking','朗讀中');setTtsHighlightRange(unit.range);updatePauseControl();};
     u.onend=function(){ finish(false); };
     u.onerror=function(){ finish(true); };
     try{ synth.speak(u); }catch(e){ finish(true); }
@@ -26963,6 +27662,7 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     if(fb) fb.classList.remove('fn-tts-active');
     window.__fnTtsSpeaking = false; /* V24 修復：朗讀來源旗標同步 */
     _ttsFootnoteSource292=null;_ttsFootnoteContent292=null;flushTtsWrap292();
+    ttsState5010('idle','');
   }
 
   /* ── 朗讀純文字（供腳注使用）── */
@@ -27014,12 +27714,13 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     var language=/^en(?:[-_]|$)/i.test(para.getAttribute('lang')||'')?'en-US':'zh-TW';
     var prepared=prepareTtsQueue(para,language);
     if(!prepared.queue.some(function(item){return !item.pause&&String(item.text||'').trim();}))return false;
-    currentBtn=btn;currentPara=para;
+    pauseBtn.disabled=false;currentBtn=btn;currentPara=para;
     if(btn){btn.classList.add('tts-active');btn.title='停止朗讀';}
-    para.classList.add('tts-reading');
+    para.classList.add('tts-reading');_ttsStopped=false;
     barLabel.textContent=labelOverride||('▶ '+prepared.text.slice(0,16)+'…');ttsBar.classList.add('tts-bar-on');
     var rect=para.getBoundingClientRect(),margin=Math.max(56,(window.innerHeight-Math.min(rect.height||0,window.innerHeight-112))/2);
-    window.__acimJump(window.scrollY+rect.top-margin);window.__acimCorrectScroll(para,margin);
+    var followToken5010=window.__acimNav.begin('tts-follow');
+    window.__acimJump(window.scrollY+rect.top-margin,followToken5010);window.__acimCorrectScroll(para,margin,followToken5010);
     _queue=prepared.queue.slice();_hlQueue=(prepared.ranges||[]).slice();_ttsStopped=false;
     var job=_ttsGeneration;
     scheduleTtsStart(function(){runQueue(function(){
@@ -27071,7 +27772,9 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     },140);
   }
   function _secPlayNext(){
+    _ttsPendingStart=function(){_secPlayNext();};
     /* V50_INTEGRATION */ if(window.__acimV50&&!window.__acimV50.canRead())return;
+    _ttsPendingStart=null;
     if(_secTimer!==null){clearTimeout(_secTimer);_secTimer=null;}
     if(!_secOn||_ttsAppPaused)return;
     if(document.hidden){suspendAppTTS();return;}
@@ -27086,15 +27789,18 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
   }
 
   function speakSection(){
+    if(window.__acimBookReadyForSpeech5010&&!window.__acimBookReadyForSpeech5010()){ttsBar.classList.add('tts-bar-on');barLabel.textContent='正在切換閱讀位置…';ttsState5010('preparing','畫面定位完成後，請再按一次朗讀。');pauseBtn.disabled=true;return;}
     /* V50_INTEGRATION */ if(window.__acimV50&&!window.__acimV50.canRead())return;
     if(_secOn){ stopTTS(); return; }
     stopTTS(); /* Starting a section is a new source, even if its first paragraph was playing. */
     var sec=_secCurrentSection();
-    if(!sec) return;
+    if(!sec){ttsBar.classList.add('tts-bar-on');barLabel.textContent='這個章名頁沒有可朗讀的正文。';ttsState5010('empty','請由目錄選擇下方一節，再按整節朗讀。');pauseBtn.disabled=true;return;}
     var paras=Array.prototype.slice.call(sec.querySelectorAll('p.mn,p.mns,p.mft')).filter(function(p){
       return !p.closest('#acim-footnotes-container') && (p.textContent||'').trim().length>=1;
     });
-    if(!paras.length){ return; }
+    if(!paras.length){
+      ttsBar.classList.add('tts-bar-on');barLabel.textContent='這個章名頁沒有可朗讀的正文。';ttsState5010('empty','請由目錄選擇下方一節，再按整節朗讀。');pauseBtn.disabled=true;return;
+    }
     _secOn=true; _secParas=paras; _secIdx=0; _secTotal=paras.length;
     var cb=document.getElementById('crumb-tts'), fb2=document.getElementById('btn-sec-tts');
     if(cb) cb.classList.add('acim-tts-on');
@@ -27112,6 +27818,8 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
   updatePauseControl();
   /* V50_INTEGRATION_START */
   document.addEventListener('acim-v50-block',suspendAppTTS);
+  document.addEventListener('acim-navigation',function(e){if(e.detail!=='tts-follow'&&!_ttsStopped)stopTTS();});
+  window.__acimStopTTS5010=stopTTS;
   /* V50_INTEGRATION_END */
   document.addEventListener('visibilitychange',function(){ if(document.hidden) suspendAppTTS(); });
   document.addEventListener('freeze',suspendAppTTS);
@@ -27156,14 +27864,15 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
 
   function flushTtsWrap292(){
     var input=document.getElementById('toc-search-input'),searching=!!(input&&input.value.trim().length>=2);
-    _ttsDeferredWrap292.forEach(function(para){
+    Array.from(_ttsDeferredWrap292).forEach(function(para){
       if(!para||!para.isConnected){_ttsDeferredWrap292.delete(para);return;}
       if(searching)return;
+      if(para.hasAttribute('data-acim-hash-target')||(para===currentPara&&!_ttsStopped)||(window.__fnTtsSpeaking&&para.closest&&para.closest('#fn-text')))return;
       _ttsDeferredWrap292.delete(para);para.removeAttribute('data-acim-pending-sentnums');wrapSentNums(para);
     });
   }
   function wrapSentNums(para){
-    if((para===currentPara&&!_ttsStopped)||(window.__fnTtsSpeaking&&para.closest&&para.closest('#fn-text'))){
+    if(para.hasAttribute('data-acim-hash-target')||(para===currentPara&&!_ttsStopped)||(window.__fnTtsSpeaking&&para.closest&&para.closest('#fn-text'))){
       para.dataset.acimPendingSentnums='1';_ttsDeferredWrap292.add(para);return;
     }
     _ttsDeferredWrap292.delete(para);
@@ -27225,6 +27934,7 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     }
   }
   document.addEventListener('acim:footnote-closed',function(){if(window.__fnTtsSpeaking)stopTTS();});
+  document.addEventListener('acim:citation-retired',flushTtsWrap292);
   document.addEventListener('acim:footnote-rendered',function(){
     var bar292=document.getElementById('footnote-bar'),source292=bar292?bar292.getAttribute('data-fn-id')||'':'';
     var content292=document.getElementById('fn-text');
@@ -27478,6 +28188,7 @@ if(!window.__acimV50WrongOrigin){
     if(old.reveal&&old.sec.style.contentVisibility==='visible')old.sec.style.contentVisibility=old.reveal.prev;
   }
   function pinReferenceSection30(target){
+    if(window.__acimEnsureSection5011)window.__acimEnsureSection5011(target,true);
     var sec=target&&target.closest?target.closest('section.csec'):null;
     if(!sec||!sec.isConnected)return;
     if(activeReferenceReveal30&&activeReferenceReveal30.sec===sec){sec.classList.add('acim-reference-section30');return;}
@@ -27493,16 +28204,13 @@ if(!window.__acimV50WrongOrigin){
     var guard=referenceAnchorGuard30;if(!guard)return;
     referenceAnchorGuard30=null;clearTimeout(guard.timer);
     ['wheel','touchmove','pointerdown','keydown'].forEach(function(type){window.removeEventListener(type,guard.stop,true);});
-    var style=document.documentElement.style;
-    if(guard.value)style.setProperty('overflow-anchor',guard.value,guard.priority);
-    else style.removeProperty('overflow-anchor');
+    /* Scroll anchoring is stable in the stylesheet, never toggled per jump. */
   }
   function holdReferenceAnchor30(token){
     releaseReferenceAnchor30();
     lastReferenceToken30=token;
-    var style=document.documentElement.style;
-    var guard={token:token,value:style.getPropertyValue('overflow-anchor'),priority:style.getPropertyPriority('overflow-anchor'),timer:null,stop:null};
-    referenceAnchorGuard30=guard;style.setProperty('overflow-anchor','none');
+    var guard={token:token,timer:null,stop:null};
+    referenceAnchorGuard30=guard;
     guard.stop=function(e){
       if(e.type==='keydown'&&!/^(ArrowUp|ArrowDown|ArrowLeft|ArrowRight|PageUp|PageDown|Home|End| |Tab|Escape|Enter)$/.test(e.key))return;
       if(referenceAnchorGuard30===guard)releaseReferenceAnchor30();
@@ -27520,6 +28228,20 @@ if(!window.__acimV50WrongOrigin){
       },delay);
     });
   }
+  /* V50.1.1: one active section is rendered for direct ToC/glossary navigation. */
+  window.__acimNavigateTarget5010=function(target,margin,kind){
+    if(!target||!target.isConnected)return;
+    var token=window.__acimNav.begin(kind||'target');if(token===null)return;
+    holdReferenceAnchor30(token);pinReferenceSection30(target);
+    window.__acimJump(window.scrollY+target.getBoundingClientRect().top-margin,token);
+    window.__acimCorrectScroll(target,margin,token);
+    scheduleReferenceCorrection30(target,margin,token);
+  };
+  window.__acimOpenCitation5010=function(ref){
+    if(!parseHash('#'+ref))return false;
+    function go(){scrollToHash('#'+ref);}
+    if(window.__acimVeilUnveil)window.__acimVeilUnveil(false,go);else go();return true;
+  };
   function invalidateReferenceNavigation30(options){
     if(options&&options.contextOnly)return;
     var nav=window.__acimNav;
@@ -28354,9 +29076,11 @@ if(!window.__acimV50WrongOrigin){
     var token=window.__acimNav.begin('hash');
     holdReferenceAnchor30(token);
     /* 長範圍以首句定位，後續字型校正也使用同一首句 Range，避免回拉段首。 */
+    var stableFocus5010=first?{block:target,node:first.node,offset:first.offset,textOffset:first.raw,range:null,top:0}:null;
     var focusRange=null;
     if(first)try{focusRange=document.createRange();focusRange.setStart(first.node,first.offset);focusRange.setEnd(first.node,first.offset+1);}catch(e){}
     function rectOfTarget(){
+      if(stableFocus5010&&window.__acimMeasureTextFrame5010){var liveRect5010=window.__acimMeasureTextFrame5010(stableFocus5010);if(liveRect5010&&liveRect5010.height)return liveRect5010;}
       if(focusRange&&focusRange.startContainer.isConnected){var r=focusRange.getBoundingClientRect();if(r.width||r.height)return r;}
       return target.getBoundingClientRect();
     }
@@ -28365,6 +29089,7 @@ if(!window.__acimV50WrongOrigin){
       pinReferenceSection30(target);
       var rect=rectOfTarget(), margin=Math.max(56,(window.innerHeight-Math.min(rect.height||0,window.innerHeight-112))/2);
       window.__acimJump(window.scrollY+rect.top-margin,token);
+      if(stableFocus5010)window.__acimReadingFocus5010=stableFocus5010;
       window.__acimCorrectScroll(target,margin,token,rectOfTarget);
       scheduleReferenceCorrection30(target,margin,token,rectOfTarget);
       /* V50_INTEGRATION */ v50ReadingReady(target,rectOfTarget,token);
@@ -28996,7 +29721,7 @@ if(!window.__acimV50WrongOrigin){
     buildUI();
     /* V40.30: source context survives gestures, but never survives a new navigation. */
     document.addEventListener('acim-navigation',function(e){
-      if(e.detail!=='hash'){recipientQueue30.invalidate();hideCiteToast();}
+      if(e.detail!=='hash'){recipientQueue30.invalidate();hideCiteToast();document.querySelectorAll('[data-acim-hash-target]').forEach(function(el){el.removeAttribute('data-acim-hash-target');});document.dispatchEvent(new Event('acim:citation-retired'));}
     });
     function stopRecipientAuto30(event){
       /* V50.0.6: a browser-restored scroll is not a reader gesture. Keep the
@@ -29853,10 +30578,10 @@ function buildBottomNav(){
          task（V40.10/V40.11 儀器化實測），必須讓書本從未離開版面樹。
          V40.13：開面板即啟動書首預熱（回頂的唯一定向跳轉由此面板發起，
          面板開啟到點按回頂之間有數秒——預熱正好在這段時間完成）。 */
-      sheet.classList.add('open');
+      sheet.classList.add('open');sheetBtn.setAttribute('aria-expanded','true');sheet.setAttribute('aria-hidden','false');
       if(window.__acimWarmTopDestination)window.__acimWarmTopDestination();
     }else{
-      sheet.classList.remove('open');
+      sheet.classList.remove('open');sheetBtn.setAttribute('aria-expanded','false');sheet.setAttribute('aria-hidden','true');
       if(opts&&typeof opts.onVeilDropped==='function'&&window.__acimUnveilNow){
         /* V40.11→V40.14：帶 onVeilDropped 的關閉＝主動跳轉（回頂）——直通
            唯一一次解紗管線。V40.14：skipRestore 由呼叫端傳遞（回頂＝true，
@@ -29932,7 +30657,7 @@ function buildBottomNav(){
   bmBtn.addEventListener('pointerup',function(){clearTimeout(bmPressTimer);});
   bmBtn.addEventListener('pointercancel',function(){clearTimeout(bmPressTimer);bmLongPress=false;});
   bmBtn.addEventListener('contextmenu',function(e){e.preventDefault();});
-  bmBtn.title='短按：加入／移除書籤；長按半秒：開啟書籤清單';
+  bmBtn.title='短按：加入／移除書籤；長按：開清單；也可由更多開啟我的書籤';
   bmBtn.setAttribute('aria-label',bmBtn.title);
   sheetBtn=tab('Aa','字級',function(){
     if(sheet)setSheet(!sheet.classList.contains('open'));
@@ -29955,7 +30680,8 @@ function buildBottomNav(){
      （V40.12 改：開啟不掛紗、書本可見；A＋／A－／明暗在點按當下才
      掛紗套用，回頂走零面紗直跳——詳見下方 setSheet 與 bTop 註解）。 */
   sheet=document.createElement('div');
-  sheet.id='acim-quick-sheet';
+  sheet.id='acim-quick-sheet';sheet.setAttribute('aria-label','閱讀顯示選項');sheet.setAttribute('aria-hidden','true');sheetBtn.setAttribute('aria-controls',sheet.id);sheetBtn.setAttribute('aria-expanded','false');
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&sheet.classList.contains('open')){e.preventDefault();setSheet(false);sheetBtn.focus({preventScroll:true});}});
   /* V40.9：面板內版本標籤——開面板即可確認裝置真正運行的版本；
      若此標籤未出現或與最新版不符，代表裝置尚未換版（更新流程見檔首）。 */
   var vtag=document.createElement('div');
@@ -30196,12 +30922,7 @@ function rtPin(){
       set(RT_ACTIVE,arr[i].id); render(); v30toast('此位置已在分頁：'+arr[i].title); return;
     }
   }
-  if(arr.length>=RT_MAX){
-    var oldest=null,oti=-1;
-    for(var j=0;j<arr.length;j++){ if(!oldest||arr[j].ts<oldest.ts){ oldest=arr[j]; oti=j; } }
-    if(oldest && get(RT_ACTIVE)!==oldest.id){ arr.splice(oti,1); }
-    else arr.splice(oti,1); /* 滿了就淘汰最舊 */
-  }
+  if(arr.length>=RT_MAX){v30toast('最多可保留五個閱讀分頁。請先關閉一個，再新增；原有分頁都已保留。');return;}
   var t=rtNormalize({id:'rt'+Date.now().toString(36), anchor:anchor, title:title, scrollY:curY,
     atop:h?Math.round(h.getBoundingClientRect().top):0, ts:Date.now()});
   arr.push(t);
@@ -30213,8 +30934,13 @@ function rtPin(){
 function rtRemove(id){
   var arr=rtLoad().filter(function(t){ return t.id!==id; });
   rtSave(arr);
-  if(get(RT_ACTIVE)===id){ if(arr.length) set(RT_ACTIVE,arr[arr.length-1].id); else set(RT_ACTIVE,''); }
-  render();
+  if(get(RT_ACTIVE)===id){
+    if(arr.length){set(RT_ACTIVE,'');rtSwitch(arr[arr.length-1].id);}
+    else{set(RT_ACTIVE,'');render();}
+  }else render();
+  var bar=document.getElementById('rtabs-bar');
+  var next=bar.querySelector('.rtab-on .rtab-select')||bar.querySelector('.rtab-add');
+  if(next)next.focus({preventScroll:true});
 }
 function rtSwitch(id){
   var arr=rtLoad();
@@ -30272,23 +30998,17 @@ function render(){
   var arr=rtLoad(), active=get(RT_ACTIVE);
   bar.querySelectorAll('.rtab').forEach(function(n){ n.remove(); });
   arr.forEach(function(t){
-    var b=document.createElement('button');
-    b.type='button';
-    b.className='rtab'+(t.id===active?' rtab-on':'');
-    b.setAttribute('role','tab');
-    b.setAttribute('aria-selected',t.id===active?'true':'false');
-    var tx=document.createElement('span'); tx.className='rtab-t'; tx.textContent=t.title||'分頁';
-    b.appendChild(tx);
-    if(t.id===active){
-      var x=document.createElement('span'); x.className='rtab-x'; x.textContent='✕';
-      x.title='移除此分頁'; x.setAttribute('data-id',t.id);
-      b.appendChild(x);
-    }
-    b.title=t.id===active?(t.title+'（點 ✕ 移除）'):('切換到：'+t.title);
-    b.addEventListener('click',function(){ rtSwitch(t.id); });
+    var b=document.createElement('div');b.className='rtab'+(t.id===active?' rtab-on':'');b.setAttribute('role','presentation');
+    var select=document.createElement('button');select.type='button';select.className='rtab-select';select.setAttribute('role','tab');select.setAttribute('aria-selected',t.id===active?'true':'false');
+    var tx=document.createElement('span');tx.className='rtab-t';tx.textContent=t.title||'分頁';select.appendChild(tx);select.title='切換到：'+t.title;
+    select.addEventListener('click',function(){rtSwitch(t.id);});b.appendChild(select);
+    var x=document.createElement('button');x.type='button';x.className='rtab-x';x.textContent='×';x.title='關閉此分頁';x.setAttribute('aria-label','關閉閱讀分頁：'+t.title);x.setAttribute('data-id',t.id);b.appendChild(x);
     bar.appendChild(b);
   });
   bar.classList.toggle('has-tabs',arr.length>0);
+  var hint=bar.querySelector('.rtab-empty');if(hint)hint.remove();
+  if(!arr.length){hint=document.createElement('span');hint.className='rtab-empty';hint.textContent='儲存閱讀分頁';bar.appendChild(hint);}
+  var selected=bar.querySelector('.rtab-on');if(selected){var left=selected.offsetLeft,right=left+selected.offsetWidth;if(left<bar.scrollLeft)bar.scrollLeft=left;else if(right>bar.scrollLeft+bar.clientWidth)bar.scrollLeft=right-bar.clientWidth;}
 }
 
 /* ═══ 4) 目錄「目前位置」定位鈕 ═══ */
@@ -30505,7 +31225,7 @@ function backupInit(){
   panel.id='acim-backup291-preview';panel.className='acim-backup291-preview';panel.hidden=true;panel.setAttribute('role','region');panel.setAttribute('aria-label','匯入備份預覽');
   host.append(status,previous,panel);
   var incoming=null,previewPlan=null,fileReadSerial=0;
-  function paint(message){var s=engine.status();status.textContent=(message?message+' ':'')+(s.temporary?'部分資料僅於本分頁暫存，關閉前請匯出。':'閱讀資料儲存在此瀏覽器；清除網站資料會一併移除。')+(s.lastExport?' 上次產生備份：'+engine.formatTaipeiDate(s.lastExport)+'。':' 尚未產生完整備份。');previous.hidden=!s.hasSnapshot;}
+  function paint(message){var s=engine.status();status.textContent=(message?message+' ':'')+(s.temporary?'部分資料僅於本分頁暫存，關閉前請匯出。':'閱讀資料儲存在此瀏覽器；清除網站資料會一併移除。')+(s.lastExport?' 上次產生備份：'+engine.formatTaipeiDate(s.lastExport)+'。':'');/* V50.0.7：依讀者回報移除狀態列尾端「尚未產生完整備份。」——從未匯出過時該句只造成困惑（「設定與資訊」面板最後一行）；有備份紀錄時「上次產生備份：…」照常顯示。 */previous.hidden=!s.hasSnapshot;}
   function download(data,name){var url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'}));var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1200);}
   function exportNow(){try{var d=engine.exportCurrent();download(d,'acim-backup-'+engine.formatTaipeiDate()+'.json');var saved=engine.markExport();paint('已準備完整備份下載，請確認檔案已保存。'+(saved?'':' 備份日期無法持久記錄。'));return true;}catch(e){paint('無法產生備份：'+e.message);return false;}}
   ex.addEventListener('click',exportNow);
@@ -30620,6 +31340,85 @@ else setTimeout(init,400);
 
 /* V50_GUARDED_APP_END */
 }
+</script>
+<script id="acim-v5010-ui">
+if(!window.__acimV50WrongOrigin){
+/* All enhancements are local, event driven and bounded to visible UI or tables. */
+(function(){
+  'use strict';
+  function button(text,id,action){var b=document.createElement('button');b.type='button';b.textContent=text;b.id=id;b.addEventListener('click',action);return b;}
+  function closeDrawer(){if(window.innerWidth<=768&&window.__acimCloseSidebar)window.__acimCloseSidebar();}
+  var noteHeader=document.getElementById('fn-header');if(noteHeader){var noteStatus=document.createElement('span');noteStatus.id='fn-engine-status5010';noteStatus.setAttribute('role','status');noteHeader.appendChild(noteStatus);}
+  document.addEventListener('click',function(e){
+    if(e.target.closest&&e.target.closest('#toc-wrapper a,.rtab-select,.sr-item,.bm-item')){
+      if(window.__acimStopTTS5010)window.__acimStopTTS5010();
+    }
+  },true);
+  var panel=document.getElementById('sidebar-settings-panel');
+  if(panel){
+    var actions=document.createElement('div');actions.id='acim-reader-actions5010';
+    actions.appendChild(button('朗讀目前整節','acim-section-play5010',function(){
+      function play(){if(window.__acimSpeakSection)window.__acimSpeakSection();else if(window.__acimBrowserGuide)window.__acimBrowserGuide.show('tts-unavailable');}
+      if(window.innerWidth<=768&&window.__acimCloseSidebar)window.__acimCloseSidebar(play);else play();
+    }));
+    actions.appendChild(button('我的書籤','acim-bookmark-list5010',function(){closeDrawer();if(window.__acimOpenBookmarks)window.__acimOpenBookmarks();}));
+    panel.insertBefore(actions,panel.firstChild);
+  }
+  // A table has its own horizontal scroll area. The book itself never scrolls sideways.
+  var tables=document.querySelectorAll('#content-area table');
+  tables.forEach(function(table,i){
+    if(table.closest('#acim-footnotes-container')||table.closest('.acim-table-scroll5010'))return;
+    var wrap=document.createElement('div');wrap.className='acim-table-scroll5010';wrap.tabIndex=0;wrap.setAttribute('role','region');
+    wrap.setAttribute('aria-label','表格 '+(i+1)+'，可左右捲動閱讀');
+    var hint=document.createElement('div');hint.className='acim-table-hint5010';hint.textContent='表格可左右滑動，查看完整欄位。';
+    table.parentNode.insertBefore(hint,table);table.parentNode.insertBefore(wrap,table);wrap.appendChild(table);
+  });
+  var returnButton=button('返回剛才的註文','acim-note-return5010',function(e){
+    e.stopPropagation();window.__fnClickOpen=true;window.__fnSkip=true;
+    var saved=returnState;if(!saved||!saved.ref.isConnected)return;returnState=null;returnButton.hidden=true;
+    if(window.__acimShowFootnote5010){window.__acimShowFootnote5010(saved.ref);requestAnimationFrame(function(){var body=document.getElementById('fn-body');if(body)body.scrollTop=saved.scroll;});}
+  });returnButton.hidden=true;document.body.appendChild(returnButton);var returnState=null;
+  window.__acimLinkNoteReferences5010=function(root,ref){
+    var walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),nodes=[],node;
+    while((node=walker.nextNode()))if(node.parentElement&&!node.parentElement.closest('a,button,script,style'))nodes.push(node);
+    // Validate through the existing citation parser; leave unsupported references untouched.
+    var pattern=/\b(?:[TMCPS]-(?:\d+|In|Ep)|W-(?:\d+|In|PtI|PtII|Re|WI|FL|Ep))(?:\.[A-Za-z0-9]+)*(?::\d+(?:-\d+)?)?/g;
+    nodes.forEach(function(n){
+      var text=n.nodeValue,m,at=0,frag=document.createDocumentFragment(),changed=false;pattern.lastIndex=0;
+      while((m=pattern.exec(text))){
+        var raw=m[0];if(!window.__acimCitationUrl30||!window.__acimCitationUrl30(raw))continue;
+        frag.appendChild(document.createTextNode(text.slice(at,m.index)));
+        (function(value){var link=button(value,'',function(e){
+          e.stopPropagation();var body=document.getElementById('fn-body');returnState={ref:ref,scroll:body?body.scrollTop:0};
+          if(window.__acimHideFootnote5010)window.__acimHideFootnote5010(false);
+          if(window.__acimOpenCitation5010&&window.__acimOpenCitation5010(value)){returnButton.hidden=false;returnButton.focus({preventScroll:true});}
+        });link.className='acim-note-ref5010';link.setAttribute('aria-label','前往原文 '+value+'，可返回註文');frag.appendChild(link);})(raw);
+        at=m.index+raw.length;changed=true;
+      }
+      if(changed){frag.appendChild(document.createTextNode(text.slice(at)));n.parentNode.replaceChild(frag,n);}
+    });
+  };
+})();
+
+}
+</script>
+<script id="acim-v5011-ui">
+(function(){
+ 'use strict';
+ var bar=document.getElementById('tts-bar'),gender=document.getElementById('tts-gender-wrap'),rate=document.getElementById('tts-rate-wrap');
+ if(!bar||!gender||!rate)return;
+ var toggle=document.createElement('button');toggle.type='button';toggle.id='tts-options-toggle5011';toggle.textContent='⚙';toggle.title='朗讀設定';toggle.setAttribute('aria-label','朗讀設定：音色與語速');toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','tts-options5011');
+ var options=document.createElement('div');options.id='tts-options5011';options.setAttribute('role','group');options.setAttribute('aria-label','朗讀設定');
+ bar.insertBefore(toggle,gender);bar.insertBefore(options,gender);options.appendChild(gender);options.appendChild(rate);
+ function close(returnFocus){options.classList.remove('open');toggle.setAttribute('aria-expanded','false');if(returnFocus)toggle.focus({preventScroll:true});}
+ toggle.addEventListener('click',function(e){e.stopPropagation();var opening=!options.classList.contains('open');options.classList.toggle('open',opening);toggle.setAttribute('aria-expanded',opening?'true':'false');});
+ document.addEventListener('pointerdown',function(e){if(!options.contains(e.target)&&e.target!==toggle)close(false);},{passive:true});
+ options.addEventListener('keydown',function(e){if(e.key==='Escape'){e.preventDefault();close(true);}});
+ toggle.addEventListener('keydown',function(e){if(e.key==='Escape'){e.preventDefault();close(true);}});
+ if(window.MutationObserver)new MutationObserver(function(){if(!bar.classList.contains('tts-bar-on'))close(false);}).observe(bar,{attributes:true,attributeFilter:['class']});
+ window.matchMedia('(max-width:768px)').addEventListener('change',function(){close(false);});
+})();
+
 </script>
 </body>
 </html>

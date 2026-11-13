@@ -1,15 +1,15 @@
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-/sw.js
+/acim-ce-zh-tw/sw.js
   Cache-Control: no-store, max-age=0
-/index.html
+/acim-ce-zh-tw/index.html
   Cache-Control: no-cache
-/
+/acim-ce-zh-tw/
   Cache-Control: no-cache
-/manifest.json
+/acim-ce-zh-tw/manifest.json
   Cache-Control: no-cache
-/release-manifest.json
+/acim-ce-zh-tw/release-manifest.json
   Cache-Control: no-cache
-/fonts/*
+/acim-ce-zh-tw/fonts/*
   Cache-Control: public, max-age=31536000, immutable
