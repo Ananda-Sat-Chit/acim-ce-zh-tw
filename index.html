@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta name="acim-version" content="v50.1.1">
+<meta name="acim-version" content="v50.2.6">
 <meta name="acim-ui-baseline" content="V29-S1">
-<meta name="acim-release-id" content="b2a8e15c819e523f8a4a77dabaef55dab6c3863abb04dda8d2db1c7aa17c532b">
-<meta name="acim-build" content="2026-11-13">
-<meta name="acim-build-time" content="04:18">
+<meta name="acim-release-id" content="c2addc8337f3b315eab92074dea16eb09f8f1327ed57a49bebffab65f8d9437d">
+<meta name="acim-build" content="2026-11-14">
+<meta name="acim-build-time" content="13:35">
 <link rel="canonical" href="https://ananda-sat-chit.github.io/acim-ce-zh-tw/">
 <meta name="description" content="支援全文搜尋、註釋查閱及離線閱讀，隨時隨地探索奇蹟課程。">
 <meta property="og:title" content="完整加註版奇蹟課程">
@@ -30,7 +30,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#29224A">
 <meta name="apple-mobile-web-app-title" content="奇蹟課程CE">
-<title>完整加註版奇蹟課程｜V50.1.1</title>
+<title>完整加註版奇蹟課程｜V50.2.6</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="acimce-pwa-192x192.png">
@@ -59,6 +59,358 @@ window.__acimIcon=(function(){var icons={"menu":"<svg class=\"acim-icon acim-men
 <script id="acim-v50-session">
 if(!window.__acimV50WrongOrigin){
 /* ═══════════════════════════════════════════════════════════════════
+   V50.2.6 變更記錄（追查指南）——引號停頓真根因：句內 zh↔en 語音引擎切換
+   ═══════════════════════════════════════════════════════════════════
+   【讀者回報】V50.2.5：「英：自動」下 " 符號處仍明顯停頓；「英：代
+   讀」同位置只剩自然小停頓。讀者問：能否一致？並質疑「自動」技術上
+   應能提前判斷整句話要用的朗讀方式，不該還停頓——這一定有 Bug。
+   【根因（Bug 屬實）・停頓不是引號，是引號所在位置＝中英邊界的語音
+   引擎切換】V50.2.5 已刪除引號字元，但「以下簡稱 "CE"—— complete…」
+   刪除後仍是 中→英→中 三段。自動模式逐「單位」選聲：中文段→中文聲、
+   英文段→本機英文聲，同一句內 zh↔en 來回切換；手機引擎每次切換
+   voice 都要重建另一個發音管線（實測 1~3 秒），引號／破折號恰好多為
+   邊界位置→「遇符號大停頓」。代讀模式整句同一中文聲、零切換→同位
+   置只剩自然小停頓。讀者的兩模式對照正是診斷證據。
+   【修正 1（核心）・句級單聲預判（英：自動＋行動流暢模式）】
+   flush()（句邊界＝批次組邊界）預先判斷整句組成：句內含漢字→句中
+   所有英文單位標記 _grpVoiceZh292，由中文聲代讀（與代讀模式同效果：
+   句內零切換）——中文聲能讀拉丁字母、英文聲讀不了漢字，含漢字的句
+   一律整句中文聲；整句純拉丁（獨立英文引用句）→維持本機英文聲（發
+   音標準）；獨立英文段落（inlineEnglish=false）不受影響；桌機（非
+   行動流暢模式）不標記，行為完全不變。修好後「英：自動」＝中文句零
+   切換（同代讀聽感）＋純英文句標準英文聲，預設順序無需改動。
+   【修正 2・救援路徑緩衝補齊（斷句殘留隱患）】V50.2.5 復甦梯仍有兩
+   處 cancel 後立即 speak（手機引擎易吞）：①組內看門狗（4 秒）sticky
+   降級重播；②recoverGroup292 對「已啟動」單位的續播（批次補位或降
+   級單發）——兩者皆改經 scheduleTtsStart（resume＋60ms 緩衝），與
+   其他救援路徑一致。
+   【驗收】mock speechSynthesis：V50.2.5 全情境迴歸＋新增：N1 自動模
+   式含引號中文句——句內所有單位（含原英文分軌單位）同一中文聲、零
+   切換；N2 自動模式純拉丁句——維持英文聲；N3 代讀／略過／桌機自動
+   行為逐位元組不變；N4 降級重播與 recoverGroup 續播皆帶 resume＋60ms。
+   ──（以下沿用 V50.2.5 變更記錄）──────────────────────────
+/* ═══════════════════════════════════════════════════════════════════
+   V50.2.5 變更記錄（追查指南）——TTS 殘留：句中斷掉的自動復甦＋引號停頓根除
+   ═══════════════════════════════════════════════════════════════════
+   【讀者回報】V50.2.4 整體再改善，但：①長句仍會「唸到一半就停」
+   ——編輯說明例句在「…complete and annotated edition」後停住，英
+   ：略過模式另一句仍停在句中；②「英：自動（本機英文聲）」遇到 "
+   符號停頓很大、「英：代讀（中文聲）」停頓較小——希望一致。
+   【根因 1（主因）・多單位組播完＝整趟被終結】mock 引擎重現讀者
+   兩例句：朗讀恰停在第一個「多單位組」的組尾。追查（V50.2.3／
+   V50.2.4／除錯插樁三版對照）：批次組完成時 g.onQueueDone() 直呼
+   runQueue 傳下的「整趟完成回呼」——；／。之後的分句全部漏播，朗
+   讀收組結束（狀態列回 idle）。單單位組一直有 onDone→runQueue 續
+   行，多單位組漏了。這解釋全部觀察：例句1（自動／代讀）第一組
+   ＝中文＋CE＋complete 三單位→停在 …annotated edition；例句2 略
+   過後組內仍有 5 個中文單位→照樣停；例句1 略過後每組只剩 1 單位
+   →整句讀得完；桌機逐逗號切組、組幾乎皆單單位→可接受。
+   【根因 2・次要＝啟動看門狗只會「停下等讀者」】引擎吞掉 speak()
+   （批次播完後的新一批、多 utterance 佇列丟失）時，8 秒啟動看門
+   狗的最終手段是 pauseAppTTS()——狀態列停在「語音引擎尚未回應，
+   請按繼續重試」，朗讀實質停止。
+   【根因 2・引號停頓＝引號只刪「漢字相鄰」】V50.2.4 的 CJK 標點刪
+   除以 hanSide292 判斷（兩側 3 字內有漢字）——「CE」的閉引號右側
+   是破折號 ――、左側是拉丁字母，判定不成立，引號原樣送進英文語音
+   引擎；英文引擎對 " 的插入停頓遠大於中文聲（讀者對照實測），即
+   「自動模式引號位大停頓、代讀模式小停頓」的來源。
+   【修正 0（主修復）・組完續行佇列】speakGroupBatch292 的
+   onQueueDone 改為 runQueue(onQueueDone,job)——組播完回佇列取下
+   一分句，空佇列才結束整趟；單發路徑與暫停標記路徑本就如此。
+   【修正 1・自動復甦梯（桌機＋手機）】所有「停止等讀者」的死點改
+   為自動救援：①單發／組首啟動看門狗（8 秒）逾時→退役現場→
+   cancel→resume→60ms→重播／重排（單位／組各上限 3 次，之後才交
+   還暫停狀態）；②組內換聲看門狗（4 秒）逾時→重排 3 次→才 sticky
+   降級單發；③靜默停轉重播與未發聲可恢復錯誤重播改經
+   scheduleTtsStart（cancel 後立即 speak 在手機容易被吞，加入
+   resume＋60ms 緩衝）；④不可恢復錯誤（synthesis-failed 等）：單
+   發先重試一次；組成員單位重試用盡即跳過續播（_grp292／skip292，
+   不中止整趟），獨立單位（腳注等）才停止＋提醒；⑤最後一道保險網：
+   每 5 秒巡檢
+   「朗讀中＋非暫停＋頁面可見＋無任何待辦計時器＋引擎佇列空轉＋10
+   秒無事件」的未知死態，直接重播目前單位或續行佇列。
+   【修正 2・停轉看門狗防誤判】onboundary（引擎回報推進到第幾字）
+   持續觸發時依「剩餘文字量」重新武裝看門狗（bumpStallWatch292，重
+   新武裝前清除舊計時器避免並行誤觸）——引擎只要在推進就永不誤判
+   停轉；真正無聲死亡時 boundary 一併停止，看門狗照樣在剩餘估算時
+   間後觸發救援。估算同步放寬：拉丁 95→130
+   ms/字、餘裕 4→6 秒、下限 6→9 秒、上限 60→90 秒。
+   【修正 3・引擎佇列深度 2】同句批次從「整組一次排入（上限 12）」
+   改為「窗口深度 2：播完一個即補進下一個」——語音切換邊界維持熱
+   機（下一個 utterance 已在引擎佇列），同時把手機引擎多 utterance
+   佇列丟失的暴露面從 12 降到 2；救援重排時以 resetBatchFrom292 重
+   置批次狀態（spoken 旗標與深度計數），不漏播、不重播已完結單位。
+   【修正 4・引號根除＋英文分軌標點輕量化（行動流暢模式）】引號類
+   （「」『』《》〈〉【】〝〞“”＂"'«»等）一律刪除，不再只刪漢
+   字相鄰——引號本身無聲韻價值，兩種聲（自動英文聲／代讀中文聲）
+   從此一致無大停頓；英文分軌內的 ，、､： 換成半形逗號（英文引擎
+   對半形逗號的停頓短而自然）；中文分軌內 ､ 正規化為 、。桌機行
+   為完全不變。
+   【驗收】mock speechSynthesis：V50.2.4 T1~T15 全數迴歸＋新增：批
+   次後吞 speak 自動復甦（8 秒看門狗）、組內佇列丟失復甦（4 秒看
+   門狗）、onboundary 防誤判、硬錯誤跳過續播、救援重試用盡仍會交
+   還暫停狀態（不無聲消失）、佇列深度 2 形狀、引號零殘留；讀者回
+   報兩例句漢字零損失、英文分軌正確（CE／complete／sin／guilt／
+   Self／revenge）、頓號保留。
+   ──（以下沿用 V50.2.4 變更記錄）──────────────────────────
+/* ═══════════════════════════════════════════════════════════════════
+   V50.2.4 變更記錄（追查指南）——手機 TTS 朗讀中途斷掉＋符號長停頓
+   ═══════════════════════════════════════════════════════════════════
+   【讀者回報】V50.2.3 上線後整體改善，但：①整句沒念完中間就斷掉
+   （編輯說明兩段長句朗讀一半停住）；②遇到「」等符號感受明顯長停
+   頓。電腦上可接受。
+   【根因 1・中途斷掉＝引擎靜默死亡無救援】V50.2.3 批次把整組
+   utterance 一次送進引擎佇列後，恢復路徑全部依賴事件：4 秒組看門
+   狗只在「前一單位 onend 之後」武裝、8 秒啟動看門狗只在「組首」
+   武裝、onstart 之後即清除。手機引擎（Android Google TTS／iOS）在
+   長句、中英換聲批次下可能播放到一半「無聲死亡」——onend/onerror
+   全不發，此時沒有任何計時器在保護，朗讀永久停在句中（狀態列停在
+   「朗讀中」）。另 utterance 僅被自身 closure 引用（自環不可達），
+   Chrome 舊有 GC bug 下批次中段可能被回收；Android 也會在自然結束
+   時誤發 error='interrupted'，原設計任何 error 一律中止整趟朗讀。
+   【根因 2・符號長停頓＝逐逗號切組＋引擎重啟】v2 起每個 ，、：…―
+   都切斷批次組＋應用層 120ms 計時＋引擎重新合成啟動（手機
+   300~600ms、桌機 <100ms）——同樣設計桌機可接受、手機停頓放大
+   5~10 倍；且「」《》（）等 CJK 標點被替換成空格送進引擎，中文引
+   擎在字間空格又插微停頓，每個引號位都是一頓。
+   【修正 1・三層停轉救援】①單位級「靜默停轉」看門狗：每單位
+   onstart 後依文字量/語言/語速估算最長發聲時間（漢字 320ms/字÷語
+   速、拉丁 95ms/字÷語速＋4 秒餘裕，下限 6 秒上限 60 秒；
+   window.__acimTtsStallFloor 可覆寫供測試），逾時無 onend 判定引
+   擎停轉——先退役本批（bump attempt→cancel）重播該單位一次（不
+   跳內容），再停轉則跳過續播，朗讀不再永久卡死。②utterance 強引
+   用表（上限 12 個 FIFO，stopTTS 清空）防 GC。③可恢復錯誤分流：
+   interrupted/canceled/audio-busy 不再一律 fatal——該單位已發聲→
+   視為完結續播下一單位；未發聲→重播一次；每組救援上限 3 次、超過
+   才走原 fatal（停止＋提醒）；遲到 error（已 moved on）忽略。
+   【修正 2・行動流暢模式（pointer:coarse 觸控裝置；桌機完全不變）】
+   ①逗號級停頓（，、､：…―—）不再切組＋計時器——標點保留在文本內
+   （…―—轉為，、連續標點去重）由引擎自然韻律停頓，一句只啟動一次
+   合成，消除每個符號 300~900ms 的組切換；句號級（。！？；.）維持
+   切組＋250ms，句間節奏不變。②漢字相鄰的 CJK 標點（「」『』《》
+   〈〉【】“”〝〞等，向兩側各掃 3 字略過空白與 CJK 標點判斷）直接
+   刪除不留空格，消除中文引擎字間空格微停頓；拉丁文環境照舊保留空
+   格（英文需要）。③中文單位上限 160→80 字且優先在頓號/逗號/冒號
+   處切（切點含標點保留韻律），單位更短、高亮更細、引擎單次合成負
+   擔更小。④段內換行（BR/\u2028）由 120ms 停頓改為空格。語言分段
+   邊緣的孤立標點（如中英切換處殘留的「，」）自動剝除，不會送出只
+   有標點的單位。
+   【驗收】mock speechSynthesis 15 情境：V50.2.3 T1~T10 全數迴歸＋
+   新增 T11 行動佇列形狀（讀者回報兩例句：無 pause-1 標記、CJK 標
+   點刪除、逗號保留內文、CE/complete 分軌單位、無孤立標點單位）、
+   T12 桌機佇列完全不變（pause-1 仍在、引號仍換空格、上限 160）、
+   T13 靜默停轉救援（凍結 onend→重播→再凍結→跳過→整趟完成）、
+   T14 發聲中 error=interrupted 視為完結續播完成、T15 未發聲
+   interrupted 重播一次後完成。
+   ──（以下沿用 V50.2.3 變更記錄）──────────────────────────
+/* ═══════════════════════════════════════════════════════════════════
+   V50.2.3 變更記錄（追查指南）——手機 TTS 中英夾雜卡頓：句中英文讀法
+   設定＋本機英文聲分軌＋同句批次佇列
+   ═══════════════════════════════════════════════════════════════════
+   【讀者回報】手機朗讀時，中文句中夾雜的英文（如「小我」（ego）、
+   「聖靈」（Holy Spirit））卡頓很久且語速突變，聽起來非常吃力；
+   電腦上可接受。
+   【根因】V27.1 起句中英文（inlineEnglish）分軌架構下，若裝置的
+   英文語音不存在或非 localService，一律退回「中文語音代讀」：中文
+   引擎遇到拉丁字母做引擎內部換語（code-switch），手機引擎實測停頓
+   數秒且語速突變；即使有本機英文語音，逐單位 onend→speak 的 JS 往返
+   與換聲重建也讓每次中英切換多等數百毫秒（桌機引擎快，故可接受）。
+   【修正 1・「英：自動／代讀／略過」設定】TTS 列新增循環鈕
+   （#tts-en-mode-btn，記憶於 localStorage acim-tts-enmode）：
+   自動＝有本機英文語音就用它分軌朗讀（遠端英文語音會在每次切換重建
+   連線同樣卡頓，故不用）；沒有本機英文語音時，觸控裝置略過句中英文、
+   桌機維持舊行為由中文聲代讀。代讀＝永遠中文聲代讀（舊行為）。
+   略過＝一律不讀句中英文（中文最流暢）。
+   【修正 2・同句批次佇列】runQueue 收集「同一句」連續非靜音單位
+   （含中→英→中切換）一次 synth.speak() 進引擎佇列，引擎連續播放、
+   保持熱機，消除 onend→speak 往返空窗；靜音標記（句號/逗號）照舊
+   計時停頓，分句與 highlight 對位不變。暫停／繼續語意不變（cancel
+   後重讀目前分句，續播其餘單位）；引擎若批次卡死（某單位遲不開始），
+   4 秒看門狗退役該組改單發續播並 sticky 降級（_ttsNoBatch292），
+   行為不劣於舊版；8 秒啟動看門狗語意照舊。
+   【修正 3・英文分軌語速微調】英文單位 rate＝中文語速×0.95
+   （TTS_EN_RATE_FACTOR），緩解兩語音基速差。
+   【驗收重點】①mock speechSynthesis 八情境全過：自動分軌／代讀／
+   略過／無本機英文聲（觸控 vs 桌機）/批次預排（第二次 speak 早於前
+   一單位結束）/暫停後續播（重讀目前分句＋其餘單位接續）/停止/批次
+   卡死 watchdog 降級；②句號/逗號停頓節奏不變；③腳注朗讀與整節
+   朗讀不受影響；④TTS 列版面（桌機＋手機）不被新鈕擠壓；⑤SW 雜湊
+   鏈重算通過。
+   位置：TTS 模組（buildUtterance292／resolveInlineEn292／
+   runQueue／speakGroupBatch292 系列／speakTtsUnit／stopTTS／
+   clearTtsTimers）、#tts-bar HTML、.tts-gender-btn CSS 區、
+   <title>、meta acim-version／acim-release-id、ACIM_VERSION、sw.js。
+   ═══════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════
+   V50.2.2 變更記錄（追查指南）——換章後第一次點句 5~6 秒才出分享框與
+   Highlight（contextmenu 全書排版）＋搜索索引 siN 不再寫入 DOM
+   ═══════════════════════════════════════════════════════════════════
+   【讀者回報】換章節後第一次點選句子，點完過 5~6 秒才跳出分享小框與
+   Highlight；隨後同章節點任何句子整句立即 Highlight；再換章節又重演
+   （V50.2.1 已修啟動後第一次按壓約 8 秒，本版修剩餘的「每次換章第一次」）。
+   【根因（Playwright＋CDP 真實觸控＋tracing，4x CPU 節流行動模擬實測）】
+   ①點按選句（V50.2.1 修正 3）以 setBaseAndExtent 產生真實選取後，
+     Android Chrome 約 30ms 後派發 contextmenu（原生選取選單）；其預設
+     處理強制「全文件」樣式重算＋排版——tracing 實測單一
+     EventDispatch(type=contextmenu) 10.0s，內含 UpdateLayoutTree
+     59,424 元素（0.97s）與 Layout 8.5s（dirtyObjects 129,800／
+     totalObjects 137,680，partialLayout=false，content-visibility:auto
+     的分節跳過在此路徑失效）。
+   ②而換章（抽屜面紗 display:none 開關＋新章首次渲染＋字型切片載入）
+     剛好讓全書進入待重算狀態（失效追蹤實測：StyleRecalc「DisplayLock」
+     ×796、Layout「Fonts changed」×817、「Added to layout」×4,418）；
+     正常排版路徑會被 content-visibility 跳過，債務留存在各分節。
+   ③債務由 contextmenu 這一次全書排版一次付清：4x 節流 8~9 秒＝讀者
+     手機的 5~6 秒。期間選取上色、分享列全部被擋，債清後一次出現——
+     「點完過 5~6 秒才 Highlight＋跳出小框」；第二點時債務已清故即時；
+     換新章再欠再付，與回報完全吻合。因子實驗佐證：換章後僅以腳本執行
+     setBaseAndExtent／CSS.highlights.set（不經真實觸控、不派發
+     contextmenu）不觸發巨兽；真實觸控必觸發。
+   【修正 1・點按選句後攔截 contextmenu 預設行為】tapSelectSentence291
+     成功選取後記時（tapSelectAt291）；document 捕獲階段 contextmenu
+     監聽器在 1.2 秒內 preventDefault()——點按選句自帶分享列與整句
+     Highlight，原生選取選單多餘，免去全書排版。任何新觸壓
+     （pointerdown）重置旗標，長按／拖曳選取的原生選單完全不受影響；
+     桌機滑鼠路徑不設定旗標，行為不變。
+   【修正 2・搜索索引 siN 錨點不再寫入 DOM】indexStep 原為全書每個候選
+     段落寫 id='siN'（約 11.5k 次屬性寫入＝持續的全文件樣式失效來源）。
+     改為索引資料內保留 'siN' 字串（entries.id），DOM 不寫；搜索結果
+     點擊本就走 entry.node，舊書籤 siN 錨點由 legacySearchAnchor 既有
+     懶解析單點補寫，行為不變。
+   【驗收重點】①換章後第一次點句：整句 Highlight＋分享列亞秒級
+     （4x 節流實測 setBase 97~146ms、分享列 134~188ms；修復前同環境
+     分享列 5~11 秒且含 8~9 秒單體排版任務）；②同章後續點句即時
+     （不變）；③長按選句原生選單仍在（新觸壓重置旗標）；④桌機拖曳
+     分享不變；⑤搜索與舊 siN 書籤跳轉正常；⑥SW 安裝 book-version／
+     book-release／book-integrity 三驗證通過。
+   位置：分享模組監聽器區（tapSelectAt291／contextmenu 攔截）、
+   indexStep（siN 資料化）、<title>、meta acim-version／
+   acim-release-id、ACIM_VERSION、sw.js。
+   ═══════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════
+   V50.2.1 變更記錄（追查指南）——手機第一次按壓句子數秒無反應（啟動期
+   主執行緒飽和）＋點按即選句＋分享列「準備中」殼
+   ═══════════════════════════════════════════════════════════════════
+   【讀者回報】手機上長按句子產生分享連結：第一次點壓要等約 8 秒，被點
+   到的文字才被選取高亮，之後每次選取都正常；感覺與當年「輸入閱讀碼欄
+   卡頓」同型。
+   【根因（8x CPU 節流行動模擬實測，對應 Redmi 13C 級裝置）】啟動後存在
+   主執行緒飽和窗：HTML 解析與排版（瀏覽器層約 4.7s）＋句碼索引
+   assignIds 批次（JS 約 1.8s，以 4ms 批次散佈於啟動後約 10s 內，
+   setTimeout(0) 連發與觸控競爭）；第一次觸壓的輸入延遲實測 962ms，
+   其後僅 22~30ms。長按選取的上色與分享列顯示都被排到索引批次之後；
+   分享列另受 idsReady 閘門（onSel 開頭直接 return），索引建成那一刻
+   （手機上約 8 秒）才一併出現——與「第一次點要等 8 秒、之後都正常」
+   完全吻合，也解釋了與閱讀碼欄卡頓同型的感受（同為背景批次與輸入
+   搶主執行緒）。
+   【修正 1・句碼索引批次完全讓位給閱讀互動】assignIds 的 step() 批次
+   排程改以 requestIdleCallback（timeout 100ms 保進度；不支援時沿用
+   setTimeout(0)），且手指按住／作用中指標／編輯／抽屜開啟時暫緩批次
+   （interactionActive292 → scheduleStep292）。啟動期的原生長按選取
+   不再排在索引批次之後上色。
+   【修正 2・分享列「準備中」殼】索引掃描完成前（idsReady=false）若已
+   有選取，先顯示分享列殼（按鈕停用、文字「準備中…」），第一次選取
+   立即有可見回饋；索引完成後既有完成回呼（run→scheduleShareSelection
+   291(0,true)）與試讀會話就緒（acim-v50-state ready→resumeV50Reference
+   新增重試）以同一選取重跑 onSel 填入真正引用並啟用按鈕。殼涵蓋兩個
+   靜默期：idsReady 閘門與試讀會話 markReady 前（canRead=false 但未
+   過期；原代碼此時直接靜默）。新增 sharePendingShell291 快照，避免殼
+   顯示期間被 scheduleShareSelection 291 的隱藏行閃滅。
+   【修正 3・點按即選句】短觸（單指、<260ms、位移<12px）正文文字直接
+   選取指下整句：先以 CSS Custom Highlight（acim-tap-hl，與引用跳轉
+   acim-sent-hl 同色、獨立註冊名互不覆寫）同幀上色，再 setBaseAndExtent
+   產生真實選取（原生選取與拖曳把柄隨即出現），交由既有
+   selectionchange→onSel 流程顯示分享列。句界由 buildSharePart 句碼
+   模型就地計算，不需等待全書索引；長按與拖曳選取路徑不受影響（tap
+   判定不通過即不介入）；fn-badge／連結／按鈕上的觸壓不劫持；試讀
+   會話未就緒（markReady 前）仍允許點按選句（僅過期 isBlocked 阻擋），
+   由殼承接可見回饋。
+   【驗收重點】① 手機開書後立即點句子：同幀整句高亮＋原生選取；②
+   索引未完成時分享列顯示「準備中…」，建成後變「🔗 分享」可按；③
+   長按與滑拖選取行為不變；④ 桌機拖曳分享不受影響；⑤ 註腳徽章、連結
+   點擊不受劫持；⑥ SW 安裝 book-version／book-release／book-integrity
+   三驗證通過；⑦ 8x 節流下句碼索引仍會完成（讓位不餓死）。
+   位置：assignIds step（scheduleStep292／interactionActive292）、
+   onSel／scheduleShareSelection291／cancelShareSelection291（殼）、
+   分享模組監聽器區（tapSelectSentence291 等）、addCSS（acim-tap-hl）、
+   <title>、meta acim-version／acim-release-id、ACIM_VERSION、sw.js。
+   ═══════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════
+   V50.2.0 變更記錄（追查指南）——依「V50.1.1 全面測試報告」實作九項修正
+   （報告總分 8.8/10；讀者指定 D 試讀節奏暫不更動，本版試讀輪次機制
+   trialSeconds=300／waitSeconds=60 一字未動）
+   ═══════════════════════════════════════════════════════════════════
+   【修正 A・重大：浮動「儲存閱讀分頁」膠囊覆蓋正文】
+   根因：V50.1.0 的 acim-v5010-fixes 樣式把 #rtabs-bar 強制 display:flex，
+   覆蓋了基底「無分頁時 display:none」——空狀態膠囊（＋鈕＋「儲存閱讀分頁」
+   提示）遂以 fixed/z-index:9998/不透明底常駐上緣中央，桌面蓋住置中章節
+   路徑標題、手機直向壓在正文第二行（實測最大重疊 128×42px），捲動全程
+   不隱藏。
+   修法（四件套）：① 移除常駐 display:flex，回復「.has-tabs 才顯示」；
+   ② 有分頁時加「捲動自動隱藏」——下滑淡出、停止捲動 900ms 或上滑淡入、
+   近頁頂恆顯、鍵盤焦點進入保持可見（prefers-reduced-motion 不動畫）；
+   ③ 桌面入口：右側工具列新增「＋ 儲存閱讀分頁」圓鈕（書籤鈕之後）；
+   ④ 手機入口：字級快選單新增「＋ 儲存閱讀分頁」列（直接呼叫 rtPin，
+   不走通用 row() 的面紗管線以免框景量測失真）。分頁全數關閉後鍵盤焦點
+   自動改回右列新增鈕（display:none 不可聚焦）。
+   【修正 B・中度：橫向＋注文面板蓋住右列】
+   根因：面板最高 min(52dvh,480px) 高於讓位假設 42vh，且 v5010 在
+   桌面矮窗（≥769px、≤620px 高）把 body.fn-open #pwa-tools 覆寫回
+   bottom:10px——橫向 844×390 實測面板蓋住右列 135px，「目錄／書籤」
+   完全不可點。
+   修法：ResizeObserver 實測面板高度寫入 --acim-fn-h；右列與 TTS 列改
+   bottom:calc(var(--acim-fn-h,42vh) + 讓位)，任何面板高度真實避讓；
+   矮窗媒體查詢同步改用變數並限制右列 max-height，不超出剩餘空間。
+   【修正 C・中度：橫向 A＋／A− 圓鈕內換行】
+   根因：全形「＋」（U+FF0B）使「A＋」約 26px，恰為 40px 圓鈕內寬 26px
+   的臨界值，橫向（40px 變體無字級覆寫）即換行為兩行。
+   修法：右列鈕面改半形「A+」「A−」（U+2212），並為 .pwa-btn 加
+   white-space:nowrap；快選單兩列同步改半形保持一致。aria-label 不變。
+   【修正 E・輕微：資料清除承諾與試讀保全矛盾】
+   「設定與資訊」面板文案改為如實三段：書籤／分頁／偏好存於本瀏覽器；
+   清除網站資料會一併移除；試讀輪次與閱讀碼啟用狀態由離線封裝保全，
+   不會因清除資料而重置。（機制本身為防篡改特性，保留不動。）
+   【修正 F・輕微：離線橫幅文案兩版本併存】
+   「確證／確認」兩種字串抽成 OFFLINE_BAR_READY／OFFLINE_BAR_PENDING
+   常數（單一來源），橫幅僅引用常數。
+   【修正 G・輕微：目錄／分頁／書籤殘留紙本頁碼樣數字】
+   實為標題內 .fn-badge 註文編號被 textContent 一併帶入（如「第三節
+   『否認』機制的正確用法 240」）。新增 headingTitle()：以 clone 剝除
+   fn-badge 後取字；目錄 mkLink、閱讀分頁 rtPin、書籤 bmSnapshot 三處
+   標題改用之。標題 DOM 本身不動（畫面與錨點不受影響）。
+   【修正 H・輕微：離線圖片計數浮動（0/6→0/4→2/4）】
+   根因：頁面 validState 允許「releaseId 缺漏或任意」的狀態回覆——更新
+   過渡期舊版 worker（imagesTotal=6）的回覆會污染 latest，計數遂浮動；
+   補齊結果「不動」則是補齊請求落到舊 worker、回覆再被顯示所致。
+   修法：validState 收緊為「releaseId 必填且 version/releaseId 與本頁
+   相符」；SW 端 inspectOfflineStatus 本就是固定全書總數（4），兩端對齊
+   後顯示穩定。實機驗證：PREPARE_OFFLINE 後 imagesCached 4/4、complete
+   true。
+   【修正 I・輕微：未造訪章節圖片離線破圖】
+   「補齊離線資料」已確實預先下載並快取全書 4 張圖片（含 data-src 未載
+   的 2 張）。另為 data-src 圖片掛 error 重試：恢復連線（online）或離線
+   資料驗證完整（acim-offline-complete 事件，complete(d) 時廣播）後自動
+   重新指派 src，由 SW 自快取供應，無須重新整理。
+   【修正 J・觀察事項：目錄展開箭頭的無障礙關聯】
+   以 AX 樹實測（Chrome 157）：箭頭已正確位於其卷名連結之前，報告建議
+   「箭頭改為連結前置子元素」反而會造成 link 內巢狀 button 的反模式，
+   不採行；改為箭頭 aria-controls 指向子目錄容器（role=group，
+   aria-label=章節子目錄），詞彙子目錄同樣補上——螢幕閱讀器可直接宣告
+   「控制哪一層子目錄」。零視覺影響。
+   【版本升級】<title>／meta acim-version／ACIM_VERSION 常數 → v50.2.0；
+   sw.js CACHE_VERSION/RELEASE_ID/BOOK_SHA256/ASSET_SHA256['index.htm']
+   依文件化規則重算；release-manifest.json 同步重建。
+   【驗收重點】① 空狀態無膠囊；存一個分頁後膠囊出現、下滑隱藏上滑再現；
+   ② 橫向開注文面板右列全部可點；③ 橫向 A+/A− 單行；④ 設定面板文案含
+   試讀保全說明；⑤ 離線橫幅單一文案；⑥ 目錄節名無訂文編號；⑦ 離線面板
+   圖片 4/4 穩定；⑧ 未造訪章節離線首訪不破圖（補齊後）。
+   位置：acim-v5010-fixes／acim-v5020-fixes 樣式、rtabsInit/rtPin/
+   rtRemove/render、quick-sheet 建構、pwa-tools HTML、注文面板模組
+   （ResizeObserver）、bmSnapshot、mkLink、headingTitle、offline
+   controller（validState/receive/updateBanner/lazyImages）、
+   buildGlossaryToc、<title>、ACIM_VERSION、sw.js、release-manifest.json。
+   ═══════════════════════════════════════════════════════════════════
    V50.0.10 變更記錄（追查指南）——二段確認鈕面文字簡化＋手機搜尋點選
    來回震盪修正＋桌機視窗標題移除「五分鐘試讀版」
    ═══════════════════════════════════════════════════════════════════
@@ -658,7 +1010,7 @@ try {
 } catch (e) {}
 
 /* ── 版本統一管理（單一真實來源）── */
-var ACIM_VERSION = 'v50.1.1';
+var ACIM_VERSION = 'v50.2.6';
 var ACIM_FONT_TOTAL = 30; /* V30：字型切片總數（與 sw.js FONT_FILES 同步） */
 
 /* V50.0.9：冷啟動「平台靜默套用」告知。新版在 App 關閉期間裝好進入等待
@@ -1965,6 +2317,8 @@ html.dark-mode .tts-btn.tts-active::before{background-image:url("data:image/svg+
   font-family:inherit;
 }
 .tts-gender-btn:hover{background:rgba(255,255,255,0.12);}
+/* V50.2.3：句中英文讀法鈕（英：自動／代讀／略過循環；沿用性別鈕樣式）*/
+#tts-en-mode-btn{flex:0 0 auto;white-space:nowrap;}
 .tts-gender-btn.tts-gender-active{
   background:rgba(148,140,195,0.25);
   border-color:rgba(148,140,195,0.8);
@@ -3062,7 +3416,7 @@ html.dark-mode #rtabs-bar .rtab.rtab-on{background:#3B324B;color:#CBB27B;box-sha
 </style>
 <style id="acim-v5010-fixes">
 /* V50.1.1: app chrome only; original Song/Kai/underline meanings are retained. */
-#rtabs-bar{display:flex;min-height:34px;max-width:min(60vw,700px);box-sizing:border-box;border-radius:12px;}
+#rtabs-bar{min-height:34px;max-width:min(60vw,700px);box-sizing:border-box;border-radius:12px;} /* V50.2.0 修正 A：移除常駐 display:flex——空狀態膠囊回到 display:none（基底 .has-tabs 顯示） */
 #rtabs-bar .rtab{padding:0;gap:0;flex-shrink:0;max-width:190px;border-radius:8px;}
 #rtabs-bar .rtab-select{display:flex;align-items:center;min-height:34px;max-width:146px;background:none;border:0;padding:5px 8px;color:inherit;font:inherit;cursor:pointer;}
 #rtabs-bar .rtab .rtab-x,#rtabs-bar .rtab.rtab-on .rtab-x{display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:34px;padding:0;opacity:1;border:0;background:none;color:inherit;font:18px/1 system-ui;cursor:pointer;}
@@ -3156,6 +3510,31 @@ html{overflow-anchor:none;scroll-behavior:auto;}
  #tts-options5011{flex-direction:row;flex-wrap:wrap;width:auto;min-width:280px;gap:10px;padding:8px 12px;}
 }
 
+</style>
+<style id="acim-v5020-fixes">
+/* V50.2.0：分頁列自動隱藏（A）＋注文面板實測讓位（B）＋右列字級鈕單行（C）。 */
+#rtabs-bar{transition:opacity .18s ease,transform .18s ease;}
+#rtabs-bar.rtabs-autohide{opacity:0;transform:translateX(-50%) translateY(-6px);pointer-events:none;}
+@media(prefers-reduced-motion:reduce){#rtabs-bar{transition:none;}}
+#pwa-tools .pwa-btn{white-space:nowrap;}
+#btn-rtab{font-size:15px;}
+/* B：注文面板開啟時，右列與 TTS 列依「面板實測高度」（--acim-fn-h 由 JS 寫入）
+   讓位；var 未定義時退回原 42vh 近似值。原 v5010 在桌面矮窗把讓位覆寫為
+   bottom:10px，實測面板（最高 52dvh）蓋住右列下方按鈕 135px——本規則置於其
+   後生效，任何面板高度都真實避讓。 */
+body.fn-open #pwa-tools{bottom:calc(var(--acim-fn-h,42vh) + 16px);}
+body.fn-open #tts-bar{bottom:calc(var(--acim-fn-h,42vh) + 58px);}
+@media(max-width:768px){
+  body.fn-open #tts-bar{bottom:calc(var(--acim-fn-h,42vh) + var(--acim-nav-h) + 10px);}
+}
+@media(min-width:769px) and (max-height:620px){
+  /* 修正 B：面板開啟時右列改 3 欄緊湊格（8 鈕 → 3×3，高 144px）——
+     390px 高的橫向畫面扣除面板（最高 52dvh）後僅餘約 177px，單列 8 鈕
+     （約 380px）必須捲動才能觸及；改格線後全部按鈕可直接點擊。 */
+  body.fn-open #pwa-tools{bottom:calc(var(--acim-fn-h,40vh) + 10px);right:8px;flex-direction:row;flex-wrap:wrap;width:148px;gap:6px;max-height:none;}
+  body.fn-open #pwa-tools .pwa-btn-wrap{flex-shrink:0;}
+  body.fn-open #pwa-tools .pwa-btn{width:44px;height:44px;}
+}
 </style>
 </head>
 
@@ -23550,10 +23929,10 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
     <button id="btn-top" class="pwa-btn" title="回到頂部" aria-label="回到頂部" style="background:rgba(41,34,74,0.75)"><svg class="acim-icon acim-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20V4M5 11l7-7 7 7"/></svg></button>
   </div>
   <div class="pwa-btn-wrap" data-tip="放大字體">
-    <button id="btn-fup" class="pwa-btn" title="放大字體" aria-label="放大字體" style="background:#29224A">A＋</button>
+    <button id="btn-fup" class="pwa-btn" title="放大字體" aria-label="放大字體" style="background:#29224A">A+</button>
   </div>
   <div class="pwa-btn-wrap" data-tip="縮小字體">
-    <button id="btn-fdn" class="pwa-btn" title="縮小字體" aria-label="縮小字體" style="background:#29224A">A－</button>
+    <button id="btn-fdn" class="pwa-btn" title="縮小字體" aria-label="縮小字體" style="background:#29224A">A−</button>
   </div>
   <div class="pwa-btn-wrap" data-tip="切換深色">
     <button id="btn-dark" class="pwa-btn" title="切換深色" aria-label="切換深色" style="background:#34343B"><span class="acim-theme-icon"><svg class="acim-icon acim-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z"/></svg><svg class="acim-icon acim-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></svg></span></button>
@@ -23563,6 +23942,9 @@ T-5.VII.1:1：「這整個問題［指業力；與輪迴有關］對於宗教來
   </div>
   <div class="pwa-btn-wrap" data-tip="書籤">
     <button id="btn-bm" class="pwa-btn" title="加入/移除書籤" aria-label="加入或移除書籤" style="background:#29224A"><svg class="acim-icon acim-bookmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3h12v18l-6-4-6 4Z"/></svg></button>
+  </div>
+  <div class="pwa-btn-wrap" data-tip="儲存閱讀分頁">
+    <button id="btn-rtab" class="pwa-btn" title="把目前位置存成閱讀分頁" aria-label="新增閱讀分頁" style="background:#29224A">＋</button>
   </div>
 </div>
 
@@ -23706,9 +24088,29 @@ if(!window.__acimV50WrongOrigin){
       var io = new IntersectionObserver(function(entries, obs){
         entries.forEach(function(en){
           if (en.isIntersecting) {
-            en.target.src = en.target.getAttribute('data-src');
-            en.target.removeAttribute('data-src');
-            obs.unobserve(en.target);
+            var im = en.target;
+            im.src = im.getAttribute('data-src');
+            im.removeAttribute('data-src');
+            obs.unobserve(im);
+            /* V50.2.0 修正 I：離線且快取未備時首訪可能破圖——掛 error 重試：
+               恢復連線（online）或「補齊離線資料」完成（acim-offline-complete）
+               後自動重新指派 src，由 Service Worker 自快取供應，無須重新整理。
+               根本修復為修正 H 後「補齊離線資料」確實預先下載全書 4 張圖片
+               （實機驗證 imagesCached 4/4）。 */
+            if(!im.__acimRetryArmed){
+              im.__acimRetryArmed = true;
+              var redo = function(){
+                if(!im.isConnected) return;
+                var s = im.getAttribute('src') || '';
+                if(!s) return;
+                im.removeAttribute('src');
+                im.setAttribute('src', s);
+              };
+              im.addEventListener('error', function(){
+                window.addEventListener('online', redo, {once:true});
+                document.addEventListener('acim-offline-complete', redo, {once:true});
+              });
+            }
           }
         });
       }, {rootMargin: '400px'});
@@ -24918,10 +25320,22 @@ function createReadingFrameV5005(){
     /* ── 遞迴建立巢狀 TOC ── */
     var frag = document.createDocumentFragment();
 
+    /* V50.2.0 修正 G：標題文字剝除訂文標記（.fn-badge）——此前「第三節 … 48」
+       把訂文顯示編號誤當紙本頁碼殘留於目錄／閱讀分頁／書籤標題。
+       掛在 window：mkLink／bmSnapshot（本區塊）與 rtPin（後續區塊）共用。
+       （首版定義在 cleanTitle 旁——與 mkLink 不同 <script> 區塊，目錄建構
+       拋 ReferenceError，V50.2.0 建置過程實測抓出後上移至此。） */
+    window.headingTitle = window.headingTitle || function(h){
+      if(!h) return '';
+      var c=h.cloneNode(true), b=c.querySelectorAll('.fn-badge'), i;
+      for(i=0;i<b.length;i++) if(b[i].parentNode) b[i].parentNode.removeChild(b[i]);
+      return (c.textContent||'').replace(/\s+/g,' ').trim();
+    };
+
     function mkLink(h, cls) {
       var a = document.createElement('a');
       a.href='#'+h.id; a.className='toc-link '+cls; a.dataset.id=h.id;
-      var t=h.textContent.trim(); a.textContent=t; a.title=t;
+      var t=headingTitle(h)||h.textContent.trim(); a.textContent=t; a.title=t; /* V50.2.0 修正 G：目錄標籤剝除註文編號 */
       a.addEventListener('click', function(e){
         e.preventDefault();
         var el=document.getElementById(a.dataset.id);
@@ -24998,6 +25412,9 @@ function createReadingFrameV5005(){
         });
         /* 恢復上次展開狀態 */
         var gid = g.h ? g.h.id : '';
+        /* V50.2.0 修正 J：箭頭以 aria-controls 指向子目錄容器（role=group），
+           螢幕閱讀器可直接宣告「展開／收合哪一層子目錄」。 */
+        if(gid){ childWrap.id='toc-kids-'+gid; arr.setAttribute('aria-controls',childWrap.id); childWrap.setAttribute('role','group'); childWrap.setAttribute('aria-label','章節子目錄'); }
         if(gid && loadTocState(gid)){
           childWrap.classList.add('open');
           arr.textContent='▼'; arr.setAttribute('aria-label','收合章節'); arr.setAttribute('aria-expanded','true');
@@ -25118,6 +25535,8 @@ function createReadingFrameV5005(){
         arr.className='toc-arrow'; arr.textContent='▶';
         arr.setAttribute('role','button'); arr.setAttribute('tabindex','0');
         arr.setAttribute('aria-label','展開術語詞彙'); arr.setAttribute('aria-expanded','false');
+        /* V50.2.0 修正 J：詞彙子目錄同樣補上 aria-controls 關聯 */
+        childWrap.id='toc-kids-'+gHead.id; arr.setAttribute('aria-controls',childWrap.id);
         /* V25.1：取代原有箭頭佔位，避免附錄三多縮排 18px。 */
         var placeholder=row.querySelector('.toc-arrow-placeholder');
         if(placeholder) row.replaceChild(arr, placeholder);
@@ -25417,9 +25836,12 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
       var i=job.cursor++,n=job.nodes[i],t=(n.textContent||'').replace(/\s+/g,' ').trim();
       used++;
       if(!t)continue;
-      /* Same selector, candidate ordinal, whitespace and id policy as V30.4. */
-      if(!n.id)n.id='si'+i;
-      job.entries.push({id:n.id,node:n,text:t,lower:t.toLowerCase(),inNote:!!n.closest('#acim-footnotes-container')});
+      /* V50.2.2 實驗：siN 僅存於索引資料，不寫入 DOM id——
+         全書 ~11.5k 次 id 寫入會持續失效全文件樣式，與讀者點句的
+         選取排版相撞時形成秒級單體排版任務（手機換章後首次點句
+         卡 5~6 秒的根因）。搜索結果點擊走 en.node；舊書籤 siN 錨點
+         由 legacySearchAnchor 懶解析單點補寫。 */
+      job.entries.push({id:n.id||('si'+i),node:n,text:t,lower:t.toLowerCase(),inNote:!!n.closest('#acim-footnotes-container')});
     }
     stats.indexCount=job.entries.length;
     if(job.cursor<job.nodes.length){stats.indexYieldCount++;scheduleIndex(job);return;}
@@ -26381,7 +26803,7 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
       var el=currentAnchorEl(prepare);
       if(!el) return null;
       var head=nearestHeading(el);
-      var title=head?(head.textContent||'').replace(/\s+/g,' ').trim().slice(0,40):'';
+      var title=head?(headingTitle(head)||'').replace(/\s+/g,' ').trim().slice(0,40):''; /* V50.2.0 修正 G：書籤標題剝除訂文編號 */
       if(!title){
         var crumb=document.getElementById('crumb-text');
         title=(crumb&&crumb.textContent.trim())?crumb.textContent.trim().slice(0,40)
@@ -26809,6 +27231,29 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
   var hoverOpened=null; /* V24 修復：hover 開啟來源標記（與點擊競合判定用）*/
   var isTouch=('ontouchstart' in window||navigator.maxTouchPoints>0);
 
+  /* V50.2.0 修正 B：注文面板開啟時以 ResizeObserver 實測高度寫入
+     --acim-fn-h，右側工具列與 TTS 列依實際高度讓位。原固定 42vh 低估
+     面板最高 52dvh 的情形，且桌面矮窗媒體查詢把讓位整個取消——橫向
+     844×390 實測面板蓋住右列 135px，「目錄／書籤」兩顆按鈕完全不可點。 */
+  /* 量測本體同時掛到 window：showFn 開啟當下直接量測（不依賴 RO 的
+     通知時序），RO 僅負責後續視窗/版面變化的持續更新。 */
+  window.__acimUpdateFnH5020=function(){
+    var open=fnBar.classList.contains('open')||fnBar.classList.contains('fn-visible');
+    var h=open?Math.round(fnBar.getBoundingClientRect().height):0;
+    if(h>0)document.documentElement.style.setProperty('--acim-fn-h',h+'px');
+    else document.documentElement.style.removeProperty('--acim-fn-h');
+  };
+  (function(){
+    if(!window.ResizeObserver||!fnBar)return;
+    var ro=new ResizeObserver(function(){window.__acimUpdateFnH5020();});
+    ro.observe(fnBar);
+    window.__acimFnRO5020=ro;
+    window.addEventListener('resize',window.__acimUpdateFnH5020,{passive:true});
+  })();
+  document.addEventListener('acim:footnote-closed',function(){
+    document.documentElement.style.removeProperty('--acim-fn-h');
+  });
+
   /* 從 <a href="#_ftnN"> 或新式徽章（data-fn="N"）取得 href */
   function getFnHref(el){
     if(!el) return null;
@@ -26849,6 +27294,13 @@ var _nativeSearchHighlight=!!(window.CSS && CSS.highlights && window.Highlight)&
     if(window.__acimLinkNoteReferences5010)window.__acimLinkNoteReferences5010(fnText,ref);
     document.dispatchEvent(new Event('acim:footnote-rendered'));
     fnBar.classList.add('open'); document.body.classList.add('fn-open'); activeRef=ref; lastFnTrigger=ref;
+    /* V50.2.0 修正 B：開啟當下重掛觀察＋rAF 連測 14 幀——面板高度（含
+       過渡動畫）實測寫入 --acim-fn-h，右列與 TTS 列即時真實讓位。 */
+    try{
+      if(window.__acimFnRO5020)window.__acimFnRO5020.observe(fnBar);
+      var n5020=0,tick5020=function(){window.__acimUpdateFnH5020();if(++n5020<14)requestAnimationFrame(tick5020);};
+      requestAnimationFrame(tick5020);
+    }catch(e){}
     /* 無障礙：將 focus 移入腳注列，讓鍵盤/螢幕閱讀器使用者可直接閱讀 */
     fnBar.setAttribute('tabindex','-1'); fnBar.focus({preventScroll:true});
   }
@@ -27089,6 +27541,7 @@ if(!window.__acimV50WrongOrigin){
     <button id="tts-gender-f" class="tts-gender-btn tts-gender-active" title="女聲">♀</button>
     <button id="tts-gender-m" class="tts-gender-btn" title="男聲">♂</button>
   </div>
+  <button id="tts-en-mode-btn" class="tts-gender-btn" type="button" title="句中英文讀法">英：自動</button>
   <div id="tts-rate-wrap">
     <span id="tts-rate-label">語速</span>
     <input id="tts-rate-slider" type="range" min="1" max="6" step="1" value="3" title="調整語速">
@@ -27127,6 +27580,51 @@ if(!window.__acimV50WrongOrigin){
   var rateVal     = document.getElementById('tts-rate-val');
   var genderBtnF  = document.getElementById('tts-gender-f');
   var genderBtnM  = document.getElementById('tts-gender-m');
+
+  /* ── V50.2.3：句中英文讀法（'auto'=有本機英文語音就分軌；'read'=中文聲代讀；'skip'=略過）──
+     行動裝置上，中文語音引擎遇到句中夾雜的拉丁字母會做引擎內部換語
+     （code-switch）——實測停頓數秒且語速突變。設定記憶於
+     localStorage（acim-tts-enmode），按鈕循環切換。 */
+  var TTS_EN_RATE_FACTOR = 0.95; /* 英文分軌語速微調（相對中文語速；聽感可再調）*/
+  var EN_MODES292 = ['auto', 'read', 'skip'];
+  var EN_MODE_LABEL292 = { auto: '英：自動', read: '英：代讀', skip: '英：略過' };
+  var EN_MODE_TIP292 = {
+    auto: '句中英文：自動——有本機英文語音就用英文聲朗讀（配合批次預排降低切換停頓）；沒有本機英文語音時，手機略過句中英文、電腦由中文聲代讀',
+    read: '句中英文：由目前中文語音代讀（單一聲音零切換；引擎唸英文的流暢度依裝置而定）',
+    skip: '句中英文：略過不讀，只唸中文（最流暢；英文原文仍在畫面上）'
+  };
+  var ttsEnMode292 = window.__acimStorage.get('acim-tts-enmode');
+  if (EN_MODES292.indexOf(ttsEnMode292) < 0) ttsEnMode292 = 'auto';
+  var enModeBtn292 = document.getElementById('tts-en-mode-btn');
+  function applyEnModeUI292(){
+    if (!enModeBtn292) return;
+    enModeBtn292.textContent = EN_MODE_LABEL292[ttsEnMode292];
+    enModeBtn292.title = EN_MODE_TIP292[ttsEnMode292];
+    enModeBtn292.setAttribute('aria-label', EN_MODE_TIP292[ttsEnMode292]);
+  }
+  applyEnModeUI292();
+  if (enModeBtn292) enModeBtn292.addEventListener('click', function(e){
+    e.stopPropagation();
+    ttsEnMode292 = EN_MODES292[(EN_MODES292.indexOf(ttsEnMode292) + 1) % EN_MODES292.length];
+    window.__acimStorage.set('acim-tts-enmode', ttsEnMode292);
+    applyEnModeUI292();
+  });
+  /* 決定句中英文（inlineEnglish）單位的處理：'en'=本機英文聲分軌；
+     'zh'=中文聲代讀；'skip'=略過。遠端英文語音會在每次切換重建連線
+     （同樣卡頓），自動模式不予採用。獨立英文段落不受此函式影響。 */
+  function resolveInlineEn292(){
+    if (ttsEnMode292 === 'read') return 'zh';
+    if (ttsEnMode292 === 'skip') return 'skip';
+    var en = pickZhVoice('en-US');
+    if (en && en.localService === true) return 'en';
+    try {
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return 'skip';
+    } catch (e) {}
+    return 'zh'; /* 桌機：維持 V27.1 以來的中文聲代讀（讀者回報桌機可接受）*/
+  }
+  function inlineEnSkipped292(item){
+    return !!(item && item.inlineEnglish && resolveInlineEn292() === 'skip');
+  }
 
   /* ── 語速對照表（6段：慢～極快）── */
   var RATE_MAP = {
@@ -27303,19 +27801,111 @@ function createTtsText292(env){
     if(at<text.length)other(at,text.length);return result;
   }
   function makeRange(maps){var a=null,b=null;for(var i=0;i<maps.length;i++)if(maps[i]){if(!a)a=maps[i].start;b=maps[i].end;}if(!a||!b||!doc||!doc.createRange)return null;try{var r=doc.createRange();r.setStart(a.node,a.offset);r.setEnd(b.node,b.offset);return r;}catch(e){return null;}}
+  /* V50.2.4：行動流暢模式（觸控裝置）。桌機（精確指標）行為完全不變。 */
+  var SMOOTH292=(function(){try{return !!(env.window.matchMedia&&env.window.matchMedia('(pointer: coarse)').matches);}catch(e){return false;}})();
+  /* 判斷 text[i] 標點是否緊鄰漢字：向兩側各掃 3 字，略過空白與 CJK
+     標點／彎引號（「」《》“”相鄰串如「《…》」整串一起評估）。任一
+     側為漢字即視為中文環境標點。 */
+  function hanSide292(text,i){
+    function side(dir){
+      for(var k=1;k<=3;k++){
+        var j=i+dir*k;if(j<0||j>=text.length)return false;
+        var ch=text.charAt(j);
+        if(/[\s]/.test(ch)||/[\u3000-\u303F\u201C\u201D\u2018\u2019]/.test(ch))continue;
+        return /[\u3400-\u9fff\uF900-\uFAFF]/.test(ch);
+      }
+      return false;
+    }
+    return side(-1)||side(1);
+  }
   function queueFrom(data,language){
     var out=[],chars='',maps=[];
-    function flush(){var trim=chars.match(/^\s*/),start=trim?trim[0].length:0,end=chars.replace(/\s+$/,'').length;if(end>start){var text=chars.slice(start,end),source=maps.slice(start,end);segmentMixedLanguage(text,language).forEach(function(seg){var clean=seg.text.trim();if(!clean)return;var lead=seg.text.indexOf(clean),pos=seg.start+lead,max=seg.lang==='en-US'?240:160;while(clean){var cut=Math.min(max,clean.length);if(cut<clean.length&&seg.lang==='en-US'){var space=clean.lastIndexOf(' ',cut);if(space>40)cut=space;}var part=clean.slice(0,cut).trim();if(/[\p{L}\p{N}]/u.test(part)){var count=part.length,range=makeRange(source.slice(pos,pos+count));out.push({text:part,lang:seg.lang,inlineEnglish:seg.lang==='en-US'&&!/^en(?:[-_]|$)/i.test(language||''),pause:0,range:range});}pos+=cut;clean=clean.slice(cut);var leading=clean.match(/^\s+/);if(leading){pos+=leading[0].length;clean=clean.slice(leading[0].length);}}});}chars='';maps=[];}
+    function flush(){var trim=chars.match(/^\s*/),start=trim?trim[0].length:0,end=chars.replace(/\s+$/,'').length;if(end>start){var text=chars.slice(start,end),source=maps.slice(start,end),hasCJK292=/[\u3400-\u9fff\uF900-\uFAFF]/.test(text);segmentMixedLanguage(text,language).forEach(function(seg){
+      if(SMOOTH292){
+        /* V50.2.5 行動：以「字元＋地圖」對清理——英文分軌內的中文標點
+           （，、､：）換成半形逗號（英文語音引擎對半形逗號停頓短而自
+           然，對全形標點可能大停頓），中文分軌內 ､ 正規化為 、；地圖
+           隨字元同步刪改，高亮對位不變。引號已在 queueFrom 刪除。 */
+        var kept=[],ki,pc;
+        for(ki=seg.start;ki<seg.end;ki++){pc=text.charAt(ki);
+          if(seg.lang==='en-US'&&/[，、､：:]/.test(pc))pc=',';
+          if(seg.lang!=='en-US'&&pc==='､')pc='、';
+          kept.push({ch:pc,mp:source[ki]});
+        }
+        var st=0,enN=kept.length;
+        while(st<enN&&/\s/.test(kept[st].ch))st++;
+        while(enN>st&&/\s/.test(kept[enN-1].ch))enN--;
+        while(st<enN&&/[，、､：:,]/.test(kept[st].ch))st++; /* 分段邊緣孤立逗號 */
+        var max=seg.lang==='en-US'?240:80;
+        while(st<enN){
+          var cut=Math.min(max,enN-st);
+          if(cut<enN-st&&seg.lang==='en-US'){
+            var space=-1,si;
+            for(si=st+cut;si>st;si--){if(kept[si-1].ch===' '){space=si;break;}}
+            if(space-st>40)cut=space-st;
+          }else if(cut<enN-st){
+            var zz;
+            for(zz=st+cut;zz>st+Math.floor(cut*0.55);zz--){if(/[，、､：,]/.test(kept[zz-1].ch)){cut=zz-st;break;}}
+          }
+          var part='',pj;
+          for(pj=st;pj<st+cut;pj++)part+=kept[pj].ch;
+          var trail=part.match(/\s+$/);if(trail){part=part.slice(0,trail.index);cut=trail.index;}
+          if(/[\p{L}\p{N}]/u.test(part)){
+            var range=makeRange(source.slice(seg.start+st,seg.start+st+cut));
+            /* V50.2.6：句級單聲預判——句含漢字（_grpVoiceZh292=true）時
+               句中英文單位改由中文聲代讀，句內 zh↔en 引擎切換歸零
+               （讀者實測：自動模式引號／破折號處大停頓＝切換點，代讀
+               同位只剩自然小停頓）；純拉丁句（false）維持英文聲。
+               桌機（非行動流暢模式）不標記，行為完全不變。 */
+            var inl292=seg.lang==='en-US'&&!/^en(?:[-_]|$)/i.test(language||'');
+            out.push({text:part,lang:seg.lang,inlineEnglish:inl292,_grpVoiceZh292:inl292?hasCJK292:undefined,pause:0,range:range});
+          }
+          st+=cut;
+          while(st<enN&&/\s/.test(kept[st].ch))st++;
+        }
+        return;
+      }
+      var clean=seg.text.trim().replace(/^[，、､：:,]+/,'');if(!clean)return;var lead=seg.text.indexOf(clean),pos=seg.start+lead,max=seg.lang==='en-US'?240:160;while(clean){var cut=Math.min(max,clean.length);if(cut<clean.length&&seg.lang==='en-US'){var space=clean.lastIndexOf(' ',cut);if(space>40)cut=space;}var part=clean.slice(0,cut).trim();if(/[\p{L}\p{N}]/u.test(part)){var count=part.length,range=makeRange(source.slice(pos,pos+count));out.push({text:part,lang:seg.lang,inlineEnglish:seg.lang==='en-US'&&!/^en(?:[-_]|$)/i.test(language||''),pause:0,range:range});}pos+=cut;clean=clean.slice(cut);var leading=clean.match(/^\s+/);if(leading){pos+=leading[0].length;clean=clean.slice(leading[0].length);}}
+    });}chars='';maps=[];}
     function pause(level){flush();if(!out.length)return;var last=out[out.length-1];if(last.pause)last.pause=Math.max(last.pause,level);else out.push({text:'',pause:level,lang:language||'zh-TW',range:null});}
     for(var i=0;i<data.text.length;i++){
       var c=data.text[i],prev=data.text[i-1]||'',next=data.text[i+1]||'';
       if(/\p{Cf}/u.test(c))continue;
       if(c==="'"&&/\p{Script=Latin}/u.test(prev)&&/\p{Script=Latin}/u.test(next)){chars+=c;maps.push(data.map[i]);continue;}
       if(/[。！？!?；;]/.test(c)){pause(2);continue;}
-      if(/[，,、：:…—–―\n\r\u2028]/.test(c)){pause(1);continue;}
       if(c==='.'||c==='．'){pause(2);continue;}
+      if(/[\n\r\u2028]/.test(c)){
+        /* V50.2.4：桌機照舊 120ms 停頓；行動流暢模式改空格（引擎自然
+           處理，不再多一次組切換）。 */
+        if(!SMOOTH292)pause(1);
+        else if(chars&&!/\s$/.test(chars)){chars+=' ';maps.push(data.map[i]);}
+        continue;
+      }
+      if(/[，,、､：:…—–―]/.test(c)){
+        /* V50.2.4 行動流暢模式：逗號級停頓不切組——標點保留在文本內
+           （省略號／破折號轉為，；連續標點去重）由引擎自然韻律停頓，
+           消除每個符號 120ms 計時＋引擎重啟（手機 300~600ms）。桌機
+           維持切組（行為不變）。 */
+        if(SMOOTH292){
+          var sub=(c==='…'||c==='—'||c==='–'||c==='―')?'，':c;
+          if(!/[，,、､：:]$/.test(chars))chars+=sub;
+          maps.push(data.map[i]);
+        }
+        else pause(1);
+        continue;
+      }
       if(/[\s]/.test(c)){if(chars&&!/\s$/.test(chars)){chars+=' ';maps.push(data.map[i]);}continue;}
-      if(/[\p{P}\p{S}]/u.test(c)){if(chars&&!/\s$/.test(chars)){chars+=' ';maps.push(data.map[i]);}continue;}
+      if(/[\p{P}\p{S}]/u.test(c)){
+        /* V50.2.5 行動流暢模式：引號類（「」『』《》〈〉【】〝〞“”
+           ＂"'«»等）一律刪除——引號本身無聲韻價值，英文語音引擎對 "
+           的插入停頓遠大於中文聲（讀者實測對照），刪除後兩種聲一致；
+           不再只刪漢字相鄰（「CE」的閉引號兩側皆非漢字，V50.2.4 刪不
+           掉）。其他漢字相鄰 CJK 標點照 V50.2.4 刪除；拉丁環境的其他
+           標點照舊留空格。 */
+        if(SMOOTH292&&/[「」『』《》〈〉【】〝〞“”‘’＂"'‚„‟«»]/.test(c))continue;
+        if(SMOOTH292&&hanSide292(data.text,i))continue;
+        if(chars&&!/\s$/.test(chars)){chars+=' ';maps.push(data.map[i]);}continue;
+      }
       chars+=c;maps.push(data.map[i]);
     }
     flush();while(out.length&&out[out.length-1].pause)out.pop();return out;
@@ -27339,6 +27929,7 @@ function getTextNodes(root){return ttsText292.getTextNodes(root);}
 function buildRawText(root){return ttsText292.buildRawText(root);}
 function segmentMixedLanguage(text,language){return ttsText292.segmentMixedLanguage(text,language);}
 function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQueue(source,language,options);}
+window.__acimTtsPrep292=prepareTtsQueue; /* V50.2.4 診斷 hook：佇列形狀檢查 */
 
   /* ── 語音選擇（依音色偏好 + 優先順序）── */
   /*
@@ -27515,8 +28106,8 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
   var _ttsSilenceTimer = null,_ttsStartWatch5010=null,_ttsLabel5010='';
   var ttsStats5010=window.__acimTtsState5010={state:'idle',voice:'',local:null,startDelayMs:null};
   var ttsStatus5010=document.createElement('span');ttsStatus5010.id='tts-engine-status';ttsStatus5010.setAttribute('role','status');ttsStatus5010.setAttribute('aria-live','polite');ttsBar.appendChild(ttsStatus5010);
-  function ttsState5010(state,text){ttsStats5010.state=state;ttsStatus5010.textContent=text||'';ttsBar.dataset.engineState=state;var noteStatus=document.getElementById('fn-engine-status5010');if(noteStatus)noteStatus.textContent=window.__fnTtsSpeaking?text||'':'';}
-  function clearStartWatch5010(){if(_ttsStartWatch5010!==null){clearTimeout(_ttsStartWatch5010);_ttsStartWatch5010=null;}}
+  function ttsState5010(state,text){_ttsEvtMark292();ttsStats5010.state=state;ttsStatus5010.textContent=text||'';ttsBar.dataset.engineState=state;var noteStatus=document.getElementById('fn-engine-status5010');if(noteStatus)noteStatus.textContent=window.__fnTtsSpeaking?text||'':'';}
+  function clearStartWatch5010(){_ttsEvtMark292();if(_ttsStartWatch5010!==null){clearTimeout(_ttsStartWatch5010);_ttsStartWatch5010=null;}}
   var _ttsFootnoteSource292=null,_ttsFootnoteContent292=null,_ttsDeferredWrap292=new Set();
 
   function updatePauseControl(){
@@ -27529,10 +28120,13 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     clearStartWatch5010();
     if(_speakTimer!==null){ clearTimeout(_speakTimer); _speakTimer=null; }
     if(_ttsSilenceTimer!==null){ clearTimeout(_ttsSilenceTimer); _ttsSilenceTimer=null; }
+    if(_ttsGroupWatch292!==null){ clearTimeout(_ttsGroupWatch292); _ttsGroupWatch292=null; } /* V50.2.3 */
+    if(_ttsStallWatch292!==null){ clearTimeout(_ttsStallWatch292); _ttsStallWatch292=null; } /* V50.2.4 */
     if(clearPending) _ttsPendingStart=null;
   }
   function scheduleTtsStart(action,job){
     if(_ttsStopped || job!==_ttsGeneration || _ttsAppPaused) return;
+    _ttsEvtMark292(); /* V50.2.5 */
     _ttsPendingStart=action;
     /* V50_INTEGRATION */ if(window.__acimV50&&!window.__acimV50.canRead())return;
     if(_speakTimer!==null) clearTimeout(_speakTimer);
@@ -27586,6 +28180,31 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     if(!currentPara){ stopTTS(); return; }
     pauseAppTTS();
   }
+  /* V50.2.3：統一產生 utterance（語音/語言/語速/音調）。句中英文：
+     'en'→本機英文聲＋語速微調；'zh'→中文聲代讀（原 V27.1 行為）；
+     'skip' 在佇列端已過濾，此處僅防禦。獨立英文段落照舊用英文語音。 */
+  function buildUtterance292(item, job){
+    var u = new SpeechSynthesisUtterance(item.text);
+    u.lang = item.lang || 'zh-TW';
+    u.rate = getCurrentRate(); u.pitch = getCurrentPitch();
+    var voice = pickZhVoice(u.lang);
+    if (item.inlineEnglish) {
+      var how = resolveInlineEn292();
+      /* V50.2.6：句級單聲預判（英：自動＋行動流暢模式）——含漢字的
+         句，句中英文一律中文聲代讀（與代讀模式同效果：句內零切換，
+         引號／破折號處只剩自然小停頓）；整句純英文（_grpVoiceZh292
+         =false）維持本機英文聲。代讀／略過模式與桌機不受影響。 */
+      if (ttsEnMode292 === 'auto' && item._grpVoiceZh292 === true) how = 'zh';
+      if (how === 'zh') {
+        var zh = pickZhVoice('zh-TW');
+        if (zh) { voice = zh; u.lang = zh.lang || 'zh-TW'; }
+      } else if (how === 'en') {
+        u.rate = Math.round(getCurrentRate() * TTS_EN_RATE_FACTOR * 100) / 100;
+      }
+    }
+    if (voice) u.voice = voice;
+    return u;
+  }
   function speakTtsUnit(unit,job){
     if(_ttsStopped || job!==_ttsGeneration || _ttsAppPaused) return;
     /* canRead emits block synchronously: retain the next unit BEFORE it pauses us. */
@@ -27617,27 +28236,67 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
       _ttsSilenceTimer=setTimeout(function(){ finish(false); },unit.item.pause===1?120:250);
       return;
     }
-    var u=new SpeechSynthesisUtterance(unit.item.text);
-    u.lang=unit.item.lang || 'zh-TW';
-    u.rate=getCurrentRate(); u.pitch=getCurrentPitch();
-    var voice=pickZhVoice(u.lang);
-    /* Inline English must not start a remote second engine between Chinese words.
-       Standalone English paragraphs still use an English voice. No text is changed. */
-    if(unit.item.inlineEnglish&&(!voice||voice.localService!==true)){
-      var zh=pickZhVoice('zh-TW');if(zh){voice=zh;u.lang=zh.lang||'zh-TW';}
-    }
-    if(voice)u.voice=voice;
+    /* V50.2.3：句中英文讀法由「英：自動／代讀／略過」設定決定（模組頂部）。
+       獨立英文段落（inlineEnglish=false）不受影響，照舊用英文語音。 */
+    if (unit.item.inlineEnglish && resolveInlineEn292() === 'skip') { finish(false); return; }
+    var u=trackU292(buildUtterance292(unit.item,job)); /* V50.2.4 */
+    var voice=u.voice;
     ttsStats5010.voice=voice?voice.name:'';ttsStats5010.local=voice?voice.localService===true:null;
     var requestedAt5010=performance.now();ttsState5010('preparing','準備朗讀…');clearTtsHighlight();
     clearStartWatch5010();
     _ttsStartWatch5010=setTimeout(function(){
       if(!valid()||finished)return;
       if(window.__fnTtsSpeaking){stopTTS();var noteWait=document.getElementById('fn-engine-status5010');if(noteWait)noteWait.textContent='語音尚未回應，請再按朗讀重試。';return;}
+      /* V50.2.5：引擎吞掉 speak()（批次播完後的新一批最常見）時自動復
+         甦——退役現場→cancel→resume→60ms→重播；不再直接停下等讀者
+         按「繼續」（讀者實測：這就是「唸到一半就停」的體感）。3 次
+         仍無法啟動才交還給暫停狀態。 */
+      if((unit._rev292=(unit._rev292||0)+1)<=3){
+        _ttsAttempt++;try{synth.cancel();}catch(e){}
+        scheduleTtsStart(function(){ speakTtsUnit(unit,job); },job);
+        return;
+      }
       pauseAppTTS();ttsState5010('waiting','語音引擎尚未回應，請按繼續重試。');
     },8000);
-    u.onstart=function(){if(!valid()||finished)return;clearStartWatch5010();ttsStats5010.startDelayMs=Math.round(performance.now()-requestedAt5010);ttsState5010('speaking','朗讀中');setTtsHighlightRange(unit.range);updatePauseControl();};
+    u.onstart=function(){if(!valid()||finished)return;clearStartWatch5010();ttsStats5010.startDelayMs=Math.round(performance.now()-requestedAt5010);ttsState5010('speaking','朗讀中');setTtsHighlightRange(unit.range);updatePauseControl();unit._started292=true;armStallWatch292(unit.item.text,u.rate,function(){
+      /* V50.2.4：逾時無 onend＝引擎靜默停轉。重播一次；再停轉跳過。
+         V50.2.5：重播改經 scheduleTtsStart（resume＋60ms 緩衝，避免
+         cancel 後立即 speak 被手機引擎吞掉）。 */
+      if(!valid()||finished)return;
+      if((unit._stallRetry292=(unit._stallRetry292||0)+1)<=1){
+        _ttsAttempt++;try{synth.cancel();}catch(e){}
+        scheduleTtsStart(function(){ speakTtsUnit(unit,job); },job);return;
+      }
+      finish(false);
+    });};
+    u.onboundary=function(ev){
+      /* V50.2.5：引擎持續推進→依剩餘量順延停轉看門狗（防誤判） */
+      if(!valid()||finished)return;
+      if(ev&&typeof ev.charIndex==='number')bumpStallWatch292(ev.charIndex);
+    };
     u.onend=function(){ finish(false); };
-    u.onerror=function(){ finish(true); };
+    u.onerror=function(ev){
+      /* V50.2.4：可恢復錯誤（Android 自然結束時也會誤發 interrupted）
+         不再一律中止整趟朗讀：已發聲→視為完結；未發聲→重播一次。
+         V50.2.5：重播改經 scheduleTtsStart；不可恢復錯誤（synthesis-
+         failed 等）先重試一次，再失敗才中止整趟（停止＋提醒）。 */
+      if(!valid()||finished)return;
+      var kind=ev&&ev.error?String(ev.error):'';
+      if(kind==='interrupted'||kind==='canceled'||kind==='audio-busy'){
+        if(unit._started292){ finish(false); return; }
+        if((unit._errRetry292=(unit._errRetry292||0)+1)<=1){
+          _ttsAttempt++;try{synth.cancel();}catch(e){}
+          scheduleTtsStart(function(){ speakTtsUnit(unit,job); },job);return;
+        }
+        finish(false);return;
+      }
+      if((unit._hardRetry292=(unit._hardRetry292||0)+1)<=1){
+        _ttsAttempt++;try{synth.cancel();}catch(e){}
+        scheduleTtsStart(function(){ speakTtsUnit(unit,job); },job);return;
+      }
+      if(unit._grp292){ finish(false); return; } /* V50.2.5：組成員跳過續播 */
+      finish(true);
+    };
     try{ synth.speak(u); }catch(e){ finish(true); }
   }
   function stopTTS(){
@@ -27647,9 +28306,10 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     _ttsStopped = true; _ttsAppPaused=false; _ttsCurrentUnit=null;
     clearTtsTimers(true);
     synth.cancel();
+    _liveUtter292.length=0; /* V50.2.4：清空 utterance 強引用表 */
     /* Stop is terminal: do not resume a native engine here. Any required
        empty-queue normalization belongs to the next explicit start only. */
-    _queue = []; _queueRunning = false; _hlQueue = [];
+    _queue = []; _queueRunning = false; _hlQueue = []; _group = null; /* V50.2.3 */
     clearTtsHighlight();
     if(currentBtn){ currentBtn.classList.remove('tts-active'); currentBtn.title=currentBtn.getAttribute('aria-label') || '朗讀此段'; }
     if(currentPara){ currentPara.classList.remove('tts-reading'); }
@@ -27687,10 +28347,132 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
   var _queue = [];
   var _queueRunning = false;
   var _hlQueue = [];   /* 與 _queue 中「真正朗讀」的項目一一對應的 Range（供 highlight）*/
+  var _group = null;            /* V50.2.3：進行中的「同句批次組」 */
+  var _ttsGroupWatch292 = null; /* V50.2.3：組內換聲停擺看門狗 */
+  var _ttsNoBatch292 = false;   /* V50.2.3：引擎批次降級旗標（sticky） */
 
+  /* ── V50.2.4：三層停轉救援 ──
+     ①靜默停轉看門狗：手機引擎可能在批次播放中「無聲死亡」（onend/
+     onerror 全不發），原 4 秒組看門狗只在前一單位 onend 後武裝、8 秒
+     啟動看門狗只在組首武裝，播放中沒有任何保護——讀者實測「朗讀一半
+     就會斷掉」。本層在每個單位 onstart 後依文字量/語言/語速估算最長
+     發聲時間，逾時仍無 onend 即判定引擎停轉：退役本批（先 bump
+     attempt 再 cancel，讓被取消 utterance 的遲到回呼全部失效）重播
+     該單位一次（不跳內容），再停轉則跳過續播。
+     ②utterance 強引用表：批次一次排入多個 utterance，物件僅被自身
+     closure 引用（自環不可達），Chrome 舊有 GC bug 下可能被回收造成
+     播放中斷；以 FIFO 表保持強引用（上限 12，stopTTS 清空）。
+     ③可恢復錯誤分流見 speakTtsUnit.onerror／_speakGroupSlice292 內
+     u.onerror：interrupted/canceled/audio-busy 不再一律中止整趟朗
+     讀；每組救援上限 3 次（recoverGroup292），超過才 fatal。 */
+  var _ttsStallWatch292 = null;
+  var _liveUtter292 = [];
+  var _stallCtx292=null,_stallLast292=-1,_ttsLastEvt292=Date.now(); /* V50.2.5 */
+  function _ttsEvtMark292(){ _ttsLastEvt292=Date.now(); }
+  function trackU292(u){ _liveUtter292.push(u); if(_liveUtter292.length>12)_liveUtter292.shift(); return u; }
+  function clearStallWatch292(){ _ttsEvtMark292(); if(_ttsStallWatch292!==null){ clearTimeout(_ttsStallWatch292); _ttsStallWatch292=null; } }
+  function armStallWatch292(text,rate,onStall){
+    clearStallWatch292();
+    var cjk=0,i,ch;
+    for(i=0;i<text.length;i++){ ch=text.charAt(i); if(/[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af\uF900-\uFAFF]/.test(ch))cjk++; }
+    var lat=text.length-cjk, r=Math.max(0.3,rate||1);
+    /* V50.2.5：拉丁 95→130ms/字（字母發音與慢速機種實測餘裕）、餘裕
+       4→6 秒、下限 6→9 秒、上限 60→90 秒——降低「還在唸就被誤判停
+       轉」的機率；誤判另由 onboundary 順延機制雙重防護。 */
+    var ms=(cjk*320+lat*130)/r+6000;
+    ms=Math.max(9000,Math.min(90000,ms));
+    var tf=Number(window.__acimTtsStallFloor)||0;
+    if(tf>0)ms=tf; /* 診斷／測試 hook：直接覆寫看門狗時限 */
+    _stallCtx292={text:text,ms:ms,onStall:onStall};
+    _stallLast292=-1;
+    _ttsStallWatch292=setTimeout(function(){ _ttsStallWatch292=null; onStall(); },ms);
+  }
+  /* V50.2.5：onboundary（引擎回報推進到 charIndex）→依「剩餘文字量」
+     重新武裝停轉看門狗。引擎持續推進時永不誤判；真正無聲死亡時
+     boundary 一併停止，看門狗照樣在剩餘估算時間後觸發救援。 */
+  function bumpStallWatch292(idx){
+    if(_ttsStallWatch292===null||!_stallCtx292)return;
+    if(!(idx>_stallLast292))return;
+    _stallLast292=idx;
+    var left=Math.max(0,1-idx/Math.max(1,_stallCtx292.text.length));
+    var ms=_stallCtx292.ms*left+6000;
+    ms=Math.max(5000,Math.min(90000,ms));
+    var tf=Number(window.__acimTtsStallFloor)||0;
+    if(tf>0)ms=tf;
+    /* V50.2.5：重新武裝前清掉舊計時器——否則新舊並行，最早的仍會觸發誤判 */
+    if(_ttsStallWatch292!==null){ clearTimeout(_ttsStallWatch292); }
+    _ttsStallWatch292=setTimeout(function(){ _ttsStallWatch292=null; _stallCtx292.onStall(); },ms);
+  }
+  /* ── V50.2.5：最後一道保險網（全域巡檢）──
+     所有分層看門狗都沒接到的未知死態：朗讀進行中、非暫停、頁面可見、
+     應用層沒有任何待辦計時器、引擎佇列空轉（speaking/pending 皆否）、
+     且 10 秒內沒有任何引擎事件／狀態變化。此時退役現場並重播目前單
+     位（或續行佇列），朗讀自動走下去；正常播放中各計時器均在武裝，
+     絕不觸發。 */
+  setInterval(function(){
+    if(_ttsStopped||_ttsAppPaused||document.hidden)return;
+    if(_speakTimer!==null||_ttsSilenceTimer!==null||_ttsGroupWatch292!==null||
+       _ttsStartWatch5010!==null||_ttsStallWatch292!==null)return;
+    if(!_group&&!_queueRunning&&!_ttsCurrentUnit)return;
+    var sp=false,pd=false;
+    try{sp=!!synth.speaking;pd=!!synth.pending;}catch(e){}
+    if(sp||pd)return;
+    if(Date.now()-_ttsLastEvt292<10000)return;
+    _ttsLastEvt292=Date.now();
+    var job=_ttsGeneration,unit=_ttsCurrentUnit;
+    _ttsAttempt++;try{synth.cancel();}catch(e){}
+    scheduleTtsStart(function(){
+      if(_ttsStopped||_ttsAppPaused||job!==_ttsGeneration)return;
+      if(unit){speakTtsUnit(unit,job);return;}
+      if(_queue.length||_queueRunning){_queueRunning=false;runQueue(function(){stopTTS();},job);}
+    },job);
+  },5000);
+  /* 批次組內單位遭可恢復錯誤／停轉時的退役續播：計入每組救援上限。
+     重新接續點取「最早的未啟動單位」——錯誤單位之前若有從未輪到的
+     單位（引擎丟棄／未及啟動），一併補播，不漏內容。 */
+  function firstUnstarted292(g,k){
+    var from=k,i;
+    for(i=0;i<k;i++){ if(g.entries[i]&&!g.entries[i].started&&!g.entries[i].skip292){ from=i; break; } }
+    while(from<g.entries.length&&g.entries[from]&&(g.entries[from].started||g.entries[from].skip292))from++;
+    return from;
+  }
+  /* V50.2.5：批次狀態重置——被退役的引擎佇列裡「已排入但未啟動」的
+     單位必須重新排入；深度計數歸零重計。 */
+  function resetBatchFrom292(g,k){
+    /* started 且 ended292＝已完結，不重排；started 未 ended＝曾被 cancel
+       中斷，一併重排（重播時可能重複幾個字，但不漏內容）。 */
+    for(var i=k;i<g.entries.length;i++){ if(g.entries[i]&&!(g.entries[i].started&&g.entries[i].ended292))g.entries[i].spoken=false; }
+    g._pend292=0;
+  }
+  function recoverGroup292(g,k){
+    if(_ttsStopped||_ttsAppPaused||g!==_group) return;
+    g._rec292=(g._rec292||0)+1;
+    clearStallWatch292();
+    if(g._rec292>3){ finishGroup292(g,true); return; }
+    _ttsAttempt++;
+    try{ synth.cancel(); }catch(e){}
+    var from=firstUnstarted292(g,k),e;
+    if(from>=g.entries.length){ finishGroup292(g,false); return; } /* V50.2.5：全數完結 */
+    e=g.entries[from];
+    if(!e.unit) e.unit=makeGroupUnit292(g,from);
+    /* V50.2.6：cancel 後續播（批次補位或降級單發）一律經
+       scheduleTtsStart 的 resume＋60ms 緩衝，避免手機引擎吞 speak。 */
+    if(e.started){ scheduleTtsStart(function(){ continueGroupAfter292(g,from+1); },g.job); }
+    else{
+      /* V50.2.5：cancel 後立即 speak 在手機引擎容易被吞——改經
+         scheduleTtsStart（resume＋60ms 緩衝）再重播。 */
+      resetBatchFrom292(g,from);
+      scheduleTtsStart(function(){ speakTtsUnit(e.unit,g.job); },g.job);
+    }
+  }
   function splitSentences(text,language){return ttsText292.splitSentences(text,language);}
   function buildHighlightRanges(para,speakCount,language){var prepared=prepareTtsQueue(para,language);return prepared.ranges.length===speakCount?prepared.ranges:[];}
 
+  /* ── V50.2.3：runQueue 批次版 ──
+     「同一句」內連續的非靜音單位（含中文→英文→中文的語言切換）收集成
+     組，一次 synth.speak() 進引擎佇列；行動裝置上跨語音切換不再有
+     onend→speak 的往返空窗。遇到靜音標記（句號/逗號）即出組，原有停頓
+     節奏不變；略過模式在此過濾（Range 同步消費維持 1:1 對位）。 */
   function runQueue(onDone,job){
     if(_ttsStopped||job!==_ttsGeneration||_ttsAppPaused) return;
     if(document.hidden){
@@ -27699,10 +28481,224 @@ function prepareTtsQueue(source,language,options){return ttsText292.prepareTtsQu
     }
     if(!_queue.length){ _queueRunning=false; clearTtsHighlight(); if(onDone) onDone(); return; }
     _queueRunning = true;
-    var item = _queue.shift();
-    /* 非靜音的「真正朗讀」分句：取出對應的 highlight Range 並上色 */
-    var range = !item.pause && _hlQueue.length ? _hlQueue.shift() : null;
-    speakTtsUnit({item:item,range:range,onDone:function(){ runQueue(onDone,job); }},job);
+    /* 靜音標記：維持原本的計時器停頓 */
+    if(_queue[0].pause){
+      var p=_queue.shift();
+      speakTtsUnit({item:p,range:null,onDone:function(){ runQueue(onDone,job); }},job);
+      return;
+    }
+    /* 批次降級（引擎不支援連續佇列）→ 舊版單發行為 */
+    if(_ttsNoBatch292){
+      var s=_queue.shift();
+      var sr=_hlQueue.length?_hlQueue.shift():null;
+      if(inlineEnSkipped292(s)){ runQueue(onDone,job); return; }
+      speakTtsUnit({item:s,range:sr,onDone:function(){ runQueue(onDone,job); }},job);
+      return;
+    }
+    /* 收集同一句的連續非靜音單位成組 */
+    var entries=[];
+    while(_queue.length && !_queue[0].pause){
+      var it=_queue.shift();
+      var rg=_hlQueue.length?_hlQueue.shift():null;
+      if(inlineEnSkipped292(it)) continue; /* V50.2.3：句中英文略過 */
+      entries.push({item:it,range:rg,unit:null,started:false});
+      if(entries.length>=12) break; /* 保險閥：超長句分批送排 */
+    }
+    if(!entries.length){ runQueue(onDone,job); return; }
+    if(entries.length===1){
+      var e0=entries[0];
+      e0.unit={item:e0.item,range:e0.range,onDone:function(){ runQueue(onDone,job); }};
+      speakTtsUnit(e0.unit,job);
+      return;
+    }
+    speakGroupBatch292(entries,onDone,job);
+  }
+
+  /* ── V50.2.3：同句批次組 ──
+     把組內所有單位一次 synth.speak() 進引擎佇列，讓引擎自己連續播放——
+     中英切換時引擎保持熱機。暫停/停止語意不變：cancel() 後由
+     _ttsCurrentUnit 重讀目前分句、續播其餘單位（_group 於暫停時保留）。
+     引擎若批次卡死（某單位 4 秒不開始），看門狗退役本批、單發續播並
+     sticky 降級；8 秒啟動看門狗語意照舊。 */
+  function makeGroupUnit292(g,k){
+    var e=g.entries[k];
+    /* V50.2.5：_grp292＝組成員單位——硬錯誤重試用盡時跳過續播，不中止整趟 */
+    return {item:e.item,range:e.range,_grp292:true,onDone:function(){ continueGroupAfter292(g,k+1); }};
+  }
+  function armGroupStartWatch292(g,k){
+    clearStartWatch5010();
+    _ttsStartWatch5010=setTimeout(function(){
+      if(_ttsStopped||_ttsAppPaused||g.job!==_ttsGeneration||g!==_group)return;
+      var e=g.entries[k];
+      if(e&&e.started)return;
+      if(window.__fnTtsSpeaking){stopTTS();var w=document.getElementById('fn-engine-status5010');if(w)w.textContent='語音尚未回應，請再按朗讀重試。';return;}
+      /* V50.2.5：引擎吞掉整批 speak() 時自動復甦——退役現場→cancel→
+         resume→重排未啟動單位（從最早的未啟動單位掃起，不漏內容）；
+         讀者實測的「唸到一半就停」多發生在這個時點。3 次失敗才交還
+         暫停狀態。 */
+      if((g._rev292=(g._rev292||0)+1)<=3){
+        _ttsAttempt++;try{synth.cancel();}catch(err){}
+        scheduleTtsStart(function(){
+          if(_ttsStopped||_ttsAppPaused||g!==_group||g.job!==_ttsGeneration)return;
+          var from=firstUnstarted292(g,k);
+          if(from>=g.entries.length){finishGroup292(g,false);return;}
+          resetBatchFrom292(g,from);
+          armGroupStartWatch292(g,from);
+          _speakGroupSlice292(g,from);
+        },g.job);
+        return;
+      }
+      /* V50.2.5：3 次復甦仍無法啟動 → sticky 降級為單發鏈（原 v50.2.3
+         路徑，onDone 逐單位接續）；連單發都無法啟動才交還暫停狀態。 */
+      _ttsNoBatch292=true;
+      _ttsAttempt++;try{synth.cancel();}catch(err){}
+      var from2=firstUnstarted292(g,k);
+      if(from2<g.entries.length){
+        if(!g.entries[from2].unit)g.entries[from2].unit=makeGroupUnit292(g,from2);
+        speakTtsUnit(g.entries[from2].unit,g.job);
+        return;
+      }
+      pauseAppTTS();ttsState5010('waiting','語音引擎尚未回應，請按繼續重試。');
+    },8000);
+  }
+  function armGroupWatch292(g,k){
+    if(_ttsGroupWatch292!==null){clearTimeout(_ttsGroupWatch292);_ttsGroupWatch292=null;}
+    _ttsGroupWatch292=setTimeout(function(){
+      _ttsGroupWatch292=null;
+      if(_ttsStopped||_ttsAppPaused||g.job!==_ttsGeneration||g!==_group)return;
+      var e=g.entries[k];
+      if(!e||e.started)return;
+      /* V50.2.5：自動復甦梯——整趟朗讀第一次觸發時 cancel→resume→重排
+         一次（處理「批次播到一半引擎丟掉後續」的暫時性故障）；同趟再
+         次觸發即 sticky 降級為單發鏈（V50.2.3 的降級行為，證明可靠），
+         不讓每個組邊界都反覆付出看門狗代價。 */
+      /* V50.2.5：組內看門狗觸發＝引擎無法自動接續預排佇列——sticky 降級
+         為單發鏈（V50.2.3/V50.2.4 驗證可靠的行為）。深度 2 已大幅降低
+         觸發機率；讀者回報的「整批後停住」由 8 秒啟動看門狗的自動復甦
+         梯負責（組首路徑），此處維持快速降級避免反覆付出 4 秒代價。 */
+      _ttsNoBatch292=true;
+      _ttsAttempt++;
+      synth.cancel();
+      /* V50.2.6：降級重播改經 scheduleTtsStart（cancel 後立即 speak
+         在手機引擎容易被吞；resume＋60ms 與其他救援路徑一致）。 */
+      scheduleTtsStart(function(){ speakTtsUnit(e.unit,g.job); },g.job);
+    },4000);
+  }
+  function speakGroupBatch292(entries,onQueueDone,job){
+    /* V50.2.5：組完成＝「本組播完」而非「整趟完成」——必須續行佇列，
+       由 runQueue 的空佇列分支才呼叫最終 onDone。V50.2.3 起多單位組
+       直呼最終回呼，；／。之後的內容全部漏播（讀者回報斷點）。 */
+    _group={entries:entries,job:job,onQueueDone:function(){ runQueue(onQueueDone,job); }};
+    _ttsCurrentUnit=entries[0].unit=makeGroupUnit292(_group,0);
+    ttsState5010('preparing','準備朗讀…');clearTtsHighlight();
+    armGroupStartWatch292(_group,0);
+    _speakGroupSlice292(_group,0);
+  }
+  function _speakGroupSlice292(g,from){
+    if(_ttsStopped||g.job!==_ttsGeneration||_ttsAppPaused||g!==_group) return;
+    var requestedAt=performance.now();
+    var attempt=_ttsAttempt;
+    function valid(){return !_ttsStopped&&!_ttsAppPaused&&g.job===_ttsGeneration&&attempt===_ttsAttempt&&g===_group;}
+    try{
+      for(var k=from;k<g.entries.length;k++){
+        if((g._pend292||0)>=2)break; /* V50.2.5：引擎佇列深度上限 2 */
+        (function(k){
+          var e=g.entries[k];
+          if(e.spoken)return; /* V50.2.5：已在引擎佇列，勿重複排入 */
+          e.spoken=true;g._pend292=(g._pend292||0)+1;
+          if(!e.unit)e.unit=makeGroupUnit292(g,k);
+          var u=trackU292(buildUtterance292(e.item,g.job)); /* V50.2.4 */
+          var vname=(u.voice&&u.voice.name)||'';
+          u.onstart=function(){
+            if(!valid())return;
+            clearStartWatch5010();
+            e.started=true;
+            _ttsCurrentUnit=e.unit;
+            ttsStats5010.voice=vname;ttsStats5010.local=u.voice?u.voice.localService===true:null;
+            ttsStats5010.startDelayMs=Math.round(performance.now()-requestedAt);
+            ttsState5010('speaking','朗讀中');
+            setTtsHighlightRange(e.range);
+            updatePauseControl();
+            e.unit._started292=true;
+            /* V50.2.4：播放中靜默停轉看門狗（逾時無 onend→重播/跳過） */
+            armStallWatch292(e.item.text,u.rate,function(){
+              if(!valid()||g!==_group)return;
+              if((e.unit._stallRetry292=(e.unit._stallRetry292||0)+1)<=1){
+                _ttsAttempt++;try{synth.cancel();}catch(err){}
+                scheduleTtsStart(function(){
+                  if(_ttsStopped||_ttsAppPaused||g!==_group||g.job!==_ttsGeneration)return;
+                  speakTtsUnit(e.unit,g.job);
+                },g.job);return;
+              }
+              recoverGroup292(g,k); /* 已重播過→計入救援上限後跳過 */
+            });
+          };
+          u.onboundary=function(ev){
+            /* V50.2.5：引擎持續推進→依剩餘量順延停轉看門狗（防誤判） */
+            if(!valid())return;
+            if(ev&&typeof ev.charIndex==='number')bumpStallWatch292(ev.charIndex);
+          };
+          u.onend=function(){
+            if(!valid())return;
+            e.ended292=true; /* V50.2.5：完結標記（resetBatchFrom 判定用） */
+            clearStallWatch292(); /* V50.2.4 */
+            g._pend292=Math.max(0,(g._pend292||1)-1); /* V50.2.5 */
+            if(k+1<g.entries.length){
+              _ttsCurrentUnit=g.entries[k+1].unit||(g.entries[k+1].unit=makeGroupUnit292(g,k+1));
+              if(document.hidden){ suspendAppTTS(); return; }
+              armGroupWatch292(g,k+1);
+              _speakGroupSlice292(g,k+1); /* V50.2.5：播完即補位（深度 2） */
+            }else if((g._pend292||0)<=0){
+              finishGroup292(g,false);
+            }
+          };
+          u.onerror=function(ev){
+            /* V50.2.4：可恢復錯誤分流；遲到 error（已 moved on）忽略。
+               V50.2.5：不可恢復錯誤不再中止整趟——同一單位第二次硬錯
+               誤才判定跳過（skip292），其餘單位續播。 */
+            if(!valid())return;
+            if(e.started&&_ttsCurrentUnit!==e.unit)return;
+            var kind=ev&&ev.error?String(ev.error):'';
+            if(kind==='interrupted'||kind==='canceled'||kind==='audio-busy'){
+              if(e.started)e.ended292=true; /* V50.2.5：已發聲視為完結 */
+              recoverGroup292(g,k); return;
+            }
+            e.unit._hard292=(e.unit._hard292||0)+1;
+            if(e.unit._hard292>=2)e.skip292=true;
+            recoverGroup292(g,k);
+          };
+          synth.speak(u);
+        })(k);
+      }
+    }catch(err){
+      if(valid())finishGroup292(g,true);
+    }
+  }
+  function finishGroup292(g,error){
+    if(g!==_group)return;
+    _group=null;
+    clearStartWatch5010();
+    clearStallWatch292(); /* V50.2.4 */
+    if(_ttsGroupWatch292!==null){clearTimeout(_ttsGroupWatch292);_ttsGroupWatch292=null;}
+    _ttsCurrentUnit=null;
+    if(error){
+      stopTTS();
+      if(window.__acimBrowserGuide)window.__acimBrowserGuide.show('tts-error');
+      return;
+    }
+    g.onQueueDone();
+  }
+  /* 重播（暫停後繼續）或看門狗降級後，從第 k 個單位接續 */
+  function continueGroupAfter292(g,k){
+    if(_ttsStopped||_ttsAppPaused||g.job!==_ttsGeneration)return;
+    if(g!==_group)return;
+    if(k>=g.entries.length){ _group=null; g.onQueueDone(); return; }
+    resetBatchFrom292(g,k); /* V50.2.5：舊佇列已退役，重置後重新補位 */
+    _ttsCurrentUnit=g.entries[k].unit||(g.entries[k].unit=makeGroupUnit292(g,k));
+    if(document.hidden){ _ttsPendingStart=function(){ continueGroupAfter292(g,k); }; suspendAppTTS(); return; }
+    if(_ttsNoBatch292){ speakTtsUnit(g.entries[k].unit,g.job); return; }
+    armGroupWatch292(g,k);
+    _speakGroupSlice292(g,k);
   }
 
   /* ── 朗讀單一段落 ── */
@@ -28470,15 +29466,40 @@ if(!window.__acimV50WrongOrigin){
       verseStats.batches++;verseStats.candidates+=count;
       verseStats.maxBatchMs=Math.max(verseStats.maxBatchMs,performance.now()-start);
     }
+    /* ── V50.2.1（讀者回報：手機第一次按壓句子選取要等數秒）──
+       句碼索引批次完全讓位給閱讀互動：手指按住／作用中指標／編輯或抽屜
+       開啟時暫緩批次（interactionActive292），改以 requestIdleCallback
+       （timeout 保進度）在真正閒置的框架縫隙推進；不支援 rIC 的環境沿用
+       setTimeout(0)。根因量測（8x CPU 節流行動模擬）：索引 JS 約 1.8s
+       以 4ms 批次散佈於啟動後約 10s 內，與長按選取的上色競爭主執行緒，
+       第一次觸壓的輸入延遲實測 962ms（其後 22~30ms）。讓位後選取路徑
+       不再排在索引批次之後。 ── */
+    var stepIdle292=null,stepTimer292=null;
+    function interactionActive292(){
+      var bg=window.__acimBackground;
+      return !!(bg&&typeof bg.isQuiet==='function'&&!bg.isQuiet({quietMs:0}));
+    }
+    function scheduleStep292(){
+      if(stepIdle292!==null||stepTimer292!==null)return;
+      if(typeof window.requestIdleCallback==='function'){
+        stepIdle292=window.requestIdleCallback(function(){
+          stepIdle292=null;step();
+        },{timeout:100});
+      }else{
+        stepTimer292=setTimeout(function(){stepTimer292=null;step();},0);
+      }
+    }
     function step(){
     if(document.hidden){resumeVerseIndex=step;return;}
+    /* V50.2.1：互動中暫緩索引批次（rIC timeout 100ms 保證閒置後仍會前進）。 */
+    if(interactionActive292()){scheduleStep292();return;}
     var start=performance.now(),count=0;
     while ((node = pending || walker.nextNode())) {
       pending=null;
       /* V40.22: preserve the state machine while yielding between batches.
          Timers allow input/paint; a single paragraph remains the minimum unit. */
       if(count&&(count>=192||performance.now()-start>=4)){
-        pending=node;recordBatch(start,count);setTimeout(step,0);return;
+        pending=node;recordBatch(start,count);scheduleStep292();return;
       }
       count++;
       var tag = node.tagName;
@@ -28708,7 +29729,7 @@ if(!window.__acimV50WrongOrigin){
     recordBatch(start,count);
     if(onReady)onReady();
     }
-    step();
+    scheduleStep292();
   }
 
   /* ══════════════════════════════════════════════════
@@ -29590,7 +30611,7 @@ if(!window.__acimV50WrongOrigin){
   }
 
   /* ACIM_SELECTION291_SCHEDULER_BEGIN */
-  var shareEpoch291=0,shareRequested291=null,sharePublished291=null,shareWaitingIndex291=false,sharePanelSnapshot291=null;
+  var shareEpoch291=0,shareRequested291=null,sharePublished291=null,shareWaitingIndex291=false,sharePanelSnapshot291=null,sharePendingShell291=null;
   function shareSnapshot291(){
     var sel=window.getSelection&&window.getSelection();
     if(!sel||sel.isCollapsed||!sel.rangeCount)return null;
@@ -29623,7 +30644,7 @@ if(!window.__acimV50WrongOrigin){
   }
   function cancelShareSelection291(hide){
     shareEpoch291++;if(barTimer!==null&&barTimer!==undefined)clearTimeout(barTimer);barTimer=null;
-    shareRequested291=null;sharePublished291=null;shareWaitingIndex291=false;
+    shareRequested291=null;sharePublished291=null;shareWaitingIndex291=false;sharePendingShell291=null;
     if(hide&&shareBar)shareBar.style.display='none';
   }
   function scheduleShareSelection291(delay,force){
@@ -29633,19 +30654,55 @@ if(!window.__acimV50WrongOrigin){
     if(shareToolTarget291(snap.range.commonAncestorContainer))return;
     if(!force&&sameShareSnapshot291(snap,shareRequested291))return;
     shareRequested291=snap;
-    if(!sameShareSnapshot291(snap,sharePublished291))shareBar.style.display='none';
+    if(!sameShareSnapshot291(snap,sharePublished291)&&!sameShareSnapshot291(snap,sharePendingShell291))shareBar.style.display='none';
     /* First event owns a short deadline. Later Android events update the range, never postpone it. */
     if(barTimer!==null&&barTimer!==undefined)return;
     var epoch=shareEpoch291;
     barTimer=setTimeout(function(){barTimer=null;if(epoch===shareEpoch291)onSel();},delay==null?40:delay);
   }
   function onSel() {
-    /* V50_INTEGRATION */ if(window.__acimV50&&!window.__acimV50.canRead())return;
+    /* V50_INTEGRATION */
+    /* V50.2.1（讀者回報：第一次選取要等約 8 秒才有反應）：原本 canRead()=false
+       （試讀會話 markReady 前的數秒靜默期）時任何選取都無分享列；改為
+       「已過期（isBlocked）仍靜默；未就緒與索引未完成一律先顯示殼」——
+       試讀會話就緒（acim-v50-state ready→resumeV50Reference）與索引完成
+       （run→scheduleShareSelection291(0,true)）的重試路徑會以同一選取重跑
+       本函式，填入真正引用並啟用按鈕。 */
+    var session291=window.__acimV50;
+    if(session291&&session291.isBlocked())return;
+    var sessionPending291=!!(session291&&!session291.canRead());
     var snap=shareSnapshot291();
     if(sharePanelBlocks291(snap))return;
     if(!snap){cancelShareSelection291(true);return;}
     if(shareToolTarget291(snap.range.commonAncestorContainer))return;
-    if(!idsReady){shareWaitingIndex291=true;return;} /* Completion callback retries the live selection once. */
+    if(!idsReady||sessionPending291){
+      /* V50.2.1（讀者回報：第一次選取要等索引建成約 8 秒才有反應）：
+         索引掃描完成前或試讀會話尚未就緒（未過期）時，先顯示分享列殼
+         ——按鈕停用、文字「準備中…」，讓第一次選取立即有可見回饋；
+         句碼索引完成後既有完成回呼（run→scheduleShareSelection291(0,true)）
+         與試讀會話就緒（acim-v50-state ready）會以同一選取重跑本函式，
+         填入真正引用並啟用按鈕。sharePendingShell291 記住殼的快照，
+         避免 scheduleShareSelection291 的隱藏行把殼閃滅。 */
+      shareWaitingIndex291=!idsReady;
+      sharePendingShell291=snap;
+      shareBar.style.display='block';
+      if(window.innerWidth<=768){
+        shareBar.style.position='fixed';shareBar.style.top='auto';
+        shareBar.style.bottom='80px';shareBar.style.left='50%';
+        shareBar.style.transform='translateX(-50%)';
+      }else{
+        var shellRect=snap.range.getBoundingClientRect();
+        var shellWidth=shareBar.offsetWidth||110;
+        var shellLeft=shellRect.left+shellRect.width/2-shellWidth/2;
+        shellLeft=Math.max(8,Math.min(shellLeft,window.innerWidth-shellWidth-8));
+        var shellTop=shellRect.top-52;if(shellTop<8)shellTop=shellRect.bottom+8;
+        shareBar.style.top=shellTop+'px';shareBar.style.left=shellLeft+'px';
+        shareBar.style.bottom='auto';shareBar.style.transform='none';
+      }
+      var shellBtn=document.getElementById('acim-sbar-btn');
+      if(shellBtn){shellBtn.disabled=true;shellBtn.textContent='準備中…';}
+      return;
+    }
     shareWaitingIndex291=false;
     if(sameShareSnapshot291(snap,sharePublished291))return;
     if(snap.count===1&&!hasTwoSelectionChars291(snap.range)){shareBar.style.display='none';sharePublished291=snap;return;}
@@ -29672,7 +30729,7 @@ if(!window.__acimV50WrongOrigin){
       var top=r.top-52;if(top<8)top=r.bottom+8;
       shareBar.style.top=top+'px';shareBar.style.left=left+'px';shareBar.style.bottom='auto';shareBar.style.transform='none';
     }
-    shareBar.style.display='block';sharePublished291=snap;
+    shareBar.style.display='block';sharePublished291=snap;sharePendingShell291=null;
   }
   /* ACIM_SELECTION291_SCHEDULER_END */
 
@@ -29707,6 +30764,10 @@ if(!window.__acimV50WrongOrigin){
       '/* V40.23（D4）：句級高亮（CSS Custom Highlight API，不支援時自動忽略）*/',
       '::highlight(acim-sent-hl){background-color:rgba(243,169,98,.32);color:inherit;}',
       'body.dark-mode ::highlight(acim-sent-hl),html.dark-mode ::highlight(acim-sent-hl){'
+        + 'background-color:rgba(243,169,98,.42);}',
+      '/* V50.2.1：點按即選句的即時高亮（與引用跳轉 acim-sent-hl 同色、獨立註冊名）*/',
+      '::highlight(acim-tap-hl){background-color:rgba(243,169,98,.32);color:inherit;}',
+      'body.dark-mode ::highlight(acim-tap-hl),html.dark-mode ::highlight(acim-tap-hl){'
         + 'background-color:rgba(243,169,98,.42);}',
       '#acim-ctoast button:hover,#acim-ctoast a:hover{opacity:.82}',
     ].join('\n');
@@ -29755,6 +30816,7 @@ if(!window.__acimV50WrongOrigin){
         /* V50_INTEGRATION_END */
         var selection=window.getSelection&&window.getSelection();
         if(selection&&!selection.isCollapsed)scheduleShareSelection291(0,true);
+        else{shareBar.style.display='none';sharePendingShell291=null;} /* V50.2.1：索引完成時選取已消失則收殼，避免「準備中」滯留。 */
       });
     }
     setTimeout(run,0);
@@ -29778,6 +30840,8 @@ if(!window.__acimV50WrongOrigin){
         var session=window.__acimV50;if(!session||session.isBlocked())return;
         var hash=session.takePendingHash();
         if(hash!==null&&hash!==undefined&&hash===location.hash)recipientQueue30.request(hash,true);
+        /* V50.2.1：試讀會話就緒後重試當前選取——殼（會話未就緒）在此時填入真正引用。 */
+        scheduleShareSelection291(0,true);
       });});
     }
     document.addEventListener('acim-v50-resume',resumeV50Reference);
@@ -29785,7 +30849,11 @@ if(!window.__acimV50WrongOrigin){
     /* V50_INTEGRATION_END */
 
     /* Native long-press/drag selection remains the only trigger; clicks do not create a range. */
-    document.addEventListener('selectionchange',function(){scheduleShareSelection291(40);});
+    document.addEventListener('selectionchange',function(){
+      var s=window.getSelection&&window.getSelection();
+      if(!s||s.isCollapsed)clearTapHighlight291(); /* V50.2.1：選取塌陷時退休點按高亮。 */
+      scheduleShareSelection291(40);
+    });
     document.addEventListener('pointerdown',function(e){
       if(shareToolTarget291(e.target))return;
       cancelShareSelection291(true);
@@ -29801,6 +30869,119 @@ if(!window.__acimV50WrongOrigin){
       /* Android may cancel page pointers when native selection handles take over. */
       if(shareSnapshot291())scheduleShareSelection291(20,true);else cancelShareSelection291(true);
     },{passive:true});
+    /* ── V50.2.1（讀者回報：手機長按選句要等數秒、新使用者抓不到按壓技巧）：
+       點按即選句。短觸（單指、<260ms、位移<12px）正文文字時，直接選取指下
+       整句：先以 CSS Custom Highlight（acim-tap-hl）同幀上色，再以
+       setBaseAndExtent 產生真實選取（原生選取與拖曳把柄隨即出現），之後交由
+       既有 selectionchange→onSel 流程顯示分享列（索引未完成時先顯示「準備中」
+       殼，見 onSel）。句界由 buildSharePart／sharePart291 句碼模型就地計算，
+       不需等待全書句碼索引；長按與拖曳選取路徑完全不受影響（tap 判定不通過
+       即不介入）；fn-badge／連結／按鈕上的觸壓不劫持。 ── */
+    var TAP_HL_NAME291='acim-tap-hl';
+    var tapTrack291=null;
+    /* ── V50.2.2（讀者回報：換章後第一次點句，點完 5~6 秒才跳出分享小框與
+       Highlight；同章後續點句即時；再換章又重演）──
+       根因（CDP tracing 實測，4x CPU 節流行動模擬）：點按選句以
+       setBaseAndExtent 產生真實選取後，Android Chrome 會在 ~30ms 後派發
+       contextmenu（原生選取選單）。其預設處理強制「全文件」樣式重算＋排版
+       （實測 UpdateLayoutTree 59,424 元素、Layout dirtyObjects 129,800/
+       137,680、partialLayout=false，content-visibility 的分節跳過在此路徑
+       失效）。而換章（抽屜面紗開關＋新章首次渲染＋字型切片載入）剛好把
+       全書標記為待重算（失效追蹤：DisplayLock ×796、Fonts changed ×817），
+       債務由 contextmenu 這一次排版一次付清——4x 節流下 8~9 秒，即讀者的
+       5~6 秒；第二點時債務已清故即時；換新章再欠再付，完全吻合。
+       修正：點按選句自帶分享列與高亮，原生選取選單此時多餘——tap-select
+       成功後 1.2 秒內的 contextmenu 攔下預設行為（preventDefault），免去
+       全書排版；任何新觸壓（pointerdown）即重置旗標，故長按／拖曳選取的
+       原生選單完全不受影響。 ── */
+    var tapSelectAt291=0;
+    function tapHighlightRange291(range){
+      try{
+        if(window.CSS&&CSS.highlights&&typeof window.Highlight==='function'){
+          CSS.highlights.set(TAP_HL_NAME291,new Highlight(range));
+        }
+      }catch(e){}
+    }
+    function clearTapHighlight291(){
+      try{
+        if(window.CSS&&CSS.highlights&&CSS.highlights.delete)CSS.highlights.delete(TAP_HL_NAME291);
+      }catch(e){}
+    }
+    function tapSelectSentence291(x,y){
+      var caret=null;
+      if(document.caretPositionFromPoint){
+        caret=document.caretPositionFromPoint(x,y);
+      }else if(document.caretRangeFromPoint){
+        var hit=document.caretRangeFromPoint(x,y);
+        caret=hit?{offsetNode:hit.startContainer,offset:hit.startOffset}:null;
+      }
+      if(!caret||!caret.offsetNode||caret.offsetNode.nodeType!==3)return;
+      var node=caret.offsetNode;
+      var area=document.getElementById('content-area');
+      var para=getParaOfNode(node);
+      if(!para||!area||!area.contains(para)||shareIgnoredNode(node,area))return;
+      var model;
+      try{model=sharePart291(para,1);}catch(e){return;}
+      if(!model||!model.units||!model.units.length)return;
+      var units=model.units,target=null,i,u;
+      for(i=0;i<units.length;i++){
+        u=units[i];
+        if(u.node===node&&u.offset<=caret.offset)target=u;
+        else if(u.node!==node&&target)break;
+      }
+      if(!target)target=units[0];
+      var first=null,last=null;
+      for(i=0;i<units.length;i++){
+        if(units[i].sent!==target.sent)continue;
+        if(!first)first=units[i];
+        last=units[i];
+      }
+      if(!first||!last)return;
+      var range=null;
+      try{
+        range=document.createRange();
+        range.setStart(first.node,first.offset);
+        range.setEnd(last.node,last.offset+1);
+      }catch(e){return;}
+      tapHighlightRange291(range);
+      try{
+        var sel=window.getSelection();
+        sel.removeAllRanges();
+        sel.setBaseAndExtent(first.node,first.offset,last.node,last.offset+1);
+      }catch(e){return;}
+      /* V50.2.2：記下點按選句時刻，供 contextmenu 攔截（見上方說明）。 */
+      tapSelectAt291=performance.now();
+      /* 立即走一次既有排程（含索引未完成時的「準備中」殼）。 */
+      scheduleShareSelection291(0,true);
+    }
+    document.addEventListener('pointerdown',function(e){
+      if(e.pointerType!=='touch'){tapTrack291=null;return;}
+      tapTrack291={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now()};
+      tapSelectAt291=0; /* V50.2.2：新觸壓重置攔截旗標（長按原生生態不受影響）。 */
+      clearTapHighlight291(); /* 新觸壓開始即退休上一個點按高亮（tapSelect 可能立刻補上新高亮）。 */
+    },{capture:true,passive:true});
+    document.addEventListener('pointerup',function(e){
+      var tr=tapTrack291;tapTrack291=null;
+      if(!tr||e.pointerId!==tr.id)return;
+      if(window.__acimV50&&window.__acimV50.isBlocked())return; /* V50.2.1：僅過期阻擋；會話未就緒仍允許（殼承接，見 onSel）。 */
+      var dt=performance.now()-tr.t,dx=e.clientX-tr.x,dy=e.clientY-tr.y;
+      if(dt>260||(dx*dx+dy*dy)>144)return; /* 長按／拖曳交給原生選取。 */
+      if(shareToolTarget291(e.target))return;
+      var el=e.target;
+      if(el&&el.closest&&el.closest('a,button,input,select,textarea,label,sup.fn-badge,[role="button"]'))return;
+      tapSelectSentence291(e.clientX,e.clientY);
+    },{capture:true,passive:true});
+    document.addEventListener('pointercancel',function(){tapTrack291=null;},{capture:true,passive:true});
+    /* ── V50.2.2：點按選句後 1.2 秒內攔下 contextmenu 預設行為。
+       Android 對新選取派發 contextmenu 以顯示原生選取選單；其預設處理
+       會強制全文件排版（根因見 tapSelectAt291 宣告處說明）。點按選句
+       已由分享列承接互動，選單多餘；長按／拖曳選取不走本旗標。 ── */
+    document.addEventListener('contextmenu',function(e){
+      if(!tapSelectAt291)return;
+      if(performance.now()-tapSelectAt291>=1200)return;
+      if(e.cancelable)e.preventDefault();
+    },true);
+
 
 
   }
@@ -29913,20 +31094,30 @@ if(!window.__acimV50WrongOrigin){
   function count(value,max){return Number.isInteger(value)&&value>=0&&value<=max;}
   function sameRelease(d){return !!(d&&d.version===version&&/^[a-f0-9]{64}$/.test(releaseId)&&d.releaseId===releaseId);}
   function validState(d){
+    /* V50.2.0 修正 H：僅接受與本頁同一發行版的狀態回覆——releaseId 改為必填
+       且必須相符。此前不同版本 worker（如舊版 imagesTotal=6）的回覆也會被
+       採用，圖片計數遂在 0/6、0/4、2/4 之間浮動；SW 端 inspectOfflineStatus
+       本就是固定全書總數，頁面端收緊後顯示即穩定。 */
     return d&&d.type==='ACIM_OFFLINE_STATUS'&&typeof d.version==='string'
-      &&(typeof d.releaseId==='undefined'||(typeof d.releaseId==='string'&&/^[a-f0-9]{64}$/.test(d.releaseId)))
+      &&typeof d.releaseId==='string'&&/^[a-f0-9]{64}$/.test(d.releaseId)
+      &&d.version===version&&d.releaseId===releaseId
       &&typeof d.bookReady==='boolean'&&typeof d.shellReady==='boolean'
       &&count(d.fontsCached,ACIM_FONT_TOTAL)&&d.fontsTotal===ACIM_FONT_TOTAL&&count(d.imagesCached,4)&&d.imagesTotal===4
       &&typeof d.warming==='boolean'&&typeof d.complete==='boolean';
   }
   function complete(d){return !!(sameRelease(d)&&d.complete&&d.bookReady&&d.shellReady&&d.fontsCached===ACIM_FONT_TOTAL&&d.imagesCached===4);}
+  /* V50.2.0 修正 F：離線橫幅文案抽成單一來源——此前不同工作階段出現
+     「確證／確認」兩種字串（版本更新前後各一），統一為以下常數，日後改版
+     只動一處。 */
+  var OFFLINE_BAR_READY='目前離線；本機已驗證的 '+version.toUpperCase()+' 全書可閱讀。';
+  var OFFLINE_BAR_PENDING='目前離線；尚未確認本機保存的書籍版本。';
   function updateBanner(){
     var bar=document.getElementById('acim-offline-bar');
     if(navigator.onLine!==false){if(bar)bar.remove();return;}
     if(!bar){bar=document.createElement('div');bar.id='acim-offline-bar';bar.setAttribute('role','status');document.body.prepend(bar);}
     bar.textContent=sameRelease(latest)&&latest.bookReady
-      ?'目前離線；本機已驗證的 '+version.toUpperCase()+' 全書可閱讀。'
-      :'目前離線；尚未確認本機保存的書籍版本。';
+      ?OFFLINE_BAR_READY
+      :OFFLINE_BAR_PENDING;
   }
   function paint(message){
     if(message)status.textContent=message;
@@ -29948,6 +31139,8 @@ if(!window.__acimV50WrongOrigin){
     if(validState(d)){
       statusRevision++;latest=d;
       if(sameRelease(d)&&!d.warming)cancelRetry();
+      /* V50.2.0 修正 I：離線資料驗證完整時廣播事件，讓離線破圖的圖片自動重試 */
+      if(complete(d)){try{document.dispatchEvent(new Event('acim-offline-complete'));}catch(e){}}
       paint();return;
     }
     if(d&&d.type==='ACIM_OFFLINE_PROGRESS'&&sameRelease(d)&&count(d.completed,64)&&count(d.total,64)&&d.total>0&&d.completed<=d.total){
@@ -30316,6 +31509,7 @@ function set(k,v){ try{ return storage.set(k,v); }catch(e){ return false; } }
 /* ── 共用小工具 ── */
 var SUPER_RE = /[⁰¹²³⁴⁵⁶⁷⁸⁹]/g;
 function cleanTitle(s){ return String(s||'').replace(SUPER_RE,'').replace(/\s+/g,' ').trim(); }
+/* V50.2.0 修正 G：headingTitle 定義已上移至 mkLink 所在區塊（掛 window，跨 script 區塊共用）。 */
 function currentHeading(){
   if(window.__acimCurrentHeading)
     return window.__acimCurrentHeading(90)||document.querySelector('#content-area h1,#content-area h2,#content-area h3,#content-area h4');
@@ -30713,9 +31907,23 @@ function buildBottomNav(){
     });
     sheet.appendChild(b);
   }
-  row('A－','縮小字體','btn-fdn');
-  row('A＋','放大字體','btn-fup');
+  row('A−','縮小字體','btn-fdn');
+  row('A+','放大字體','btn-fup');
   row('🌓','切換深色／亮色','btn-dark');
+  /* V50.2.0 修正 A：快選單新增「儲存閱讀分頁」——空狀態分頁列隱藏後的
+     行動版入口。不走通用 row()（其面紗管線會讓 rtPin 的框景量測失真），
+     先收快選單再直接呼叫 rtPin。 */
+  (function(){
+    var b=document.createElement('button'); b.type='button';
+    var i=document.createElement('span'); i.textContent='＋';
+    var t=document.createElement('span'); t.textContent='儲存閱讀分頁';
+    b.appendChild(i); b.appendChild(t);
+    b.addEventListener('click',function(){
+      if(sheet&&sheet.classList.contains('open'))setSheet(false);
+      rtPin();
+    });
+    sheet.appendChild(b);
+  })();
   var bTop=document.createElement('button');
   bTop.type='button';
   var i3=document.createElement('span'); i3.innerHTML=window.__acimIcon('up');
@@ -30896,7 +32104,7 @@ function rtabsInit(){
   bar.setAttribute('role','tablist');
   bar.setAttribute('aria-label','閱讀分頁');
   var add=document.createElement('button');
-  add.type='button'; add.className='rtab-add';
+  add.type='button'; add.className='rtab-add'; add.id='rtab-add-btn';
   add.textContent='＋'; add.title='把目前位置存成閱讀分頁';
   add.setAttribute('aria-label','新增閱讀分頁');
   add.addEventListener('click',rtPin);
@@ -30906,6 +32114,38 @@ function rtabsInit(){
     var x=e.target.closest?e.target.closest('.rtab .rtab-x'):null;
     if(x){ e.preventDefault(); e.stopPropagation(); rtRemove(x.getAttribute('data-id')); }
   });
+  /* V50.2.0 修正 A：右列「儲存閱讀分頁」圓鈕——空狀態分頁列隱藏後的桌面入口 */
+  var railRtab=document.getElementById('btn-rtab');
+  if(railRtab&&!railRtab.__acimRtabBound){
+    railRtab.__acimRtabBound=true;
+    railRtab.addEventListener('click',function(){rtPin();});
+  }
+  /* V50.2.0 修正 A：分頁列捲動自動隱藏——下滑淡出、停止捲動 900ms 或上滑淡入、
+     近頁頂（<140px）恆顯；鍵盤焦點進入時保持可見。避免膠囊常駐蓋住正文與
+     章節路徑標題（實測最大重疊 128×42px）。 */
+  (function(){
+    var lastY=window.scrollY,frame=0,hideTimer=null;
+    function show(){ if(hideTimer){clearTimeout(hideTimer);hideTimer=null;} bar.classList.remove('rtabs-autohide'); }
+    window.addEventListener('scroll',function(){
+      if(frame)return;
+      frame=requestAnimationFrame(function(){
+        frame=0;
+        var y=window.scrollY,dy=y-lastY;lastY=y;
+        if(y<140){show();return;}
+        if(dy>4){
+          bar.classList.add('rtabs-autohide');
+          if(hideTimer)clearTimeout(hideTimer);
+          hideTimer=setTimeout(show,900);
+        }else if(dy<-4){show();}
+        else if(!hideTimer){hideTimer=setTimeout(show,900);}
+      });
+    },{passive:true});
+    bar.addEventListener('focusin',show);
+    bar.addEventListener('pointerenter',function(){
+      if(hideTimer){clearTimeout(hideTimer);hideTimer=null;}
+      bar.classList.remove('rtabs-autohide');
+    });
+  })();
   render();
 }
 function rtPin(){
@@ -30915,7 +32155,7 @@ function rtPin(){
      不會誤跳到第一個標題（書名頁） */
   var h=(curY<150)?null:currentHeading();
   var anchor=h?h.id:'';
-  var title=cleanTitle(h?h.textContent:'')||document.getElementById('crumb-text').textContent.split('›').pop().trim()||'分頁';
+  var title=cleanTitle(h?headingTitle(h):'')||document.getElementById('crumb-text').textContent.split('›').pop().trim()||'分頁'; /* V50.2.0 修正 G：分頁標題剝除訂文編號 */
   if(title.length>14) title=title.slice(0,13)+'…';
   for(var i=0;i<arr.length;i++){
     if(arr[i].anchor===anchor && Math.abs((arr[i].scrollY||0)-curY)<600){
@@ -30940,7 +32180,10 @@ function rtRemove(id){
   }else render();
   var bar=document.getElementById('rtabs-bar');
   var next=bar.querySelector('.rtab-on .rtab-select')||bar.querySelector('.rtab-add');
-  if(next)next.focus({preventScroll:true});
+  /* V50.2.0 修正 A：分頁全數關閉後分頁列回到 display:none（不可聚焦），
+     焦點改回右列「儲存閱讀分頁」鈕，鍵盤操作不落空。 */
+  if(next&&next.offsetParent)next.focus({preventScroll:true});
+  else{var railAdd=document.getElementById('btn-rtab');if(railAdd)railAdd.focus({preventScroll:true});}
 }
 function rtSwitch(id){
   var arr=rtLoad();
@@ -31225,7 +32468,7 @@ function backupInit(){
   panel.id='acim-backup291-preview';panel.className='acim-backup291-preview';panel.hidden=true;panel.setAttribute('role','region');panel.setAttribute('aria-label','匯入備份預覽');
   host.append(status,previous,panel);
   var incoming=null,previewPlan=null,fileReadSerial=0;
-  function paint(message){var s=engine.status();status.textContent=(message?message+' ':'')+(s.temporary?'部分資料僅於本分頁暫存，關閉前請匯出。':'閱讀資料儲存在此瀏覽器；清除網站資料會一併移除。')+(s.lastExport?' 上次產生備份：'+engine.formatTaipeiDate(s.lastExport)+'。':'');/* V50.0.7：依讀者回報移除狀態列尾端「尚未產生完整備份。」——從未匯出過時該句只造成困惑（「設定與資訊」面板最後一行）；有備份紀錄時「上次產生備份：…」照常顯示。 */previous.hidden=!s.hasSnapshot;}
+  function paint(message){var s=engine.status();status.textContent=(message?message+' ':'')+(s.temporary?'部分資料僅於本分頁暫存，關閉前請匯出。':'閱讀資料（書籤、分頁、偏好設定）儲存在此瀏覽器；清除網站資料會一併移除。試讀進度與閱讀碼啟用狀態不會因清除資料而重置。')+(s.lastExport?' 上次產生備份：'+engine.formatTaipeiDate(s.lastExport)+'。':'');/* V50.0.7：依讀者回報移除狀態列尾端「尚未產生完整備份。」——從未匯出過時該句只造成困惑（「設定與資訊」面板最後一行）；有備份紀錄時「上次產生備份：…」照常顯示。 */previous.hidden=!s.hasSnapshot;}
   function download(data,name){var url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'}));var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1200);}
   function exportNow(){try{var d=engine.exportCurrent();download(d,'acim-backup-'+engine.formatTaipeiDate()+'.json');var saved=engine.markExport();paint('已準備完整備份下載，請確認檔案已保存。'+(saved?'':' 備份日期無法持久記錄。'));return true;}catch(e){paint('無法產生備份：'+e.message);return false;}}
   ex.addEventListener('click',exportNow);
